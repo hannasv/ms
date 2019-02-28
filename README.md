@@ -1,2 +1,2 @@
 # MS
-This repository contains the code used to comduct experiments and anaysis. 
+This repository contains the material used in my MS thesis. 
