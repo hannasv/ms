@@ -1,8 +1,8 @@
 # MS
 This repository contains the material used in my MS thesis.
 
-Run::
-  python setup.py develop
+Install directory as a python package:
+python setup.py develop
 
+import sci-clouds as sclouds
 
-to install this as a  python package.
