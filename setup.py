@@ -12,20 +12,20 @@ from setuptools import setup
 
 
 setup(
-    name        =   'pycloudprediction',
+    name        =   'sci-clouds',
     version     =   '0.1',
     author      =   'Hanna Svennevik',
     author_email=   'svennevikh@gmail.com',
     url         =   'https://github.com/hannasv/MS.git',
     license     =   'GPLv3',
-    package_dir =   {'pycloudprediction'      :   'pycloudprediction'},
-    packages    =   ['pycloudprediction',
-                     'pycloudprediction.io',
-                     'pycloudprediction.plot',
-                     'pycloudprediction.stats',
-                     'pycloudprediction.ml'], #find_packages(exclude=['contrib', 'docs', 'tests*']),
-    #include_package_data = True,
-    package_data=   {'pycloudprediction'    :   ['data/*']},
+    package_dir =   {'sci-clouds'      :   'sci-clouds'},
+    packages    =   ['sci-clouds',
+                     'sci-clouds.io',
+                     'sci-clouds.plot',
+                     'sci-clouds.stats',
+                     'sci-clouds.ml'], #find_packages(exclude=['contrib', 'docs', 'tests*']),
+    #include_package_data sci-clouds True,
+    package_data=   {'sci-clouds'    :   ['data/*']},
 
     classifiers=[
         # How mature is this project? Common values are
