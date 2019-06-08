@@ -91,7 +91,7 @@ class ProcessSateliteData:
         Returns the xarray dataset containing only one season.
         """
         self.data = self.data.groupby('time.season')
-        for group in xarray:
+        for group in self.data:
             key, dataset = group
             if key == season:
                 return dataset
