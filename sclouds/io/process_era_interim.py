@@ -1,4 +1,4 @@
-
+import glob
 class ProcessEraData:
     """
     Class which is ment to process era-intetim data in a certain way.
@@ -11,7 +11,9 @@ class ProcessEraData:
     STORE ALL THE PROCESSED DATA INTO THE : DATA_REPO
     """
 
-    def __init__(var, season = None):
+    def __init__(self, var, season = None):
+        print(var)
+        print(season)
         self.var = var
         self.season = season
         self.filename = glob.glob(var+"*.nc")
@@ -23,19 +25,20 @@ class ProcessEraData:
             self.data = xr.open_dataset(self.filename)
             # TODO it might be better to call this subset.
             self.data = get_season(season)
+            print(self.data)
             self.season_str = season
         self.data = crop_era_interim() # Remove all data before satelite
                                        # measurments.
-        return
 
-    def output_filename(var, start, stop, add_text_begin = ""):
+
+    def output_filename(self, var, start, stop, add_text_begin = ""):
         """
         Add test train or valid in front when this is appropriate.
         OBS: var should be in terms of variables in the era-interim datasets.
         """
         return add_text_begin+var + "_" + start + "_" + stop + "_" + self.season_str + ".nc"
 
-    def get_season(season):
+    def get_season(self, season):
         """
         Returns the xarray dataset containing only one season.
         """
@@ -46,7 +49,7 @@ class ProcessEraData:
                 return dataset
         return
 
-    def split_seasons_and_write_files(xarray):
+    def split_seasons_and_write_files(self, xarray):
         """
         NOT sure if this is wanted
         """
@@ -56,7 +59,7 @@ class ProcessEraData:
             # TODO write file, use key in filename and dataset.dump to netcdf
             # To save the files.
 
-    def split_into_train_vaild_test_data(train_split = None, valid_split = None, test_split= None):
+    def split_into_train_vaild_test_data(self, train_split = None, valid_split = None, test_split= None):
         """
         Do the train, validate, split on the data.
 
@@ -68,7 +71,7 @@ class ProcessEraData:
         train_split: default 01.01.2008
             The first date in training data.
             trainingdata from 01.01.2008-31.12.2014 (In total 6yrs)
-            Example input : ('2008-01-01','2018-12-31')
+            Example input : ('2008-01-01','2014-12-31')
 
         valid_split:
             The first date in training data. Here 01.01.2015.
@@ -96,13 +99,22 @@ class ProcessEraData:
             validate = self.data.sel(time = slice(va_start, va_stop))
             validate.to_netcdf(output_filename(var, start=va_start, stop=va_stop,
                                     add_text_begin = "valid_") )
-        return 
+        return
 
 
 
-    def crop_era_interim():
+    def crop_era_interim(self):
         """
         Remove data from before 01.01.2008.
         This is the time of the first satelite observations.
         """
         return self.data.sel(time = slice('2008-01-01','2018-12-31'))
+
+
+if __name__ == "__main__":
+    data = ProcessEraData(var = "t2m")
+
+    data.split_into_train_vaild_test_data(
+    train_split = ('2008-01-01', '2014-12-31'),
+    valid_split = ('2015-01-01'-'2016-12-31'),
+    test_split= ('2017-01-01'-'2018-12-31'))

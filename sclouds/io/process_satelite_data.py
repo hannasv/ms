@@ -18,7 +18,7 @@ class ProcessSateliteData:
 
     """
 
-      def __init__(var = "tcc", season = None):
+      def __init__(self, var = "tcc", season = None):
           self.var = var
           self.season = season
           self.path = path_to_all_sat_data
@@ -34,7 +34,7 @@ class ProcessSateliteData:
               self.season_str = season
           return
 
-    def timestamp(filename):
+    def timestamp(self, filename):
     """
     Returns the numpy datetime 64 [ns] for the current date.
     This is a bit hardcoded at the moment ....
@@ -49,14 +49,14 @@ class ProcessSateliteData:
     sek = ts[12:-1]
     return np.datetime64( year+"-"+month+"-"+day+"T"+hr+":"+minuts+":"+sek )
 
-    def filter_values():
+    def filter_values(self):
         """
         Make all data, a cloud = 1, no cloud = 0. By replacing no cloud over
          land and ocean with no cloud.
         """
         pass
 
-    def _regrid_tcc():
+    def _regrid_tcc(self):
         """
         Regrid the cloud mask to total cloud cover, which has the same spatial
          resolution as era interim data.z<
@@ -68,7 +68,7 @@ class ProcessSateliteData:
         """
         pass
 
-    def calculate_cloud_fractions():
+    def calculate_cloud_fractions(self):
         """
         You can do this by adding the wrong coordinate system to the satelite file
 
@@ -78,7 +78,7 @@ class ProcessSateliteData:
         """
         pass
 
-    def merge_ts_to_one_dataset():
+    def merge_ts_to_one_dataset(self):
         """
         THIS NEEDS A LONG LIST OF FILES.
         MAYBEE THIS CAN BE DONE YEARLY FIRST.
@@ -86,7 +86,7 @@ class ProcessSateliteData:
         pass
 
 
-    def _get_season(season):
+    def _get_season(self, season):
         """ OBS: only usefull after merge ts.
         Returns the xarray dataset containing only one season.
         """
