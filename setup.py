@@ -12,20 +12,21 @@ from setuptools import setup
 
 
 setup(
-    name        =   'sci-clouds',
+    name        =   'sclouds',
     version     =   '0.1',
     author      =   'Hanna Svennevik',
     author_email=   'svennevikh@gmail.com',
     url         =   'https://github.com/hannasv/MS.git',
     license     =   'GPLv3',
-    package_dir =   {'sci-clouds'      :   'sci-clouds'},
-    packages    =   ['sci-clouds',
-                     'sci-clouds.io',
-                     'sci-clouds.plot',
-                     'sci-clouds.stats',
-                     'sci-clouds.ml'], #find_packages(exclude=['contrib', 'docs', 'tests*']),
+    package_dir =   {'sclouds'      :   'sclouds'},
+    packages    =   ['sclouds',
+                     'sclouds.io',
+                     'sclouds.plot',
+                     'sclouds.stats',
+                     'sclouds.ml'],
+    #find_packages(exclude=['contrib', 'docs', 'tests*']),
     #include_package_data sci-clouds True,
-    package_data=   {'sci-clouds'    :   ['data/*']},
+    package_data=   {'sclouds'    :   ['data/*']},
 
     classifiers=[
         # How mature is this project? Common values are
