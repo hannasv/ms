@@ -1,4 +1,8 @@
 import glob
+import xarray as xr
+import numpy as np
+from sclouds.helpers import LAPTOP_REPO, LAPTOP_RESULTS_REPO
+
 class ProcessEraData:
     """
     Class which is ment to process era-intetim data in a certain way.
@@ -12,11 +16,9 @@ class ProcessEraData:
     """
 
     def __init__(self, var, season = None):
-        print(var)
-        print(season)
         self.var = var
         self.season = season
-        self.filename = glob.glob(var+"*.nc")
+        self.filename = glob.glob(LAPTOP_REPO + var+"*.nc")[0]
 
         if season is None:
             self.data = xr.open_dataset(self.filename)
@@ -24,10 +26,10 @@ class ProcessEraData:
         else:
             self.data = xr.open_dataset(self.filename)
             # TODO it might be better to call this subset.
-            self.data = get_season(season)
+            self.data = self.get_season(season)
             print(self.data)
             self.season_str = season
-        self.data = crop_era_interim() # Remove all data before satelite
+        self.data = self.crop_era_interim() # Remove all data before satelite
                                        # measurments.
 
 
@@ -36,7 +38,7 @@ class ProcessEraData:
         Add test train or valid in front when this is appropriate.
         OBS: var should be in terms of variables in the era-interim datasets.
         """
-        return add_text_begin+var + "_" + start + "_" + stop + "_" + self.season_str + ".nc"
+        return LAPTOP_RESULTS_REPO+ add_text_begin+var + "_" + start + "_" + stop + "_" + self.season_str + ".nc"
 
     def get_season(self, season):
         """
@@ -49,15 +51,6 @@ class ProcessEraData:
                 return dataset
         return
 
-    def split_seasons_and_write_files(self, xarray):
-        """
-        NOT sure if this is wanted
-        """
-        xarray = xarray.groupby('time.season')
-        for group in xarray:
-            key, dataset = group
-            # TODO write file, use key in filename and dataset.dump to netcdf
-            # To save the files.
 
     def split_into_train_vaild_test_data(self, train_split = None, valid_split = None, test_split= None):
         """
@@ -87,17 +80,17 @@ class ProcessEraData:
         if train_split is not None:
             tr_start, tr_stop = train_split
             train = self.data.sel(time = slice(tr_start, tr_stop))
-            train.to_netcdf(output_filename(var, start=tr_start, stop=tr_stop,
+            train.to_netcdf(self.output_filename(self.var, start=tr_start, stop=tr_stop,
                                     add_text_begin = "train_") )
         if test_split is not None:
             te_start, te_stop = test_split
             test = self.data.sel(time = slice(te_start, te_stop))
-            test.to_netcdf(output_filename(var, start=te_start, stop=te_stop,
+            test.to_netcdf(self.output_filename(self.var, start=te_start, stop=te_stop,
                                     add_text_begin = "test_") )
         if valid_split is not None:
             va_start, va_stop = valid_split
             validate = self.data.sel(time = slice(va_start, va_stop))
-            validate.to_netcdf(output_filename(var, start=va_start, stop=va_stop,
+            validate.to_netcdf(self.output_filename(self.var, start=va_start, stop=va_stop,
                                     add_text_begin = "valid_") )
         return
 
@@ -112,9 +105,9 @@ class ProcessEraData:
 
 
 if __name__ == "__main__":
-    data = ProcessEraData(var = "t2m")
+    data = ProcessEraData(var = "r")
 
     data.split_into_train_vaild_test_data(
-    train_split = ('2008-01-01', '2014-12-31'),
-    valid_split = ('2015-01-01'-'2016-12-31'),
-    test_split= ('2017-01-01'-'2018-12-31'))
+    train_split = ('2008-01-01', '2014-12-31'), valid_split=None,test_split= None)
+    #valid_split = ('2015-01-01','2016-12-31'),
+    #test_split= ('2017-01-01','2018-12-31'))

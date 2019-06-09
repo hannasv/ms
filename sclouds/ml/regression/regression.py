@@ -84,18 +84,5 @@ class OLS:
                     self.par + ".csv",index=False, sep =",")
         return
 
-class PredictivePower:
-    """
-    Class used to calculate the linear predictive power of a certain variable
-    pp :: predictive power a(q90 - a10)
-
-    q90, and q10 an be read from Results Stats folder.
-
-    """
-    def __init__():
-        pass
-
-
-
 if __name__ == "__main__":
     SimpleLinearRegression().regression()
