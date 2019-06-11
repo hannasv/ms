@@ -107,8 +107,38 @@ class ProcessSateliteData:
         data = data.where(data.tcc - 1 < 0.0001, 0)
         return data
 
+
+    def _lonlat_from_geos_angle(x, y):
+        """Get lons and lats from x, y in normalized satelite projection coordinates.
+
+
+        """
+        h = # distance from satelite to earth centre.
+        a = # equitorial radius
+
+        h = (geos_area.proj_dict['h'] + geos_area.proj_dict['a']) / 1000
+        b__ = (geos_area.proj_dict['a'] / geos_area.proj_dict['b']) ** 2
+
+        sd = np.sqrt((h * np.cos(x) * np.cos(y)) ** 2 -
+                     (np.cos(y)**2 + b__ * np.sin(y)**2) *
+                     (h**2 - (geos_area.proj_dict['a'] / 1000)**2))
+        # sd = 0
+
+        sn = (h * np.cos(x) * np.cos(y) - sd) / (np.cos(y)**2 + b__ * np.sin(y)**2)
+        s1 = h - sn * np.cos(x) * np.cos(y)
+        s2 = sn * np.sin(x) * np.cos(y)
+        s3 = -sn * np.sin(y)
+        sxy = np.sqrt(s1**2 + s2**2)
+
+        lons = np.rad2deg(np.arctan2(s2, s1)) + geos_area.proj_dict.get('lon_0', 0)
+        lats = np.rad2deg(-np.arctan2(b__ * s3, sxy))
+
+        return lons, lats
+
     def _regrid_tcc(self):
         """
+        Resample is a better word than regrid.
+
         Regrid the cloud mask to total cloud cover, which has the same spatial
          resolution as era interim data.z<
 
