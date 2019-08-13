@@ -46,7 +46,8 @@ class ProcessSateliteData:
         day = ts[6:8]
         hr = ts[8:10]
         minuts = ts[10:12]
-        sek = ts[12:-1]
+        sek = ts[12:14]
+        # TODO make sure all filenames have seconds 
         return np.datetime64( year+"-"+month+"-"+day+"T"+hr+":"+minuts+":"+sek )
 
     def calculate_cloud_fractions(self):
