@@ -47,37 +47,16 @@ class ProcessSateliteData:
         hr = ts[8:10]
         minuts = ts[10:12]
         sek = ts[12:14]
-        # TODO make sure all filenames have seconds 
+        # TODO make sure all filenames have seconds
         return np.datetime64( year+"-"+month+"-"+day+"T"+hr+":"+minuts+":"+sek )
 
-    def calculate_cloud_fractions(self):
+    def calculate_cloud_fraction(self, centre_era_lon, centre_era_lat):
         """
-        You can do this by adding the wrong coordinate system to the satelite file
-
-        Its might be of use when writing the thesis to know how many small
-         gridcells you calculate you fraction based on. If its few it not very diverse...
+        Calculate cloud fraction of one cell.
         """
 
         #self.data = self.data.sel('latitude' slice = (), "longitude" slice = ())
-        pass
-
-    def area_grid_cell(c_lon, c_lat, d_lat, d_lon):
-        """
-        c_lon, c_lat : float
-            Centre point longitude, latitude in degrees
-
-        d_lat, d_lon : float
-            delta lat lon in degrees
-        """
-        R = 6371
-        area = np.pi/180*R**2*( np.sind() - np.sind()*dLon )
-        pass
-
-    def _weight():
-        # WHEN YOU calculate the mean you
-        # area_grid_cell( snitt av begge cellene)/area_grid_cell( entire cell from nc fil)
         return
-
 
     def calc_one_mean(lon, lat, lon_nc, lat_nc, clm_grb):
         """
