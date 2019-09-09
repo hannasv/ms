@@ -50,11 +50,114 @@ class ProcessSateliteData:
         # TODO make sure all filenames have seconds
         return np.datetime64( year+"-"+month+"-"+day+"T"+hr+":"+minuts+":"+sek )
 
+    def area_grid_cell(c_lat, d_lat, d_lon):
+        """
+        c_lon, c_lat : float
+            Centre point longitude, latitude in degrees
+        d_lat, d_lon : float
+            delta lat lon in degrees
+
+        Returns : area in km^2
+
+        cdo : If the grid cell area have to be computed it is scaled with the earth radius to square meters.
+        """
+        R = 6371000  # in M TO BE COMPARABLE WITH
+        # area er egentlig R**2
+        area = R*(np.cos((c_lat - d_lat)*np.pi/180) - np.cos((c_lat + d_lat)*np.pi/180) )*(2*d_lon*np.pi/180) # R**2
+        return area
+
     def calculate_cloud_fraction(self, centre_era_lon, centre_era_lat):
         """
         Calculate cloud fraction of one cell.
+        Keep masks, lons, lats in memory by storing them in the constructure.
         """
 
+        nc_path   = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_coordinates/'
+        nc_file  = glob.glob(nc_path + '*.nc')[0]
+        rootgrp = Dataset(nc_file, "r", format="NETCDF4")
+        cloud_mask = rootgrp.variables["cloudMask"][:].data
+        lat_array = rootgrp.variables["lat"][:].data
+        lon_array = rootgrp.variables["lon"][:].data
+        lat_array[lat_array < -99] = np.nan # updates of disk values to nan
+        lon_array[lon_array < -99] = np.nan # updates of disk values to nan
+        d_phi   = lon_array[:, 1:] - lon_array[:, :-1]
+        d_theta = lat_array[1:] - lat_array[:-1]
+        # Padding the axis -- we removed by taking the difference
+        pad     = np.ones((3712, 1))*np.nan # adding numpy to the axis the values
+        d_phi   = np.concatenate((pad, d_phi), axis = 1)/2
+        d_theta = np.concatenate((pad.transpose(), d_theta), axis = 0)/2
+
+        # reshapes everything to arrays
+        d_phi = d_phi.reshape(-1)
+        d_theta = d_theta.reshape(-1)
+        longitude = lon_array.reshape(-1)
+        latitude = lat_array.reshape(-1)
+
+        # The indexes of the marked cell with centre inside the era cell
+        # TODO REDO this. Remove the indecies which are in the intersection of inside and out.
+        #These should be kept in the boundaries and removed from the inside..
+        idx_centre_inside  = np.intersect1d( np.argwhere( np.abs(longitude - centre_era_lon) < 0.375 ),
+                             np.argwhere( np.abs(latitude - centre_era_lat) < 0.375 ) )
+
+        era_up_boundary    = centre_era_lat + 0.375
+        era_down_boundary  = centre_era_lat - 0.375
+        era_left_boundary  = centre_era_lon + 0.375
+        era_right_boundary =  centre_era_lon - 0.375
+
+        # boundaries of the
+        cmk_left_boundary  = longitude - d_phi
+        cmk_right_boundary = longitude + d_phi
+        cmk_up_boundary    = latitude + d_theta
+        cmk_down_boundary  = latitude - d_theta
+
+        # Taking the dfferences of the oposite sides to make sure that they are
+        d_left    = cmk_right - era_left
+        d_right   = era_right - cmk_left
+        d_down    = cmk_up - era_down
+        d_up      = era_up - cmk_down
+
+        # Indexes of the
+        left_idx   = np.argwhere(d_left  < 0)
+        right_idx  = np.argwhere(d_right > 0)
+        up_idx     = np.argwhere(d_up    > 0)
+        down_idx   = np.argwhere(d_down  < 0)
+
+        # Corners are interesting because they should only be computed once
+        lower_left_idx  = np.intersect1d(left_idx, down_idx)
+        upper_left_idx  = np.intersect1d(left_idx, up_idx)
+        lower_right_idx = np.intersect1d(right_idx, down_idx)
+        upper_right_idx = np.intersect1d(right_idx, up_idx)
+
+        assert len(np.intersect1d(right_idx, left_idx)) == 0, 'The intersection of left and right indexes should be zero?'
+
+
+        # latitude lower left corner
+        lat_LL = c_lat[lower_left_idx]
+        d_lon_LL = d_phi[lower_left_idx]
+        d_lat_LL = d_theta[lower_left_idx]
+
+        idx_bondary = None
+
+        # idx
+
+
+
+        # Should be a pandas dataframe
+        centre_inside_lat = None
+        centre_inside_dtheta = None
+        centre_inside_dphi = None
+
+        # Should be a pandas dataframe
+        centre_bound_lat   = None
+        centre_bound_dphi   = None
+        centre_bound_dtheta = None
+
+        area_era     =  area_grid_cell(centre_era_lat, 0.375, 0.375)
+        area_bondary =  area_grid_cell(centre_bound_lat, centre_bound_dtheta, centre_bound_dphi)
+        area_inside  = area_grid_cell(centre_inside_lat, centre_inside_dtheta, centre_inside_dphi)
+
+        sum_weights = np.sum( area_boundary/area_era + area_inside/area_era )
+        assert sum_weights  < 1.100, 'sum_weights is to large {}'.format(sum_weights)
         #self.data = self.data.sel('latitude' slice = (), "longitude" slice = ())
         return
 

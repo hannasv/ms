@@ -14,9 +14,16 @@ import datetime
 from netCDF4 import Dataset # used for the netcdf files which contain lat, lon.
 import seaborn as sns
 
-#path      = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_data_raw/'
-#path_era  = '//uio/lagringshotell/geofag/students/metos/hannasv/era_interim_data/'
-#nc_path   = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_coordinates/'
+path_grb      = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_data_raw/'
+path_era  = '//uio/lagringshotell/geofag/students/metos/hannasv/era_interim_data/'
+nc_path   = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_coordinates/'
+
+nc_files  = glob.glob(nc_path + '*.nc')
+grb_files = glob.glob(path_grb + "*.grb")
+era       = glob.glob(path_era + "*q.nc")
+
+"""
+FOR LAPTOP BRANCH
 
 directory = '/home/hanna/Desktop/examples_master_thesis/'
 path_era  = '/home/hanna/Desktop/master_thesis/era/'
@@ -25,7 +32,7 @@ path_era  = '/home/hanna/Desktop/master_thesis/era/'
 nc_files  = glob.glob(directory + '*.nc')
 grb_files = glob.glob(directory + "*.grb")
 era       = glob.glob(path_era+"*relative*humidity*.nc")
-
+"""
 grb_file = grb_files[0]
 era_file = era[0]
 nc_file = nc_files[0]
