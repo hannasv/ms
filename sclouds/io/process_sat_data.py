@@ -14,19 +14,23 @@ import datetime
 from netCDF4 import Dataset # used for the netcdf files which contain lat, lon.
 import seaborn as sns
 
-path      = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_data_raw/'
-path_era  = '//uio/lagringshotell/geofag/students/metos/hannasv/era_interim_data/'
-nc_path   = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_coordinates/'
+#path      = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_data_raw/'
+#path_era  = '//uio/lagringshotell/geofag/students/metos/hannasv/era_interim_data/'
+#nc_path   = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_coordinates/'
 
-nc_files  = glob.glob(nc_path + '*.nc')
-grb_files = glob.glob(path+"*.grb")
-era = glob.glob(path_era+"*q.nc")
+directory = '/home/hanna/Desktop/examples_master_thesis/'
+path_era  = '/home/hanna/Desktop/master_thesis/era/'
+#nc_path   = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_coordinates/'
+
+nc_files  = glob.glob(directory + '*.nc')
+grb_files = glob.glob(directory + "*.grb")
+era       = glob.glob(path_era+"*relative*humidity*.nc")
 
 grb_file = grb_files[0]
 era_file = era[0]
 nc_file = nc_files[0]
 
-data = xr.open_dataset(grb_file, engine = "pynio")
+#data = xr.open_dataset(grb_file, engine = "pynio")
 era = xr.open_dataset(era_file)
 
 def timestamp(filename):
@@ -50,6 +54,8 @@ def timestamp(filename):
 
 # In[5]:
 
+"""
+PROBLEM WITH PYNIO
 
 ts = timestamp(grb_file)
 data['time'] = ts
@@ -68,6 +74,7 @@ cloud_mask_array = cloud_mask_array.reshape(-1)
 # 3 -off earth disk
 # 2 - cloud
 # 1 - not cloud over ocean and 0 not cloud over land
+"""
 
 rootgrp = Dataset(nc_file, "r", format="NETCDF4")
 cloud_mask_array = rootgrp.variables["cloudMask"][:].data
@@ -103,9 +110,9 @@ def area_grid_cell(c_lat, d_lat, d_lon):
     area = R*(-np.sin((c_lat - d_lat)*np.pi/180)+np.sin((c_lat + d_lat)*np.pi/180) )*(2*d_lon*np.pi/180) # R**2
     return area
 
-
-assert ((era.cell_area.values/6371000)[:,0] -
- area_grid_cell(era.latitude.values, 0.375, 0.375))/(era.cell_area.values/6371000)[:,0] < 0.001
+# # TODO: this is not availabel on laptop
+#  assert ((era.cell_area.values/6371000)[:,0] -
+# area_grid_cell(era.latitude.values, 0.375, 0.375))/(era.cell_area.values/6371000)[:,0] < 0.001
 
 # these should be sent in as attributes.
 era_lon = -15
@@ -139,7 +146,7 @@ c_lat = lat_array.reshape(-1) #+ d_theta
 cmk_left  = c_lon - d_phi   #- era_right
 cmk_right = c_lon + d_phi   #- era_left
 
-# TODO : Sjekk d theta og lignende. 
+# TODO : Sjekk d theta og lignende.
 cmk_up    = c_lat + np.abs(d_theta) #- era_down
 cmk_down  = c_lat - np.abs(d_theta) #- era_up
 
@@ -261,18 +268,6 @@ a = np.sum(area_grid_cell(lat_lf, dlat_lf, np.abs(dlon_lf)))
 fraction_left = (cloud_mask_array[idx_left_boundary][sub_section_left]*area_grid_cell(lat_lf,
                                                                                       dlat_lf,
                                                                                       dlon_lf)/largeAREA).sum()
-fraction_left
-
-
-# In[660]:
-
-
-dlon_lf
-
-
-# In[657]:
-
-
 # AREA right boundary
 # dlon right boundary - of one era interim
 dlon_rb = (c_lon[idx_right_boundary][sub_section_right] - d_phi[idx_right_boundary][sub_section_right] -
@@ -308,22 +303,6 @@ fraction_down = (cloud_mask_array[idx_down_boundary][sub_section_down]*area_grid
                                                                                       dlat_down,
                                                                                       dlon_down)/largeAREA).sum()
 
-
-# In[655]:
-
-
-largeAREA
-
-
-# In[630]:
-
-
-area_grid_cell(lat_down, dlat_down, np.abs(dlon_down))
-
-
-# In[656]:
-
-
 # AREA up boundary
 dlat_up = (era_up - (c_lat[idx_up_boundary][sub_section_up] -
                      d_theta[idx_up_boundary][sub_section_up]) )/2
@@ -339,26 +318,6 @@ fraction_up = (cloud_mask_array[idx_up_boundary][sub_section_up]*area_grid_cell(
                                                              dlon_up)/largeAREA).sum()
 
 
-# In[653]:
-
-
-fraction_up
-
-
-# ## Find the cells inside boundaried
-
-# In[599]:
-
-
-idx_centre_one = np.intersect1d(np.argwhere(cmk_left  > era_left),
-                                np.argwhere(cmk_right < era_right))
-
-
-# In[600]:
-
-
-idx_centre_two = np.intersect1d(np.argwhere(cmk_up   < era_up),
-                                np.argwhere(cmk_down >  era_down))
 
 
 # In[604]:
@@ -388,53 +347,14 @@ plt.grid( )
 # In[ ]:
 
 
+idx_centre_one = np.intersect1d(np.argwhere(cmk_left  > era_left),
+                                np.argwhere(cmk_right < era_right))
 
 
+idx_centre_two = np.intersect1d(np.argwhere(cmk_up   < era_up),
+                                np.argwhere(cmk_down >  era_down))
 
-# In[608]:
-
-
-e = np.sum()
-
-
-# In[609]:
-
-
-area_grid_cell(lat_centre_cells, dlat_centre, dlon_centre);
-
-
-# In[610]:
-
-
-largeAREA*0.009
-
-
-# In[611]:
-
-
-(a + b+c +d +e)/largeAREA  # the extra values is because of corners ..?
-
-
-# In[612]:
-
-
-a, b, c, d, e
-
-
-# In[639]:
-
-
-# In[642]:
-
-
-sns.heatmap(cloud_mask_array)
-
-
-# In[644]:
-
-
-
-
+idx_centre_cells = np.intersect1d( idx_centre_one, idx_centre_two )
 
 fraction_centre = (cloud_mask_array[idx_centre_cells]*area_grid_cell(lat_centre_cells,
                                                              dlat_centre,
