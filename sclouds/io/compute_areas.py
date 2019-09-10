@@ -260,4 +260,5 @@ class Resample:
 
 
 if __name__ == "__main__":
-    Resample().compute_dlat_dlon(save_file=True)
+    #Resample().compute_dlat_dlon(save_file=True)
+    Resample().compute_area_one_cell()
