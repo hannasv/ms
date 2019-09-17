@@ -17,6 +17,14 @@ class ConvLSTMCell(nn.Module):
         self.padding = int((kernel_size - 1) / 2)
 
         """
+        From the Convolution layer, the most important ones are:
+
+        filters: The number of output filters in the convolution.
+        kernel_size: Specifying the height and width of the convolution window.
+        padding: One of "valid" or "same".
+        data_format: Images format, if channel comes first ("channels_first") or last ("channels_last").
+        activation: Activation function. Default is the linear function a(x) = x.
+            
         i - input gate
         f - forget gate
         c - (?) gate
@@ -112,6 +120,12 @@ if __name__ == '__main__':
     .cuda() sends data to gpu. DOT cpu sends it to cup. ''
     add something called .kernal_type() where kernel_typ can be either cpu or cuda.
 
+
+    input shape : (samples == time_steps, channels (met variables), rows, cols)
+    output : (rows, cols) because you predict one timestep
+
+    Fasit should contain the values the timestep behind the train.
+
     """
     # gradient check
     #
@@ -125,4 +139,4 @@ if __name__ == '__main__':
     output = convlstm(input)
     output = output[0][0].double()
     res = torch.autograd.gradcheck(loss_fn, (output, target), eps=1e-6, raise_exception=True)
-print(res)
+    print(res)

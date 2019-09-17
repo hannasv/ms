@@ -3,6 +3,72 @@ import xarray as xr
 import numpy as np
 from sclouds.helpers import LAPTOP_REPO, LAPTOP_RESULTS_REPO
 
+
+def create_ML_repo(start = "2012-01-01", stop = "2013-01-01", season = "SON",
+                  era_path = '/uio/lagringshotell/geofag/students/metos/hannasv/era_interim_data/'):
+    """
+    Want all year put season to "".
+    """
+    q   = xr.open_dataset(glob.glob(era_path + "*_q_*" + season +".nc")[0]).q.values
+    r   = xr.open_dataset(glob.glob(era_path + "*_r_*"+ season +".nc")[0]).r.values
+    tcc = xr.open_dataset(glob.glob(era_path + "*tcc*"+ season +".nc")[0]).tcc.values
+    sp  = xr.open_dataset(glob.glob(era_path + "*sp*"+ season +".nc")[0]).sp.values
+    t2m = xr.open_dataset(glob.glob(era_path + "*t2m*"+ season +".nc")[0]).t2m.values
+    assert np.shape(q) == np.shape(r) == np.shape(tcc) == np.shape(sp) == np.shape(t2m)
+
+    nbr_times, nbr_lats, nbr_lon = np.shape(q)
+    #print(np.shape(q[0]))
+    #print(nbr_times, nbr_lats, nbr_lon)
+    train = []
+    true  = tcc
+    for i in range(nbr_times):
+        one_timestep = np.array([ q[i], r[i], tcc[i], t2m[i] ])
+        #print(one_timestep.shape)
+        train.append(one_timestep)
+    return np.array(train), true
+
+# crop_nc_file(fil, fil[:-3]+"_cropped.nc")
+def create_seasonal_files(infile):
+    W = xr.open_dataset(infile)
+
+    for i, season in enumerate(W.groupby('time.season')):
+        key, dataset = season
+        # TODO make this variable more general.
+        outfile = infile[:-3]+"_{}.nc".format(key)
+        dataset.to_netcdf(path = outfile)
+        #cropped.to_netcdf(path = outfile)
+    return
+
+def crop_nc_file_to_MS_experiments(infile, outfile):
+    """
+    Original nc files contain data from 1979 to end of 2018.
+
+    Humidities are only kept for surface plev = 1000.
+    time is from 2012 to end of 2018
+    longitude -15, 29.25
+    latitude 30, 55
+
+    Resolution is 0.75 degrees.
+
+    """
+    Q =  xr.open_dataset(infile)
+
+    variable = fil.split('_')[-2]
+    if 'r' == variable or 'q' == variable:
+        #print('enters for filename {}'.format( infile ))
+        cropped = Q.sel(level = 1000,
+                          longitude = slice(-15, 29.25),
+                          latitude = slice(55.5, 30),
+                          time = slice('2012-01-01', '2018-12-31'))
+    else:
+        cropped = Q.sel(longitude = slice(-15, 29.25),
+                        latitude = slice(55.5, 30),
+                        time = slice('2012-01-01', '2018-12-31'))
+    #print(cropped)
+    cropped.to_netcdf(path = outfile)
+    return
+
+
 class ProcessEraData:
     """
     Class which is ment to process era-intetim data in a certain way.
