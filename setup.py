@@ -12,7 +12,7 @@ from setuptools import setup
 
 
 setup(
-    name        =   'sclouds',
+    name        =   'sciclouds',
     version     =   '0.1',
     author      =   'Hanna Svennevik',
     author_email=   'svennevikh@gmail.com',
