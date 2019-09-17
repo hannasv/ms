@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import glob
+import xarray as xr
 
 DATA_REPO = "/uio/lagringshotell/geofag/students/metos/hannasv/data_processed/"
 FIGURE_REPO = "/uio/lagringshotell/geofag/students/metos/hannasv/figures/"
@@ -18,6 +19,25 @@ EXTENT = [LAT, LON]
 VARIABLES =  ["t2m", 'sp', 'q', 'r', 'tcc']
 PRESSURE_LEVELS = [300, 400, 500, 700, 850, 1000]
 
+
+class DataRepository:
+
+    def __init__(self, start, stop):
+        self.start = start
+        self.stop  = stop
+        # pass to directiory
+        # should this crop the area?
+        files = glob.glob(LAPTOP_REPO+"*.nc")
+        print(files)
+        for fil in files:
+            dataset = xr.open_dataset(fil, engine = 'pynio')
+            print(data)
+        # return list of input to make a prediction of.
+
+
+
+
+
 # TODO add get_season function.
 def get_season(data, season):
     """
@@ -32,3 +52,8 @@ def get_season(data, season):
         if key == season:
             return dataset
     return
+
+
+
+if __name__ == "__main__":
+    DataRepository(2010,2012)

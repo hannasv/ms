@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
-
 class ConvLSTMCell(nn.Module):
     """ Inspired by https://github.com/automan000/Convolution_LSTM_PyTorch. """
     def __init__(self, input_channels, hidden_channels, kernel_size, GPU = False):
