@@ -1,8 +1,7 @@
 import glob
 import xarray as xr
 import numpy as np
-from sclouds.helpers import LAPTOP_REPO, LAPTOP_RESULTS_REPO
-
+#from sclouds.helpers import LAPTOP_REPO, LAPTOP_RESULTS_REPO
 
 def create_ML_repo(start = "2012-01-01", stop = "2013-01-01", season = "SON",
                   era_path = '/uio/lagringshotell/geofag/students/metos/hannasv/era_interim_data/'):
@@ -171,9 +170,14 @@ class ProcessEraData:
 
 
 if __name__ == "__main__":
-    data = ProcessEraData(var = "r")
-
-    data.split_into_train_vaild_test_data(
-    train_split = ('2008-01-01', '2014-12-31'), valid_split=None,test_split= None)
+    #data = ProcessEraData(var = "r")
+    #data.split_into_train_vaild_test_data(
+    #train_split = ('2008-01-01', '2014-12-31'), valid_split=None,test_split= None)
     #valid_split = ('2015-01-01','2016-12-31'),
     #test_split= ('2017-01-01','2018-12-31'))
+
+    for fil in files:
+        outfile = fil[:-3] + "_MS_region.nc"
+        crop_nc_file_to_MS_experiments(fil, outfile)
+    #create_ML_repo(start = "2012-01-01", stop = "2013-01-01", season = "SON",
+    #                  era_path = '/uio/lagringshotell/geofag/students/metos/hannasv/era_interim_data/')
