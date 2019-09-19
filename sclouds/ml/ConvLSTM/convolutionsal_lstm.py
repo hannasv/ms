@@ -135,7 +135,6 @@ def padding_same(kernel_size, height, width, dialation = 1, stride = 1):
     def p(dim):
         return 0.5*( dim - 1 - stride + dim*stride + 2*kernel_size +
               kernel_size*dialation + dialation )
-
     return P(height), P(width)
 
 if __name__ == '__main__':
