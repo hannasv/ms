@@ -95,7 +95,7 @@ ENV/
 *.bak
 
 # Private and output folders
-pyaerocom.egg-info
+sclouds.egg-info
 
 # test cache
 .pytest_cache/
@@ -108,3 +108,8 @@ docs/_build
 
 # Issues directory
 issues/
+
+#from requirements.txt
+.swn
+.swo
+.swp
