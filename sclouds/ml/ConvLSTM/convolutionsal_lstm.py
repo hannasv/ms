@@ -4,17 +4,17 @@ from torch.autograd import Variable
 
 class ConvLSTMCell(nn.Module):
     """ Inspired by https://github.com/automan000/Convolution_LSTM_PyTorch. """
-    def __init__(self, input_channels, hidden_channels, kernel_size, GPU = False):
+    def __init__(self, input_channels, hidden_channels, kernel_size, dialation = 1, stride = 1,
+                 GPU = False, padding = 'same'):
         super(ConvLSTMCell, self).__init__()
+        assert hidden_channels % 2 == 0
+        # The number of hidden channels need to be larger than ..
 
-        assert hidden_channels % 2 == 0 # figure out what this does
-
-        self.input_channels = input_channels
-        self.hidden_channels = hidden_channels
+        self.input_channels = input_channels # nr of meteorological parameters
+        self.hidden_channels = hidden_channels # nr of filters makes out the hidden channels
         self.kernel_size = kernel_size
         self.num_features = 4
-
-        self.padding = int((kernel_size - 1) / 2)
+        self.padding = None
 
         """
         From the Convolution layer, the most important ones are:
@@ -24,7 +24,7 @@ class ConvLSTMCell(nn.Module):
         padding: One of "valid" or "same".
         data_format: Images format, if channel comes first ("channels_first") or last ("channels_last").
         activation: Activation function. Default is the linear function a(x) = x.
-            
+
         i - input gate
         f - forget gate
         c - (?) gate
@@ -72,24 +72,41 @@ class ConvLSTMCell(nn.Module):
 class ConvLSTM(nn.Module):
     # input_channels corresponds to the first input feature map
     # hidden state is a list of succeeding lstm layers.
-    def __init__(self, input_channels, hidden_channels, kernel_size, step=1, effective_step=[1]):
+    def __init__(self, input_channels, hidden_channels, kernel_size, step=1,
+                 effective_step=[1]):
         super(ConvLSTM, self).__init__()
         self.input_channels = [input_channels] + hidden_channels
         self.hidden_channels = hidden_channels
         self.kernel_size = kernel_size
         self.num_layers = len(hidden_channels)
-        self.step = step
+        self.step = step # what is this
         self.effective_step = effective_step
         self._all_layers = []
+
+        # set up number of cells.
         for i in range(self.num_layers):
             name = 'cell{}'.format(i)
-            cell = ConvLSTMCell(self.input_channels[i], self.hidden_channels[i], self.kernel_size)
+            cell = ConvLSTMCell(self.input_channels[i],
+                                self.hidden_channels[i],
+                                self.kernel_size)
             setattr(self, name, cell)
             self._all_layers.append(cell)
 
     def forward(self, input):
         internal_state = []
         outputs = []
+        samlples, days, lat, lon, channels = input.shape
+        # adds number of
+        if padding == 'same':
+            """ Padds so that the output dimention and input are the same """
+            self.padding = padding_same( self.kernel_size, height, width,
+                                         dialation=self.dilation,
+                                         stride=self.stride  )
+
+        elif padding == "valid":
+            # In keras it means no padding.
+            self.padding = int((kernel_size - 1) / 2)
+
         for step in range(self.step):
             x = input
             for i in range(self.num_layers):
@@ -97,7 +114,8 @@ class ConvLSTM(nn.Module):
                 name = 'cell{}'.format(i)
                 if step == 0:
                     bsize, _, height, width = x.size()
-                    (h, c) = getattr(self, name).init_hidden(batch_size=bsize, hidden=self.hidden_channels[i],
+                    (h, c) = getattr(self, name).init_hidden(batch_size=bsize,
+                                                             hidden=self.hidden_channels[i],
                                                              shape=(height, width))
                     internal_state.append((h, c))
 
@@ -111,6 +129,13 @@ class ConvLSTM(nn.Module):
 
         return outputs, (x, new_c)
 
+def padding_same(kernel_size, height, width, dialation = 1, stride = 1):
+    """ Extended formula from ML lectures includes dialution """
+    # TODO: implement for not sqauare filter?
+    def p(dim):
+        return 0.5*( dim - 1 - stride + dim*stride + 2*kernel_size +
+              kernel_size*dialation + dialation )
+    return P(height), P(width)
 
 if __name__ == '__main__':
     """
@@ -128,13 +153,17 @@ if __name__ == '__main__':
 
     """
     # gradient check
-    #
-    convlstm = ConvLSTM(input_channels=512, hidden_channels=[128, 64, 64, 32, 32], kernel_size=3, step=5,
-                        effective_step=[4]).cpu()
-    loss_fn = torch.nn.MSELoss()
+    # TODO different kernelsizes in different hidden layers
+    convlstm = ConvLSTM(input_channels = 512, hidden_channels = [128, 64, 64, 32, 32],
+                        kernel_size = 3, step = 5,
+                        effective_step = [4]).cpu()
 
-    input = Variable(torch.randn(1, 512, 64, 32)).cpu()
-    target = Variable(torch.randn(1, 32, 64, 32)).double().cpu()
+    loss_fn = torch.nn.MSELoss()
+    example_batch = torch.randn(1, 512, 64, 32)
+    example_target = torch.randn(1, 32, 64, 32)
+    # Shape of input [samples (nbr days), nr hours, lat, lon, metvars]
+    input = Variable(example_batch).cpu()
+    target = Variable(example_target).double().cpu()
 
     output = convlstm(input)
     output = output[0][0].double()
