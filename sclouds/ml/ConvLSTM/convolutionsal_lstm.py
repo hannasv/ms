@@ -2,8 +2,40 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
+def trainer(model, train_loader, criterion, loss, num_epochs):
+    # Train the model
+    total_step = len(train_loader)
+    loss_list = []
+    acc_list = []
+
+    for epoch in range(num_epochs):
+        for i, (images, labels) in enumerate(train_loader):
+
+            # Run the forward pass
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss_list.append(loss.item())
+
+            # Backprop and perform Adam optimisation
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # Track the accuracy
+            #total = labels.size(0)
+            #_, predicted = torch.max(outputs.data, 1)
+            #correct = (predicted == labels).sum().item()
+            #acc_list.append(correct / total)
+
+            if (i + 1) % 100 == 0:
+                print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
+                      .format(epoch + 1, num_epochs, i + 1, total_step, loss.item(),
+                              (correct / total) * 100))
+    return
+
 class ConvLSTMCell(nn.Module):
     """ Inspired by https://github.com/automan000/Convolution_LSTM_PyTorch. """
+    # update input to be a config dictionary
     def __init__(self, input_channels, hidden_channels, kernel_size, dialation = 1, stride = 1,
                  GPU = False, padding = 'same'):
         super(ConvLSTMCell, self).__init__()
@@ -14,7 +46,8 @@ class ConvLSTMCell(nn.Module):
         self.hidden_channels = hidden_channels # nr of filters makes out the hidden channels
         self.kernel_size = kernel_size
         self.num_features = 4
-        self.padding = None
+        if padding == 'same':
+            self.padding = padding_same(kernel_size, height, width, dialation = 1, stride = 1)
 
         """
         From the Convolution layer, the most important ones are:
@@ -27,8 +60,11 @@ class ConvLSTMCell(nn.Module):
 
         i - input gate
         f - forget gate
-        c - (?) gate
         o - output gate
+
+        c - this cell
+        x - is weight for input
+        h - is is weights for old states
 
         les her https://hackernoon.com/understanding-architecture-of-lstm-cell-from-scratch-with-code-8da40f0b71f4
 
@@ -38,10 +74,13 @@ class ConvLSTMCell(nn.Module):
         # Why the bias in a certain way.
         self.Wxi = nn.Conv2d(self.input_channels, self.hidden_channels, self.kernel_size, 1, self.padding, bias=True)
         self.Whi = nn.Conv2d(self.hidden_channels, self.hidden_channels, self.kernel_size, 1, self.padding, bias=False)
+
         self.Wxf = nn.Conv2d(self.input_channels, self.hidden_channels, self.kernel_size, 1, self.padding, bias=True)
         self.Whf = nn.Conv2d(self.hidden_channels, self.hidden_channels, self.kernel_size, 1, self.padding, bias=False)
+
         self.Wxc = nn.Conv2d(self.input_channels, self.hidden_channels, self.kernel_size, 1, self.padding, bias=True)
         self.Whc = nn.Conv2d(self.hidden_channels, self.hidden_channels, self.kernel_size, 1, self.padding, bias=False)
+
         self.Wxo = nn.Conv2d(self.input_channels, self.hidden_channels, self.kernel_size, 1, self.padding, bias=True)
         self.Who = nn.Conv2d(self.hidden_channels, self.hidden_channels, self.kernel_size, 1, self.padding, bias=False)
 
@@ -67,7 +106,6 @@ class ConvLSTMCell(nn.Module):
             assert shape[1] == self.Wci.size()[3], 'Input Width Mismatched!'
         return (Variable(torch.zeros(batch_size, hidden, shape[0], shape[1])).cpu(), #cuda(),
                 Variable(torch.zeros(batch_size, hidden, shape[0], shape[1])).cpu() )#cuda())
-
 
 class ConvLSTM(nn.Module):
     # input_channels corresponds to the first input feature map
@@ -95,7 +133,7 @@ class ConvLSTM(nn.Module):
     def forward(self, input):
         internal_state = []
         outputs = []
-        samlples, days, lat, lon, channels = input.shape
+        samples, days, lat, lon, channels = input.shape
         # adds number of
         if padding == 'same':
             """ Padds so that the output dimention and input are the same """
@@ -113,7 +151,7 @@ class ConvLSTM(nn.Module):
                 # all cells are initialized in the first step
                 name = 'cell{}'.format(i)
                 if step == 0:
-                    bsize, _, height, width = x.size()
+                    bsize, days, height, width = x.size()
                     (h, c) = getattr(self, name).init_hidden(batch_size=bsize,
                                                              hidden=self.hidden_channels[i],
                                                              shape=(height, width))
@@ -135,7 +173,7 @@ def padding_same(kernel_size, height, width, dialation = 1, stride = 1):
     def p(dim):
         return 0.5*( dim - 1 - stride + dim*stride + 2*kernel_size +
               kernel_size*dialation + dialation )
-    return P(height), P(width)
+    return p(height), p(width)
 
 if __name__ == '__main__':
     """
