@@ -4,6 +4,8 @@ from torch.autograd import Variable
 
 def trainer(model, train_loader, criterion, loss, num_epochs):
     # Train the model
+
+    # TODO update with the one in data
     total_step = len(train_loader)
     loss_list = []
     acc_list = []

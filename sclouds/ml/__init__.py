@@ -1,1 +1,1 @@
-from ConvLSTM import ConvLSTM
+from .ConvLSTM import *
