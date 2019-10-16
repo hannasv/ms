@@ -110,6 +110,6 @@ docs/_build
 issues/
 
 #from requirements.txt
-.swn
-.swo
-.swp
+.txt.swn
+.txt.swo
+.txt.swp
