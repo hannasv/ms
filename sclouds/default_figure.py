@@ -609,7 +609,7 @@
 #animation.frame_format:  png      ## Controls frame format used by temp files
 #animation.html_args:              ## Additional arguments to pass to html writer
 #animation.ffmpeg_path:  ffmpeg    ## Path to ffmpeg binary. Without full path
-                                   ## $PATH is searched
+                                   ## $PATH is searche-d
 #animation.ffmpeg_args:            ## Additional arguments to pass to ffmpeg
 #animation.avconv_path:  avconv    ## Path to avconv binary. Without full path
                                    ## $PATH is searched
