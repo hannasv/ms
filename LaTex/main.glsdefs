@@ -1,0 +1,210 @@
+\ifglsentryexists{mam}{}%
+{%
+\gls@defglossaryentry{mam}%
+{%
+name={MAM},%
+sort={MAM},%
+type={acronym},%
+first={March April May\glsspace (MAM)},%
+firstplural={March April May\acrpluralsuffix \glsspace (MAM\acrpluralsuffix )},%
+text={MAM},%
+plural={MAM\acrpluralsuffix },%
+description={March April May},%
+descriptionplural={March April May\acrpluralsuffix },%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={March April May},%
+longplural={March April Mays},%
+short={MAM},%
+shortplural={MAMs},%
+counter={page},%
+parent={},%
+%
+}%
+}%
+\ifglsentryexists{djf}{}%
+{%
+\gls@defglossaryentry{djf}%
+{%
+name={DJF},%
+sort={DJF},%
+type={acronym},%
+first={December January February\glsspace (DJF)},%
+firstplural={December January February\acrpluralsuffix \glsspace (DJF\acrpluralsuffix )},%
+text={DJF},%
+plural={DJF\acrpluralsuffix },%
+description={December January February},%
+descriptionplural={December January February\acrpluralsuffix },%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={December January February},%
+longplural={December January Februarys},%
+short={DJF},%
+shortplural={DJFs},%
+counter={page},%
+parent={},%
+%
+}%
+}%
+\ifglsentryexists{jja}{}%
+{%
+\gls@defglossaryentry{jja}%
+{%
+name={JJA},%
+sort={JJA},%
+type={acronym},%
+first={June July August\glsspace (JJA)},%
+firstplural={June July August\acrpluralsuffix \glsspace (JJA\acrpluralsuffix )},%
+text={JJA},%
+plural={JJA\acrpluralsuffix },%
+description={June July August},%
+descriptionplural={June July August\acrpluralsuffix },%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={June July August},%
+longplural={June July Augusts},%
+short={JJA},%
+shortplural={JJAs},%
+counter={page},%
+parent={},%
+%
+}%
+}%
+\ifglsentryexists{son}{}%
+{%
+\gls@defglossaryentry{son}%
+{%
+name={SON},%
+sort={SON},%
+type={acronym},%
+first={September October November\glsspace (SON)},%
+firstplural={September October November\acrpluralsuffix \glsspace (SON\acrpluralsuffix )},%
+text={SON},%
+plural={SON\acrpluralsuffix },%
+description={September October November},%
+descriptionplural={September October November\acrpluralsuffix },%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={September October November},%
+longplural={September October Novembers},%
+short={SON},%
+shortplural={SONs},%
+counter={page},%
+parent={},%
+%
+}%
+}%
+\ifglsentryexists{eu}{}%
+{%
+\gls@defglossaryentry{eu}%
+{%
+name={EU},%
+sort={EU},%
+type={acronym},%
+first={Europa\glsspace (EU)},%
+firstplural={Europa\acrpluralsuffix \glsspace (EU\acrpluralsuffix )},%
+text={EU},%
+plural={EU\acrpluralsuffix },%
+description={Europa},%
+descriptionplural={Europa\acrpluralsuffix },%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Europa},%
+longplural={Europas},%
+short={EU},%
+shortplural={EUs},%
+counter={page},%
+parent={},%
+%
+}%
+}%
+\ifglsentryexists{ra}{}%
+{%
+\gls@defglossaryentry{ra}%
+{%
+name={RA},%
+sort={RA},%
+type={acronym},%
+first={Re-Analysis\glsspace (RA)},%
+firstplural={Re-Analysis\acrpluralsuffix \glsspace (RA\acrpluralsuffix )},%
+text={RA},%
+plural={RA\acrpluralsuffix },%
+description={Re-Analysis},%
+descriptionplural={Re-Analysis\acrpluralsuffix },%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Re-Analysis},%
+longplural={Re-Analysiss},%
+short={RA},%
+shortplural={RAs},%
+counter={page},%
+parent={},%
+%
+}%
+}%
+\ifglsentryexists{relu}{}%
+{%
+\gls@defglossaryentry{relu}%
+{%
+name={ReLU},%
+sort={ReLU},%
+type={acronym},%
+first={Rectified Linear Unit\glsspace (ReLU)},%
+firstplural={Rectified Linear Unit\acrpluralsuffix \glsspace (ReLU\acrpluralsuffix )},%
+text={ReLU},%
+plural={ReLU\acrpluralsuffix },%
+description={Rectified Linear Unit},%
+descriptionplural={Rectified Linear Unit\acrpluralsuffix },%
+symbol={\relax },%
+symbolplural={\relax },%
+user1={},%
+user2={},%
+user3={},%
+user4={},%
+user5={},%
+user6={},%
+long={Rectified Linear Unit},%
+longplural={Rectified Linear Units},%
+short={ReLU},%
+shortplural={ReLUs},%
+counter={page},%
+parent={},%
+%
+}%
+}%

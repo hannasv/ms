@@ -1,0 +1,78 @@
+\documentclass{MSthesis} 
+% subclass of the document class report.
+
+\begin{document}
+
+% Formatting titles and spaces 
+
+% Originally its
+% Chaper 1:
+% Name of chapter one
+\titleformat{\chapter}[hang] 
+{\normalfont\huge\bfseries}{\thechapter}{1em}{}  
+
+% left margin, vertical space,  space to section, 
+\titlespacing*{\chapter}{0cm}{0cm}{0cm}
+\titlespacing*{\section}{0cm}{0cm}{0cm}
+\titlespacing*{\subsection}{0cm}{0cm}{0cm}
+\titlespacing*{\subsubsection}{0cm}{0cm}{0cm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% USING THE TWOSIDED OPTION left = inner , and right = outer
+\myfrontpage
+\mycopyright
+
+%\newpage\null\thispagestyle{empty}\newpage
+
+% Abstract should have first page nr,
+\pagenumbering{roman}
+\input{abstract.tex}
+
+\input{acknowledgement.tex}
+
+\tableofcontents
+
+% Clear double page --> New chapers or listings begin on odd numbered pages.
+\cleardoublepage
+
+\listoffigures
+\addcontentsline{toc}{chapter}{\listfigurename}
+\cleardoublepage
+
+% List of tables 
+\listoftables
+\addcontentsline{toc}{chapter}{\listtablename} % add list of tables to contents line
+\cleardoublepage
+
+% List of acronyms
+\input{acronyms.tex}
+\cleardoublepage
+
+\pagenumbering{arabic} % page numbering to arabic
+\input{./Chapter1_Intro/Introduction}
+\cleardoublepage
+
+\input{./Chapter2_Theory/Theory}
+\cleardoublepage
+
+\input{./Chapter3_Method/Method}
+\cleardoublepage
+
+\input{./Chapter4_Results/Results}
+\cleardoublepage
+
+\input{./Chapter5_Conclusions/Conclusions}
+\cleardoublepage
+
+\input{Chapter6_Discussion/discussion.tex}
+\cleardoublepage
+
+\addcontentsline{toc}{chapter}{Bibliography}
+
+\input{./Appendix/Appendix}
+\cleardoublepage
+
+\printbibliography
+\cleardoublepage
+
+\end{document}

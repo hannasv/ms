@@ -1,0 +1,50 @@
+\setcounter{chapter}{1} 
+
+\chapter{Theory}
+Presenter innholder i kapitellet.
+
+\section{Study area and Data}
+
+\textbf{Add image of map}
+
+Data in the period of 2004-2018 was downloaded at a hourly resolution.
+
+\subsection{ERA5}
+\paragraph{General paragraph on \acrlong{ra}}
+
+\subsubsection{Temperature}
+\subsubsection{Surface pressure}
+\subsubsection{Specific and Relative humidity}
+
+
+\subsection{Satellite images METEOSAT }
+\textbf{Make image showing the history of sate
+llite images read the filenames and correlate MSG X with date and time.}
+
+\begin{itemize}
+    
+    \item Why this satellite --  only one over Europe which is geostationary. Doing machine learning on satellites which is not in geosycronic orbids are difficult due to the temporal inhomogenity. 
+    
+    \item Where is the data downloaded. 
+    \item Four generations of meteosat satelites. It exist older satelites from meteosat but the used a different sensor and they are not avalable online. 
+    
+\end{itemize}
+
+\subsection{ReGridding satelite images to fit ERA5 platecarre grid.}
+
+Husk at du regridder noe som allerede er usikker så det er ikke sikkert du tilfører noe usikkerhet. 
+
+\textbf{Add equation for area.}
+
+\textbf{Image : View from space arrow view from era5 - cartopy maps.}
+
+\subsubsection{Estimating dlon and dlat based on matries of lat lon.}
+
+\subsubsection{Explain overestimated the area}
+Because of equation for area doensn't allow different d-lat dlon at each edge (should be trapesodial shape) (we don't have the information to calculate this either.)
+
+Because of this overestimation we weight the pixels with 
+\begin{equation}
+     \frac{area \cdot ERA_a}{AREA_{allpixels} }
+\end{equation}
+
