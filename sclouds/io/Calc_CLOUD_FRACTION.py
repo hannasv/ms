@@ -5,7 +5,7 @@
 
 # In[1]:
 
-
+import os
 import json
 import glob
 import numpy as np
@@ -14,18 +14,23 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import xarray as xr
 
+import glob
+import xarray as xr
+import numpy as np
 
 # In[2]:
 
 
 #data_dir = '/home/hanna/MS-suppl/files/'
 data_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
-sat_dir = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/'
-save_dir = '/uio/lagringshotell/geofag/students/metos/hannasv/satelite_data/'
+path = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/'
+save_dir = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/fractions_repo/'
 
+import logging
+LOG_FILENAME = 'example.log'
+logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
-# In[3]:
-
+logging.debug('This message should go to the log file')
 
 def read_dlon_dlat(data_dir):
 
@@ -42,18 +47,16 @@ def read_dlon_dlat(data_dir):
     return d_phi, d_theta, cell_areas, lat_array, lon_array
 
 
-# In[4]:
-
-
 d_phi, d_theta, cell_areas, lat_array, lon_array = read_dlon_dlat(data_dir)
-
-
-# In[5]:
-
 
 def clean_file(satfil):
     if satfil.split('.')[-1] == 'grb':
-        cloudMask = xr.open_dataset(satfil, engine = 'cfgrib')
+        try:
+            cloudMask = xr.open_dataset(satfil, engine = 'cfgrib')
+        except EOFError as e:
+            logging.debug(e)
+            return None
+
         o = cloudMask['p260537'].values.reshape( (3712, 3712) )
 
         o[o>=3.0]=np.nan
@@ -74,10 +77,6 @@ def area_grid_cell(c_lat, d_lat, d_lon):
         area = R*(np.sin((c_lat + d_lat)*np.pi/180) - np.sin((c_lat - d_lat)*np.pi/180) )*(2*d_lon*np.pi/180) # R**2
         return np.abs(area)
 
-
-# In[7]:
-
-
 def get_dict_with_all_keys():
     ex_fil = glob.glob(data_dir + '*ERA5*.json')
     #print(ex_fil)
@@ -90,13 +89,7 @@ def get_dict_with_all_keys():
 
     return merged_dict
 
-
-# In[8]:
-
-
 data_dict = get_dict_with_all_keys()
-
-
 
 def calc_fraction_one_cell(lat = '30.25', lon = '19.25', cmk = None, data = None):
 
@@ -127,30 +120,29 @@ def compute(satfil,
             lons = np.arange(-15.0, 25.25, 0.25)):
 
     o = clean_file(satfil)
-    d_phi, d_theta, cell_areas, lat_array, lon_array = read_dlon_dlat(data_dir)
-    clouds = o.reshape(-1)
 
-    data_dict = get_dict_with_all_keys()
+    if o is not None:
+        d_phi, d_theta, cell_areas, lat_array, lon_array = read_dlon_dlat(data_dir)
+        clouds = o.reshape(-1)
 
-    GRID = np.zeros((len(lats), len(lons)) )
-    GRID_NAN = np.zeros((len(lats), len(lons)) )
+        data_dict = get_dict_with_all_keys()
 
-    for i,lat in enumerate(lats):
-        for j, lon in enumerate(lons):
-            fraction, nbr_nan = calc_fraction_one_cell(lat = str(lat),
-                                                       lon = str(lon),
-                                                       cmk = clouds,
-                                                       data = data_dict)
+        GRID = np.zeros((len(lats), len(lons)) )
+        GRID_NAN = np.zeros((len(lats), len(lons)) )
 
-            GRID[i][j] = fraction
-            GRID_NAN[i][j] = nbr_nan
+        for i,lat in enumerate(lats):
+            for j, lon in enumerate(lons):
+                fraction, nbr_nan = calc_fraction_one_cell(lat = str(lat),
+                                                           lon = str(lon),
+                                                           cmk = clouds,
+                                                           data = data_dict)
 
-    return GRID, GRID_NAN
+                GRID[i][j] = fraction
+                GRID_NAN[i][j] = nbr_nan
 
-
-import glob
-import xarray as xr
-import numpy as np
+        return GRID, GRID_NAN
+    else:
+        return None, None
 
 def timestamp(filename):
     """
@@ -166,84 +158,164 @@ def timestamp(filename):
     minuts = ts[10:12]
     sek = ts[12:14]
     # TODO make sure all filenames have seconds
-    return np.datetime64( year+"-"+month+"-"+day+"T"+hr+":"+minuts+":"+sek )
+    return np.datetime64( year+"-"+month+"-"+day+"T"+hr ) # +":"+minuts+":"+sek
+
+def make_folder_str(year, month):
+    """ Generates the folder search str
+    month : int
+    year : int
+
+    Returns : str
+        year_month
+    """
+
+    month = "%2.2d" % month
+    return "{}_{}".format(year, month)
+
+def timestamp_str(filename):
+    """
+    Returns the numpy datetime 64 [ns] for the current date.
+    This is a bit hardcoded at the moment ...
+    """
+    splits = filename.split('-')
+    ts = splits[5]
+    year = ts[:4]
+    month = ts[4:6]
+    day = ts[6:8]
+    hr = ts[8:10]
+    minuts = ts[10:12]
+    sek = ts[12:14]
+    # TODO make sure all filenames have seconds
+    return np.datetime64( year+"-"+month+"-"+day+"T"+hr+":00:00"+".000000").astype(str)
+
+def get_missing_vals(folder):
+    """ Returns missing timesteps in folder. """
+    year, month = folder.split('_')
+    year  = int(year)
+    month = int(month)
+
+    t = np.arange(datetime(year,month,1), datetime(year,month+1,1), timedelta(hours=1)).astype(str)
+    folder = make_folder_str(month, year)
+    files_in_folder = glob.glob(os.path.join(path, folder, '*grb'))
+    times = [timestamp_str(fil) for fil in files_in_folder]
+    a = times
+    b = t
+    c = [x for x in a if x not in b]+[x for x in b if x not in a]
+    return c
+
+def timestamp_to_file_search_str(timestamp):
+    timestamp = timestamp.tostring()
+    splits = [split.split('T') for split in timestamp.split(':')[0].split('-')]
+    s = ''
+    for a in np.concatenate(splits):
+        s+=a
+    return s
+
+def removes_duplicates(year, month):
+    folder = make_folder_str(year, month)
+    #logging.debug( get_missing_vals(folder) ) # TODO
+
+    files_in_folder = glob.glob(os.path.join(path, folder, '*grb'))
+    times = [timestamp_str(fil) for fil in files_in_folder]
+
+    if np.unique(times) != len(times):
+        keeping = []
+        missing = []
+        for fil in files_in_folder:
+            # if timestep is already there don't append
+            search_for = timestamp_to_file_search_str(timestamp_str(fil))
+            files =  glob.glob(os.path.join(path, folder, '*-{}*grb'.format(search_for)))
+            if len(files) > 0:
+                keeping.append(files[0]) # only keep the first one for multiple files of the same data
+        return keeping
+    else:
+        return glob.glob(os.path.join(path, folder, '*.grb'))
 
 def merge_ts_to_one_dataset(grb_files,
                             lat = np.arange(30.0, 50.25, 0.25),
                             lon = np.arange(-15.0, 25.25, 0.25)):
-    """
-    grib_files : list of files
-        typically one year?
-    """
+    """ grib_files : list of files. One month. """
     data_grid = get_dict_with_all_keys()
 
     counter = 0
     for filename in grb_files:
-        if counter == 0:
-            #print("enters 0")
-            #clou = calc_all(filename, nc_file = nc_files[0])
-            cloud_fraction, nans = compute(filename, lat, lon)
-            ds = xr.Dataset({'tcc': (['latitude', 'longitude'],   cloud_fraction),
-                             'nr_nans':(['latitude', 'longitude'], nans),
-                             #'nr_cells':(['latitude', 'longitude'], cnt_cells)
-                                 },
-                             coords={'longitude': (['longitude'], lon),
-                                     'latitude': (['latitude'], lat),
-                                    })
-
-            ts = timestamp(filename)
-            ds['time'] = ts
-
-            # Add time as a coordinate and dimension.
-            ds = ds.assign_coords(time = ds.time)
-            ds = ds.expand_dims(dim = 'time')
-            counter += 1
-
-        else:
-            #clm, cnt_cells, cnt_nans = calc_all(filename, nc_file = nc_files[0])
-            cloud_fraction, nans = compute(filename, lat, lon)
-            new_ds = xr.Dataset({'tcc': (['latitude', 'longitude'],  cloud_fraction),
+        cloud_fraction, nans = compute(filename, lat, lon)
+        if cloud_fraction is not None:
+            # this becomes true if the grib file of the satelite images is corrupt.
+            if counter == 0:
+                # if the computation worked
+                ds = xr.Dataset({'tcc': (['latitude', 'longitude'],   cloud_fraction),
                                  'nr_nans':(['latitude', 'longitude'], nans),
                                  #'nr_cells':(['latitude', 'longitude'], cnt_cells)
-                                },
-                                  coords={'longitude': (['longitude'], lon),
-                                          'latitude': (['latitude'], lat),
-                                           })
+                                     },
+                                 coords={'longitude': (['longitude'], lon),
+                                         'latitude': (['latitude'], lat),
+                                        })
+                ts = timestamp(filename)
+                ds['time'] = ts
 
-            ts = timestamp(filename)
-            new_ds['time'] = ts
+                # Add time as a coordinate and dimension.
+                ds = ds.assign_coords(time = ds.time)
+                ds = ds.expand_dims(dim = 'time')
+                counter += 1
+                print('Finished nbr {}/{}'.format(counter, len(grb_files)))
+            else:
+                #clm, cnt_cells, cnt_nans = calc_all(filename, nc_file = nc_files[0])
+                #cloud_fraction, nans = compute(filename, lat, lon)
+                new_ds = xr.Dataset({'tcc': (['latitude', 'longitude'],  cloud_fraction),
+                                     'nr_nans':(['latitude', 'longitude'], nans),
+                                     #'nr_cells':(['latitude', 'longitude'], cnt_cells)
+                                    },
+                                      coords={'longitude': (['longitude'], lon),
+                                              'latitude': (['latitude'], lat),
+                                               })
 
-            # Add time as a coordinate and dimension.
-            new_ds = new_ds.assign_coords(time = new_ds.time)
-            new_ds = new_ds.expand_dims(dim = 'time')
+                ts = timestamp(filename)
+                new_ds['time'] = ts
 
-            try:
-                ds = ds.merge(new_ds)
-            except xr.MergeError:
-                # Happens if MS1 and MS2 have taken a image at the same time
-                print("Filename not included {}".format(filename))
+                # Add time as a coordinate and dimension.
+                new_ds = new_ds.assign_coords(time = new_ds.time)
+                new_ds = new_ds.expand_dims(dim = 'time')
 
-            counter += 1
+                try:
+                    ds = ds.merge(new_ds)
+                except xr.MergeError:
+                    # Happens if MS1 and MS2 have taken a image at the same time
+                    print("Filename not included {}".format(filename))
+
+                counter += 1
+                print('Finished nbr {}/{}'.format(counter, len(grb_files)))
         #print("completed {}/{} files".format(counter, len(grb_files)))
     return ds
 
-import multiprocessing as mp
-from multiprocessing import Process
 
-def f(subset, i):
 
+
+def compute_one_folder(subset, folder):
+    import os
     ds = merge_ts_to_one_dataset(subset,
                                  lat =  np.arange(30.0, 50.25, 0.25) ,
                                  lon = np.arange(-15.0, 25.25, 0.25) )
 
-    ds.to_netcdf(path = save_dir+'cloud_fractions_heilt_nytt_{}.nc'.format(i),
+    ds.to_netcdf(path = os.path.join(save_dir,'{}.nc'.format(folder)),
                  engine='netcdf4',
                  encoding ={'tcc': {'zlib': True, 'complevel': 9},
                            'nr_nans': {'zlib': True, 'complevel': 9} })
+
     return
 
+def already_regridded(year, month):
+    path = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/fractions_repo/'
+    #folder = make_folder_str(year = year, month = month)
+    month = "%2.2d"%month # Skriver
+    #key = "*-{}{}*.grb".format(year, month)
+    full = os.path.join( path, '{}_{}.nc'.format(year, month) )
+    return os.path.isfile(full)
 
 def get_list_remainig_files():
+    """
+    REWRITE: tomorrow - Should check whats available in save repo.
+    """
     print("Computes remaining files ...")
     search_str_finished = '*heilt*.nc'
     sat_dir = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/'
@@ -270,16 +342,15 @@ def get_list_remainig_files():
 
     return remaining_files
 
-sat_files = get_list_remainig_files()
-print("sat files remaining".format(len(sat_files)))
+years = np.arange(2004, 2019)
+months = np.arange(1, 13)
 
-size = len(sat_files)
-max_counter = 3000
+for y in years:
+    for m in months:
+        folder = make_folder_str(y, m)
+        files_to_read = removes_duplicates(y, m)
 
-for j, sub in enumerate(np.array_split(sat_files, 2000)):
-    #processes = []
-    #for i, subset in enumerate(alls):
-    print("Starts thread {}".format(max_counter) )
-    f(sub, max_counter)
-    max_counter += 1
-    print('Finished 200 files stored in heilte_nytt_{}'.format(max_counter))
+        if len(files_to_read) > 0 and not already_regridded(y, m):
+            print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
+            compute_one_folder(subset=files_to_read, folder=folder)
+            #print(already_regridded(year = y, month = m))
