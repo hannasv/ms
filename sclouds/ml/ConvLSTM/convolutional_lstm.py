@@ -136,6 +136,8 @@ class ConvLSTM(nn.Module):
         internal_state = []
         outputs = []
         samples, days, lat, lon, channels = input.shape
+        height = lat
+        width = lon
         # adds number of
         if padding == 'same':
             """ Padds so that the output dimention and input are the same """
