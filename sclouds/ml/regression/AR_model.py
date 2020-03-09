@@ -3,7 +3,8 @@ class AR_model:
 
 """
 Need to know:
-1. How many timesteps? Determined by the data.
+1. How many previos timestep 
+2. Load data 
 """
 
     def __init__(self):
@@ -26,3 +27,5 @@ Need to know:
 
     def store_bias():
         pass
+
+
