@@ -1,31 +1,23 @@
+import numpy as np
+import scipy as sp
+
 class AR_model:
 """ Autoregressive models used in this thesis. Inspired by sklearn"""
 
-"""
-Need to know:
-1. How many previos timestep 
-2. Load data 
-"""
-
-    def __init__(self):
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+        
+        # bias is first column
         self.weights = None
-        self.bias = None
+       
 
     def fit(X, y):
-        pass
+        self.weights = sp.linalg.inv(X.T @ X)@ X.T @ y
+        return
 
-    def predict(X, y):
+    def predict(X):
         """ Make prediction either pixelbased or full domain """
-        pass
+        return X@self.weights 
 
-    def store_performace():
-        pass
-
-
-    def store_weights():
-        pass
-
-    def store_bias():
-        pass
-
-
+    
