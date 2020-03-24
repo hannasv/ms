@@ -18,13 +18,12 @@ import glob
 import xarray as xr
 import numpy as np
 
-# In[2]:
+data_dir = '/home/hanna/MS-suppl/'
+path = '/home/hanna/miphclac/'
 
-
-#data_dir = '/home/hanna/MS-suppl/files/'
-data_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
-path = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/'
-save_dir = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/fractions_repo/'
+def generate_save_dir(year, month):
+    path = '/home/hanna/miphclac/'
+    return os.path.join(path, '{}_{:02d}'.format(year, month))
 
 import logging
 LOG_FILENAME = 'example.log'
@@ -32,24 +31,8 @@ logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
 logging.debug('This message should go to the log file')
 
-def read_dlon_dlat(data_dir):
-
-    nc_files = glob.glob(data_dir+'*small*.json')
-    #print(nc_files[-1])
-    with open(nc_files[-1]) as f:
-        d =  json.load(f)
-
-    d_phi      = d['dphi']
-    d_theta    = d['dtheta']
-    cell_areas = d['cell_area']
-    lat_array  = d['lat']
-    lon_array  = d['lon']
-    return d_phi, d_theta, cell_areas, lat_array, lon_array
-
-
-d_phi, d_theta, cell_areas, lat_array, lon_array = read_dlon_dlat(data_dir)
-
 def clean_file(satfil):
+    """Removing the land, sea mask"""
     if satfil.split('.')[-1] == 'grb':
         try:
             cloudMask = xr.open_dataset(satfil, engine = 'cfgrib')
@@ -57,7 +40,7 @@ def clean_file(satfil):
             logging.debug(e)
             return None
 
-        o = cloudMask['p260537'].values.reshape( (3712, 3712) )
+        o = np.fliplr(cloudMask['p260537'].values.reshape( (3712, 3712) ))
 
         o[o>=3.0]=np.nan
         o[o==1.0]=0
@@ -65,20 +48,22 @@ def clean_file(satfil):
     else:
         cloudMask = xr.open_dataset(satfil)
         o = cloudMask['cloudMask'].values.reshape( (3712, 3712) )
+        o[o>=3.0]=np.nan
+        o[o==1.0]=0
+        o[o==2.0]=1.0
     return o
 
-
-# In[6]:
-
-
 def area_grid_cell(c_lat, d_lat, d_lon):
-        R = 6371000  # in M
-        # area er egentlig R**2
-        area = R*(np.sin((c_lat + d_lat)*np.pi/180) - np.sin((c_lat - d_lat)*np.pi/180) )*(2*d_lon*np.pi/180) # R**2
-        return np.abs(area)
+    """Get area for one pixel. """
+    R = 6371000  # in M
+    # area er egentlig R**2
+    area = R*(np.sin((c_lat + d_lat)*np.pi/180) - np.sin((c_lat - d_lat)*np.pi/180) )*(2*d_lon*np.pi/180) # R**2
+    return np.abs(area)
 
 def get_dict_with_all_keys():
-    ex_fil = glob.glob(data_dir + '*ERA5*.json')
+    data_dir = '/home/hanna/MS-suppl/'
+    ex_fil = glob.glob(os.path.join(data_dir, 'files', '*ERA5*.json'))
+    assert len(ex_fil) != 0, 'Have you cloned the data suppplementary repository?'
     #print(ex_fil)
     merged_dict = {}
 
@@ -89,7 +74,7 @@ def get_dict_with_all_keys():
 
     return merged_dict
 
-data_dict = get_dict_with_all_keys()
+#data_dict = get_dict_with_all_keys()
 
 def calc_fraction_one_cell(lat = '30.25', lon = '19.25', cmk = None, data = None):
 
@@ -100,6 +85,7 @@ def calc_fraction_one_cell(lat = '30.25', lon = '19.25', cmk = None, data = None
         SAT_area = 0.0
 
         for key, item in ex.items():
+            """Loops over all corners"""
             index = ex[key]['index']
             area  = ex[key]['area']
 
@@ -115,14 +101,12 @@ def calc_fraction_one_cell(lat = '30.25', lon = '19.25', cmk = None, data = None
         print('Please send data as a attribute.')
         return
 
-def compute(satfil,
-            lats = np.arange(30.0, 50.25, 0.25),
-            lons = np.arange(-15.0, 25.25, 0.25)):
+def compute(satfil, lats = np.arange(30.0, 50.25, 0.25), lons = np.arange(-15.0, 25.25, 0.25) ):
 
     o = clean_file(satfil)
 
     if o is not None:
-        d_phi, d_theta, cell_areas, lat_array, lon_array = read_dlon_dlat(data_dir)
+        #d_phi, d_theta, cell_areas, lat_array, lon_array = read_dlon_dlat(data_dir)
         clouds = o.reshape(-1)
 
         data_dict = get_dict_with_all_keys()
@@ -204,8 +188,11 @@ def get_missing_vals(folder):
     return c
 
 def timestamp_to_file_search_str(timestamp):
+    print(timestamp)
+    print(str(timestamp))
     timestamp = timestamp.tostring()
-    splits = [split.split('T') for split in timestamp.split(':')[0].split('-')]
+    print(timestamp)
+    splits = [part.split('T') for part in str(timestamp).split(':')[0].split('-')]
     s = ''
     for a in np.concatenate(splits):
         s+=a
@@ -218,15 +205,26 @@ def removes_duplicates(year, month):
     files_in_folder = glob.glob(os.path.join(path, folder, '*grb'))
     times = [timestamp_str(fil) for fil in files_in_folder]
 
-    if np.unique(times) != len(times):
+    if len(np.unique(times)) != len(times):
         keeping = []
         missing = []
         for fil in files_in_folder:
             # if timestep is already there don't append
-            search_for = timestamp_to_file_search_str(timestamp_str(fil))
+            print(fil)
+            search_for = timestamp_to_file_search_str( timestamp_str(fil) )
             files =  glob.glob(os.path.join(path, folder, '*-{}*grb'.format(search_for)))
             if len(files) > 0:
-                keeping.append(files[0]) # only keep the first one for multiple files of the same data
+                # Keeping the operational satelite largest number of characher in place 3.
+                max = 1
+                fil = None
+                # TODO spøit first at / then get char 3.
+                for f in files:
+                    filesname = f.split('/')[-1]
+                    char = filename[3]
+                    if int(char) >= max:
+                        fil = f
+                        max = int(char)
+                keeping.append(fil) # only keep the first one for multiple files of the same data
         return keeping
     else:
         return glob.glob(os.path.join(path, folder, '*.grb'))
@@ -288,61 +286,28 @@ def merge_ts_to_one_dataset(grb_files,
         #print("completed {}/{} files".format(counter, len(grb_files)))
     return ds
 
-
-
-
-def compute_one_folder(subset, folder):
+def compute_one_folder(subset, year, month):
     import os
     ds = merge_ts_to_one_dataset(subset,
                                  lat =  np.arange(30.0, 50.25, 0.25) ,
                                  lon = np.arange(-15.0, 25.25, 0.25) )
-
-    ds.to_netcdf(path = os.path.join(save_dir,'{}.nc'.format(folder)),
+    save_dir = generate_save_dir(year, month)
+    ds.to_netcdf(path = os.path.join(save_dir,'{}_{:02d}_tcc.nc'.format(year, month)),
                  engine='netcdf4',
                  encoding ={'tcc': {'zlib': True, 'complevel': 9},
                            'nr_nans': {'zlib': True, 'complevel': 9} })
-
+    # TODO : update to save on both lagringshotellet and miphclac
     return
 
 def already_regridded(year, month):
-    path = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/fractions_repo/'
+    path = generate_save_dir(year, month)
     #folder = make_folder_str(year = year, month = month)
     month = "%2.2d"%month # Skriver
     #key = "*-{}{}*.grb".format(year, month)
-    full = os.path.join( path, '{}_{}.nc'.format(year, month) )
+    full = os.path.join(path, '{}_{}_tcc.nc'.format(year, month) )
     return os.path.isfile(full)
 
-def get_list_remainig_files():
-    """
-    REWRITE: tomorrow - Should check whats available in save repo.
-    """
-    print("Computes remaining files ...")
-    search_str_finished = '*heilt*.nc'
-    sat_dir = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/'
-    save_dir = '/uio/lagringshotell/geofag/students/metos/hannasv/satelite_data/'
-
-    files = glob.glob(save_dir + search_str_finished)
-
-    failed = []
-    for i, fil in enumerate(files):
-        if i == 0:
-            ds = xr.open_dataset(fil)
-        else:
-            try:
-                ds = ds.merge(xr.open_dataset(fil))
-            except xr.MergeError:
-                failed.append(fil)
-            #print(i)
-    sat_files = glob.glob(sat_dir + "*.grb")
-
-    remaining_files = []
-    for fil in sat_files:
-        if not timestamp(fil) in ds.time.values:
-            remaining_files.append(fil)
-
-    return remaining_files
-
-years = np.arange(2004, 2019)
+years = np.arange(2005, 2019)
 months = np.arange(1, 13)
 
 for y in years:
@@ -352,5 +317,5 @@ for y in years:
 
         if len(files_to_read) > 0 and not already_regridded(y, m):
             print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
-            compute_one_folder(subset=files_to_read, folder=folder)
+            compute_one_folder(subset=files_to_read, year=y, month = m)
             #print(already_regridded(year = y, month = m))
