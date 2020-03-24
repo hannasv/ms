@@ -189,9 +189,10 @@ def get_missing_vals(folder):
 
 def timestamp_to_file_search_str(timestamp):
     print(timestamp)
+    print(str(timestamp))
     timestamp = timestamp.tostring()
     print(timestamp)
-    splits = [part.split('T') for part in timestamp.split(':')[0].split('-')]
+    splits = [part.split('T') for part in str(timestamp).split(':')[0].split('-')]
     s = ''
     for a in np.concatenate(splits):
         s+=a
