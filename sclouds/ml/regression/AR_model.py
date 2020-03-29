@@ -4,9 +4,9 @@ import glob
 import numpy as np
 import xarray as xr
 
-from utils import (mean_squared_error, r2_score, merge,
-                   get_list_of_variables_in_ds, fit_pixel, predict_pixel,
-                   accumulated_squared_error)
+from sclouds.ml.regression.utils import (mean_squared_error, r2_score, merge,
+                                         get_list_of_variables_in_ds, fit_pixel, predict_pixel,
+                                         accumulated_squared_error)
 
 class AR_model:
     """ Autoregressive models used in this thesis. Inspired by sklearn

@@ -4,7 +4,7 @@ import glob
 import numpy as np
 import xarray as xr
 
-from utils import write_path, read_path
+from sclouds.ml.regression.utils import write_path, read_path
 
 class AR_model_loader:
     """ Load trained model
