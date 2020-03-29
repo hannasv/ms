@@ -215,7 +215,7 @@ def removes_duplicates(year, month):
                 fil = None
                 # TODO spøit first at / then get char 3.
                 for f in files:
-                    filesname = f.split('/')[-1]
+                    filename = f.split('/')[-1]
                     char = filename[3]
                     if int(char) >= max:
                         fil = f
@@ -303,7 +303,7 @@ def already_regridded(year, month):
     full = os.path.join(path, '{}_{}_tcc.nc'.format(year, month) )
     return os.path.isfile(full)
 
-years = np.arange(2005, 2019)
+years = np.arange(2004, 2019)
 months = np.arange(1, 13)
 
 for y in years:

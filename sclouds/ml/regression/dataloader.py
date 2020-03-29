@@ -1,7 +1,7 @@
-class DataLoader:
+#class DataLoader:
     """Class for loading data to this thesis."""
 
-    """Should be on a format suitable for both AR and ConvLSTM."""
+    """Should be on a format suitable for both AR and ConvLSTM (Not strict requirement). """
 
       def __init__(self, start, stop, lat_range = (30, 50), lon_range = (-15, 25)):
           self.start = start
