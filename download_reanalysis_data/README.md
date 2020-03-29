@@ -1,26 +1,27 @@
 # Scripts for downloading reanalysis data
-Both era interim and era5 was considered for this project, scripts for downloading era
-interim can be found in directory **downloading_era_interim** and era5 in **download_ERA5**. 
+Both era-interim and ERA5 was considered for this project, scripts for downloading era
+interim can be found in directory **downloading_era_interim** and ERA5 in **download_ERA5**. 
 
-## Instructions on downloading ERA5 using the CDS-api
-1. Creata a user at CDS registration. Go to https://cds.climate.copernicus.eu/#!/home}{https://cds.climate.copernicus.eu/#!/home and create a user. Log in to retrieve you key. This will be valid for 12 months. Paste the key in a document and save it as **\$HOME/.cdsapirc** on a Unix/Linux platform. 
+## Instructions for downloading ERA5 using the CDS-api
+Inspired by ECMWF's own instructions found at https://confluence.ecmwf.int/display/WEBAPI/Access+ECMWF+Public+Datasets.
+First creata a user at CDS registration. Go to https://cds.climate.copernicus.eu/#!/home}{https://cds.climate.copernicus.eu/#!/home and create a user. Log in to retrieve you key. This will be valid for 12 months. Paste the key in a document and save it as **\$HOME/.cdsapirc** on a Unix/Linux platform. 
 
 ```bash
 url: {api-url}
 key: {uid}:{api-key}
 ```
-The MARS downloading efficiency determines how much data you can request in one request. This is set to 100 000 items. You can solve this by looping over years or other parameters. 
+The MARS downloading efficiency limits you to 100 000 items in one request. Workaround is looping over the requests.
 
-ECMWFs API genrator for surface parameters (temperature, pressure, total cloud cover) https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form}{https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form.
+ECMWFs API generator for surface parameters (temperature, pressure, total cloud cover) https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form.
 
-ECMWF's API for pressure level parameters: https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-pressure-levels?tab=form }{https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-pressure-levels?tab=form
+ECMWF's API for pressure level parameters: https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-pressure-levels?tab=form.
 
 Note that neither of these include area and type, so these need to be added. Other than that the above links are useful for generating the API request necessary.
 
 This is available throught the project enviornment _sciclouds_ (installing inststructions are available in root). 
 ```python 
-pip install cdsapi # installing requirements
-python download_file.py # to run the script
+pip install cdsapi # installing package
+python download_file.py # executing script
 ``` 
 ## Example code 
 
@@ -33,7 +34,6 @@ c.retrieve('reanalysis-era5-pressure-levels',
     {
     	'area'    : "75/-15/30/42", # retrieving subarea :Europe
     	"type" : "an", # analysis
-        #'product_type':'reanalysis',
         'format':'netcdf',
         'day':[
             '01','02','03',
