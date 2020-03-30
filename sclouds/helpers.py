@@ -3,57 +3,37 @@ import matplotlib.pyplot as plt
 import glob
 import xarray as xr
 
-DATA_REPO = "/uio/lagringshotell/geofag/students/metos/hannasv/data_processed/"
-FIGURE_REPO = "/uio/lagringshotell/geofag/students/metos/hannasv/figures/"
-RAW_ERA_REPO = "/uio/lagringshotell/geofag/students/metos/hannasv/era_interim_data/"
-RESULTS_REPO =  "/uio/lagringshotell/geofag/students/metos/hannasv/results/"
-LAPTOP_REPO = '/home/hanna/Desktop/master_thesis/era/'
-LAPTOP_RESULTS_REPO = '/home/hanna/Desktop/master_thesis/test_results/'
-
-LAT = (30,67)
-LON = (-15,42)
+LAT = (30,50)
+LON = (-15,25)
 
 EXTENT = [LAT, LON]
-# TODO : better name for this one
 
 VARIABLES =  ["t2m", 'sp', 'q', 'r', 'tcc']
-PRESSURE_LEVELS = [300, 400, 500, 700, 850, 1000]
 
+import os
 
-class DataRepository:
+import numpy as np
+import xarray as xr
 
-    def __init__(self, start, stop):
-        self.start = start
-        self.stop  = stop
-        # pass to directiory
-        # should this crop the area?
-        files = glob.glob(LAPTOP_REPO+"*.nc")
-        print(files)
-        for fil in files:
-            dataset = xr.open_dataset(fil, engine = 'pynio')
-            print(data)
-        # return list of input to make a prediction of.
+# directories currently in use
+path_read_data       = '/home/hanna/lagrings/ERA5_monthly/'
+
+path_ar_results       = '/home/hanna/lagrings/results/ar/'
+path_convlstm_results = '/home/hanna/lagrings/results/convlstm/'
+path_stats_results    = '/home/hanna/lagrings/results/stats/'
 
 
 
+def generate_output_file_name_trained_ar_model():
+    """ Generates output file name, contain all information about the training
+    prosedure.
 
-
-# TODO add get_season function.
-def get_season(data, season):
     """
-    data : xarray dataset
-    season : str
 
-    Returns the xarray dataset containing only one season.
-    """
-    data = data.groupby('time.season')
-    for group in data:
-        key, dataset = group
-        if key == season:
-            return dataset
-    return
+    pass
 
+def get_list_of_trained_ar_models():
+    pass
 
-
-if __name__ == "__main__":
-    DataRepository(2010,2012)
+def get_list_of_trained_conv_lstm_models():
+    pass
