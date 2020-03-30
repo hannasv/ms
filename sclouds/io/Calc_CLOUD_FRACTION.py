@@ -303,15 +303,17 @@ def already_regridded(year, month):
     full = os.path.join(path, '{}_{}_tcc.nc'.format(year, month) )
     return os.path.isfile(full)
 
-years = np.arange(2004, 2019)
-months = np.arange(1, 13)
+if __name__ != '__main__':
 
-for y in years:
-    for m in months:
-        folder = make_folder_str(y, m)
-        files_to_read = removes_duplicates(y, m)
+    years = np.arange(2004, 2019)
+    months = np.arange(1, 13)
 
-        if len(files_to_read) > 0 and not already_regridded(y, m):
-            print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
-            compute_one_folder(subset=files_to_read, year=y, month = m)
-            #print(already_regridded(year = y, month = m))
+    for y in years:
+        for m in months:
+            folder = make_folder_str(y, m)
+            files_to_read = removes_duplicates(y, m)
+
+            if len(files_to_read) > 0 and not already_regridded(y, m):
+                print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
+                compute_one_folder(subset=files_to_read, year=y, month = m)
+                #print(already_regridded(year = y, month = m))
