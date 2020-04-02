@@ -4,10 +4,31 @@ import glob
 import numpy as np
 import xarray as xr
 
-from sclouds.ml.regression.utils import write_path, read_path
+from sclouds.helpers import  path_ar_results
+#from sclouds.ml.regression.utils import write_path, read_path
 
 class AR_model_loader:
     """ Load trained model
+
+    Attributes
+    ---------------------
+    weights_ds : xr.Dataset
+        Dataset of trained weights.
+
+    W_numpy : array-like
+        Grid of trained models.
+
+    Methods
+    ---------------------
+
+    get_model
+
+    load_model_to_xarray
+
+    load_transformation
+
+    load_model_to_numpy
+    
     """
     def __init__(self):
         # 1. Period
@@ -16,16 +37,22 @@ class AR_model_loader:
         self.weights_ds = None
         self.W_numpy = None
 
-    def get_model(self,):
+    def get_model(self):
         """ Gets string models """
         # gets the filename of the requested model
-        return os.path.join(write_path, 'test.nc')
+        return os.path.join(path_ar_results, 'test.nc')
 
     def load_model_to_xarray(self):
         """ Loades the model into a xarray dataset.
         """
         self.weights_ds = xr.open_dataset(self.get_model())
         return self.weights_ds
+
+    def load_transformation(self):
+        """Returns trained tranformation
+        Develop this code after the
+        """
+        return
 
     def load_model_to_numpy(self):
         """
