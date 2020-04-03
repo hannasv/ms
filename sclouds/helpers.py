@@ -33,7 +33,6 @@ def get_lat_array():
      _ : array-like
         Numpy array of valid latitude values.
     """
-
     return np.arange(LAT[0], LAT[1]+SPATIAL_RESOLUTION,
                         step = SPATIAL_RESOLUTION)
 
@@ -127,7 +126,7 @@ def get_pixel_from_ds(ds, lat, lon):
 def generate_output_file_name_trained_ar_model():
     """ Generates output file name, contain all information about the training
     prosedure.
-    
+
     Raises
     ------------
     NotImplementedError

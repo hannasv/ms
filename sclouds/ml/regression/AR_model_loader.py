@@ -1,3 +1,6 @@
+""" Write summary of the auto regressive model loader.
+"""
+
 import os
 import glob
 
@@ -28,9 +31,16 @@ class AR_model_loader:
     load_transformation
 
     load_model_to_numpy
-    
+
     """
     def __init__(self):
+        """
+        Parameters
+        -----------------
+
+
+
+        """
         # 1. Period
         # 2. Vars
         # Order ar models, number of timesteps.
@@ -108,3 +118,9 @@ class AR_model_loader:
         #        var = 'W{}'.format(i)
         #          W[:, :, i+4] = self.weights_ds[var].values
         return W
+
+    def get_best_models(num = 1):
+        raise NotImplementedError('Comming soon ...')
+
+    def get_best_hyperparameters(num = 1):
+        raise NotImplementedError('Comming soon ...')

@@ -1,3 +1,6 @@
+""" Explenation of the content of this file.
+"""
+
 import os
 import glob
 
@@ -5,8 +8,10 @@ import numpy as np
 import xarray as xr
 
 from sclouds.helpers import (merge, get_list_of_variables_in_ds,
-                             get_pixel_from_ds, path_read_data, path_ar_results)
-from sclouds.io.utils import dataset_to_numpy
+                             get_pixel_from_ds, path_input, path_ar_results)
+
+from sclouds.io.utils import (dataset_to_numpy, get_xarray_dataset_for_period)
+
 from sclouds.ml.regression.utils import (mean_squared_error, r2_score,
                                          fit_pixel, predict_pixel,
                                          accumulated_squared_error,
@@ -15,14 +20,89 @@ from sclouds.ml.regression.utils import (mean_squared_error, r2_score,
 class AR_model:
     """ Autoregressive models used in this thesis.
 
-    TODO update with start stop
+    Attributes
+    -------------------
+    start : str
+        Start date of training/ fitting the model. Format: year-month-date
+    stop  : str
+        Stop date of training/ fitting the model. Format: year-month-date
+    test_start : str, optional
+        Start date of test data, used in evaluation of the model.
+    test_stop  : str, optional
+        Stop date of test data, used in evaluation of the model.
+    order : int
+        Number of previos time steps included as predictors
+    transformer : bool, default = True
+        Whether to standardize the data or not.
+    sigmoid : bool, default = False
+        Desides if you should siogmoid transform the response.
+    longitude : array-like
+        Longitude values.
+    latitude  : array-like
+        Latitude values.
+    coeff_matrix : array-like
+        Matrix
 
+    Methods
+    -------------------
+    load(lat, lon)
+
+    load_transform(lat, lon)
+
+    fit()
+
+    fit_evaluate()
+
+    set_transformer_from_loaded_model(transformer, mean, std)
+
+    set_weights_from_loaded_model(W)
+
+    predict(X)
+
+    get_evaluation()
+
+    get_configuration()
+
+    get_weights()
+
+    get_tranformation_properties()
+
+    save()
     """
 
-    def __init__(self, order = 1, transformer = False, sigmoid = False):
+    def __init__(self, start = '2012-01-01', stop = '2012-01-31',
+                    test_start = None, test_stop = None,
+                    order = 1, transformer = False, sigmoid = False):
+        """
+        Parameters
+        ----------
+        start : str
+            Start date of training/ fitting the model. Format: year-month-date
+        stop  : str
+            Stop date of training/ fitting the model. Format: year-month-date
+
+        test_start : str, optional
+            Start date of test data, used in evaluation of the model.
+        test_stop  : str, optional
+            Stop date of test data, used in evaluation of the model.
+
+        order : int
+            Number of previos time steps included as predictors
+        transformer : bool, default = True
+            Whether to standardize the data or not.
+        sigmoid : bool, default = False
+            Desides if you should siogmoid transform the response.
+
+        """
+        assert start < stop, "Start {} need to be prior to stop {}".format(start, stop)
+        self.start = start
+        self.stop  = stop
+        self.test_start = test_start
+        self.test_stop  = test_stop
+
         # Based on start and stop descide which files it gets.
-        files        = self.get_test_files()
-        self.dataset = merge(files)
+        self.dataset = get_xarray_dataset_for_period(start = self.start,
+                                                     stop = self.stop)
         self.order = order
 
         self.longitude = self.dataset.longitude.values
@@ -49,14 +129,8 @@ class AR_model:
             self.bias = True
         return
 
-    def get_test_files(self):
-        return ['/home/hanna/lagrings/ERA5_monthly/2012_01_q.nc',
-                '/home/hanna/lagrings/ERA5_monthly/2012_01_r.nc',
-                '/home/hanna/lagrings/ERA5_monthly/2012_01_t2m.nc',
-                '/home/hanna/lagrings/ERA5_monthly/2012_01_sp.nc',
-                '/home/hanna/lagrings/ERA5_monthly/2012_01_tcc.nc']
-
     def load(self, lat, lon):
+
         # Move some of this to the dataloader part?
         ds     = get_pixel_from_ds(self.dataset, lat, lon)
 
@@ -103,6 +177,9 @@ class AR_model:
         X = scaler.fit_transform(X)
         return X, y, scaler.mean_, np.sqrt(scaler.var_)
 
+    def fit_evaluate(self, ):
+        raise NotImplementedError('Coming soon ... ')
+
     def fit(self):
         """ Fits the data retrieved in the constructor, entire grid.
         """
@@ -134,13 +211,24 @@ class AR_model:
         return
 
     def set_weights_from_loaded_model(self, W):
-        """ Sets weights from loaded model """
+        """ Sets weights from loaded model.
+
+        Parameters
+        --------------
+        W : array-like
+            Matrix containing weights from loaded model.
+        """
         self.coeff_matrix = W
         return
 
     def predict(self, X):
         """ Make prediction for the entire grid/ Domain.
         Keeps nan's.
+
+        Parameters
+        --------------
+        X : array-like
+            Matrix containing input data.
         """
         n_time = len(self.dataset.time.values)
         n_lat  = len(self.latitude)
@@ -151,6 +239,8 @@ class AR_model:
             for j in range(n_lon):
                 a = X[:, i, j, :]
 
+                # Checks if data should be transformed and performs
+                # transformation.
                 if self.transform:
                     a = (a - self.mean[i, j, :])/self.std[i, j, :]
 
@@ -165,75 +255,55 @@ class AR_model:
                 Y[:, i, j, 0] = y_pred.flatten()
         return Y
 
-    def evaluate(self, y_true, y_pred):
-        # MOve most of content in store performance to evaluate
+    def get_evaluation(self):
+        """ Get evaluation of data
+        """
+        # Checks if test_start and test_stop is provided.
+        if self.test_start is not None and self.test_stop is not None:
+            # Based on start and stop descide which files it gets.
+            dataset = get_xarray_dataset_for_period(start = self.test_start,
+                                                    stop = self.test_stop)
+            X, y_true = dataset_to_numpy_order(dataset, self.order, bias = self.bias)
+            y_pred = self.predict(X)
+        else:
+            raise NotImplementedError('Coming soon ... get_evaluation()')
+
+        # Move most of content in store performance to evaluate
         mse  = mean_squared_error(y_true, y_pred)
         ase  = accumulated_squared_error(y_true, y_pred)
         r2   = r2_score(y_true, y_pred)
+
         vars_dict = {'mse': (['latitude', 'longitude'], mse[:, :, 0]),
                      'r2':  (['latitude', 'longitude'], r2[:, :, 0]),
                      'ase': (['latitude', 'longitude'], ase[:, :, 0]),
+                     'global_mse': np.mean(mse),
+                     'global_r2':  np.mean(r2),
+                     'global_ase': np.mean(ase)
                       }
+        return vars_dict
 
-        ds = xr.Dataset(vars_dict,
-                         coords={'longitude': (['longitude'], self.longitude),
-                                 'latitude': (['latitude'], self.latitude),
-                                })
-        self.evaluate_ds = ds
-        return ds
-
-
-    def save_performance(self, y_true, y_pred):
-        """ Evaluate the performace in each grid
-        To make the code work simply use the same training and test data.
+    def get_configuration(self):
+        """Returns dictionary of configuration used to initialize this model.
         """
-        from utils import write_path
-        end_location = os.path.join(write_path, 'test_performace.nc')
+        temp_dict = {'transform' : self.transform,
+                     'sigmoid' : self.sigmoid,
+                     'order' : self.order,
+                     'start' : self.start,
+                     'stop'  : self.stop
+        }
+        return temp_dict
 
-        if not self.evaluate_ds:
-            self.evaluate(y_true, y_pred)
-
-        self.evaluate_ds.to_netcdf(end_location)
-        return
-
-    def save_transform(self):
-        """ Save model to repo : /home/hanna/lagrings/results/ar/
-        """
-        vars_dict = {'mean_t2m':(['latitude', 'longitude'], self.mean[:, :, 1]),
-                     'std_t2m':(['latitude', 'longitude'], self.std[:, :, 1]),
-                     'mean_r':(['latitude', 'longitude'], self.mean[:, :, 2]),
-                     'std_r':(['latitude', 'longitude'], self.std[:, :, 2]),
-                     'mean_q':(['latitude', 'longitude'], self.mean[:, :, 0]),
-                     'std_q':(['latitude', 'longitude'], self.std[:, :, 0]),
-                     'mean_sp':(['latitude', 'longitude'], self.mean[:, :, 3]),
-                     'std_sp':(['latitude', 'longitude'], self.std[:, :, 3]),
-                      }
-
-        ds = xr.Dataset(vars_dict,
-                         coords={'longitude': (['longitude'], self.longitude),
-                                 'latitude': (['latitude'], self.latitude),
-                                })
-
-        end_location = os.path.join(path_ar_results, 'test2_transformer.nc')
-        ds.to_netcdf(end_location)
-        return
-
-
-    def save_model(self):
-        """ Save model to repo : /home/hanna/lagrings/results/ar/
-
-        TODO : Save model should include necessary information to restore
-        transformation if model is trained have transformation
-
-        TODO : This should also know if there is a bias.
-
+    def get_weights(self):
+        """Returns dictionary of weigths fitted using this model.
         """
         temp_dict = {}
+
         if self.bias:
             temp_dict['b'] = (['latitude', 'longitude'], self.coeff_matrix[:, :, 4])
             ar_index = 5
         else:
             ar_index = 4
+
         if self.order > 0:
             for i in range(self.order):
                 var = 'W{}'.format(i+1)
@@ -246,10 +316,42 @@ class AR_model:
                      'Wsp': (['latitude', 'longitude'], self.coeff_matrix[:, :, 3]),
                       }
         temp_dict.update(vars_dict) # meges dicts together
-        ds = xr.Dataset(temp_dict,
+        return temp_dict
+
+    def get_tranformation_properties(self):
+        """ Returns dictionary of the properties used in the transformations,
+        pixelwise mean and std.
+        """
+        vars_dict = {'mean_t2m':(['latitude', 'longitude'], self.mean[:, :, 1]),
+                     'std_t2m':(['latitude', 'longitude'], self.std[:, :, 1]),
+                     'mean_r':(['latitude', 'longitude'], self.mean[:, :, 2]),
+                     'std_r':(['latitude', 'longitude'], self.std[:, :, 2]),
+                     'mean_q':(['latitude', 'longitude'], self.mean[:, :, 0]),
+                     'std_q':(['latitude', 'longitude'], self.std[:, :, 0]),
+                     'mean_sp':(['latitude', 'longitude'], self.mean[:, :, 3]),
+                     'std_sp':(['latitude', 'longitude'], self.std[:, :, 3]),
+                      }
+        return vars_dict
+
+    def save(self):
+        """ Saves model configuration, evaluation, transformation into a file
+        named by the current time. Repo : /home/hanna/lagrings/results/ar/
+        """
+        filename      = os.path.join(path_ar_results, 'AR_{}.nc'.format(np.datetime64('now')))
+
+        config_dict   = self.get_configuration()
+        weights_dict  = self.get_weights()
+        tranformation = self.get_tranformation_properties()
+        eval_dict     = self.get_evaluation()
+
+        # Merges dictionaries together
+        config_dict.update(weights_dict)
+        config_dict.update(transformation)
+        config_dict.update(eval_dict)
+
+        ds = xr.Dataset(config_dict,
                          coords={'longitude': (['longitude'], self.longitude),
                                  'latitude': (['latitude'], self.latitude),
                                 })
-        end_location = os.path.join(path_ar_results, 'test2.nc')
-        ds.to_netcdf(end_location)
+        ds.to_netcdf(filename)
         return
