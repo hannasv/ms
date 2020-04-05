@@ -21,7 +21,7 @@ class AR_model_loader:
     W_numpy : array-like
         Grid of trained models.
 
-    Methods
+    Methods UPDATE THIS
     ---------------------
 
     get_model
@@ -62,7 +62,12 @@ class AR_model_loader:
         """Returns trained tranformation
         Develop this code after the
         """
-        return
+        raise NotImplementedError('Comming soon ....')
+
+    def load_model_from_hyperparameters():
+        """ Load model from HyperParameters.
+        """
+        raise NotImplementedError('Comming soon ....')
 
     def load_model_to_numpy(self):
         """
@@ -147,7 +152,9 @@ class AR_model_loader:
             raise NotImplementedError('Comming soon ...')
         all_models = self.get_list_of_trained_AR_models()
         # Init empty container with room for num objects.
-        name_best_model = self.get_best_model_from_list_of_files(files, num = 1, metric = 'mse')
+        name_best_model = self.get_best_model_from_list_of_files(all_models,
+                                                                 num = 1,
+                                                                 metric = 'mse')
         return name_best_model
 
 
@@ -181,7 +188,8 @@ class AR_model_loader:
                      'start'      : data.start.values,
                      'stop'       : data.stop.values,
                      'test_start' : data.start.values,
-                     'test_stop'  : data.stop.values
+                     'test_stop'  : data.stop.values,
+                     'bias'       : data.bias.values,
                     }
         return temp_dict
 
@@ -206,11 +214,18 @@ class AR_model_loader:
         for model in files[1:]:
             temp_data = xr.open_dataset(model)
             # Idea store them all and then sort them by axis 1 and take the top num.
-            performace = temp_data['global_{}'.format(metric)].values
-            if performace > performance_best_model:
-                # Updates best model.
-                name_best_model = model
-                performance_best_model = performance
+            performance = temp_data['global_{}'.format(metric)].values
+            # TODO for mse we want the smallest one and for r2 we want the largest one-
+            if metric == 'r2':
+                if performance > performance_best_model:
+                    # Updates best model.
+                    name_best_model = model
+                    performance_best_model = performance
+            else:
+                if performance < performance_best_model:
+                    # Updates best model.
+                    name_best_model = model
+                    performance_best_model = performance
         return name_best_model
 
 
@@ -220,7 +235,8 @@ class AR_model_loader:
                                            test_stop = None,
                                            order = None,
                                            transform = None,
-                                           sigmoid = None):
+                                           sigmoid = None,
+                                           bias = None):
         """ Returns list of models based on relevant hyperaparameter criterions.
 
         start : str, optional
@@ -231,20 +247,23 @@ class AR_model_loader:
             year-month-day
         test_stop : str, optional
             year-month-day
-        order : int
+        order : int, optional
             The number of previos timestep
-        transform : bool
+        transform : bool, optional
             Applied transformation of data.
-        sigmoid : bool
+        sigmoid : bool, optional
             Applied sigmoid transformation on response.
+        bias : bool, optional
+            Including bias/ intecept.
         """
 
         files = [] # stores the filest where all
-        all_files = get_list_of_trained_AR_models()
+        all_files = self.get_list_of_trained_AR_models()
 
         for fil in all_files:
             # Determine which if values is not none and test that all these are true.
             model = xr.open_dataset(fil)
+            # Listing the eight conditions.
             c1 = (start is None or model.start.values == start)
             c2 = (stop is None or model.stop.values == stop)
             c3 = (test_start is None or model.test_start.values == test_start)
@@ -252,7 +271,8 @@ class AR_model_loader:
             c5 = (order is None or model.order.values == order)
             c6 = (transform is None or model.transform.values == transform)
             c7 = (sigmoid is None or model.sigmoid.values == sigmoid)
+            c8 = (bias is None or model.bias.values == bias)
 
-            if c1 and c2 and c3 and c4 and c5 and c6 and c7:
+            if c1 and c2 and c3 and c4 and c5 and c6 and c7 and c8:
                 files.append(fil)
         return files

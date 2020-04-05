@@ -10,7 +10,9 @@ import xarray as xr
 from sclouds.helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
-from sclouds.io.utils import (dataset_to_numpy, get_xarray_dataset_for_period)
+from sclouds.io.utils import (dataset_to_numpy, dataset_to_numpy_grid_order,
+                              dataset_to_numpy_grid,
+                              get_xarray_dataset_for_period)
 
 from sclouds.ml.regression.utils import (mean_squared_error, r2_score,
                                          fit_pixel, predict_pixel,
@@ -72,7 +74,7 @@ class AR_model:
 
     def __init__(self, start = '2012-01-01', stop = '2012-01-31',
                     test_start = None, test_stop = None,
-                    order = 1, transformer = False, sigmoid = False):
+                    order = 1, transform = False, sigmoid = False):
         """
         Parameters
         ----------
@@ -94,7 +96,8 @@ class AR_model:
             Desides if you should siogmoid transform the response.
 
         """
-        assert start < stop, "Start {} need to be prior to stop {}".format(start, stop)
+        if stop is not None:
+            assert start < stop, "Start {} need to be prior to stop {}".format(start, stop)
         self.start = start
         self.stop  = stop
         self.test_start = test_start
@@ -127,6 +130,9 @@ class AR_model:
             self.bias = False
         else:
             self.bias = True
+
+        self.X_train = None
+        self.y_train = None
         return
 
     def load(self, lat, lon):
@@ -187,6 +193,15 @@ class AR_model:
                                  len(self.longitude),
                                  len(self.variables)))
 
+        _X = np.zeros((len(self.dataset.time.values),
+                      len(self.latitude),
+                      len(self.longitude),
+                      len(self.variables)))
+
+        _y = np.zeros((len(self.dataset.time.values),
+                      len(self.latitude),
+                      len(self.longitude), 1))
+
         for i, lat in enumerate(self.latitude): # 81
             for j, lon in enumerate(self.longitude): # 161
                 # TODO update this to be a dataloader
@@ -196,14 +211,18 @@ class AR_model:
                     self.std[i, j, :] =  std.flatten()
                 else:
                     X, y = self.load(lat, lon)
+                _X[:, i, j, :] = X
+                _y[:, i, j, :] = y
                 #print('Number of samples after removal of nans {}.'.format(len(y)))
                 coeffs = fit_pixel(X, y)
                 coeff_matrix[i, j, :] =  coeffs.flatten()
 
+        self.X_train = _X
+        self.y_train = _y
         self.coeff_matrix = coeff_matrix
         return coeff_matrix
 
-    def set_transformer_from_loaded_model(self, transformer, mean, std):
+    def set_transformer_from_loaded_model(self, mean, std):
         """ Set old tranformation """
         self.transform = True
         self.mean = mean
@@ -234,7 +253,7 @@ class AR_model:
         n_lat  = len(self.latitude)
         n_lon  = len(self.longitude)
         Y      = np.zeros( (n_time, n_lat, n_lon, 1)  )
-
+        print("X shape {}".format(X.shape))
         for i in range(n_lat):
             for j in range(n_lon):
                 a = X[:, i, j, :]
@@ -263,11 +282,16 @@ class AR_model:
             # Based on start and stop descide which files it gets.
             dataset = get_xarray_dataset_for_period(start = self.test_start,
                                                     stop = self.test_stop)
-            X, y_true = dataset_to_numpy_order(dataset, self.order, bias = self.bias)
+            if self.order > 0:
+                X, y_true = dataset_to_numpy_grid_order(dataset, self.order, bias = self.bias)
+            else:
+                X, y_true = dataset_to_numpy_grid(dataset, bias = self.bias)
             y_pred = self.predict(X)
         else:
-            raise NotImplementedError('Coming soon ... get_evaluation()')
-
+            #raise NotImplementedError('Coming soon ... get_evaluation()')
+            print("X shape {}, y shape {}".format(self.X_train.shape, self.y_train.shape))
+            y_pred = self.predict(self.X_train)
+            y_true = self.y_train
         # Move most of content in store performance to evaluate
         mse  = mean_squared_error(y_true, y_pred)
         ase  = accumulated_squared_error(y_true, y_pred)
@@ -289,8 +313,10 @@ class AR_model:
                      'sigmoid' : self.sigmoid,
                      'order' : self.order,
                      'start' : self.start,
-                     'stop'  : self.stop
-        }
+                     'stop'  : self.stop,
+                     'test_start' : self.test_start,
+                     'test_stop'  : self.test_stop,
+                     'bias':self.bias}
         return temp_dict
 
     def get_weights(self):
@@ -346,7 +372,7 @@ class AR_model:
 
         # Merges dictionaries together
         config_dict.update(weights_dict)
-        config_dict.update(transformation)
+        config_dict.update(tranformation)
         config_dict.update(eval_dict)
 
         ds = xr.Dataset(config_dict,
