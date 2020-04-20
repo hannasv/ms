@@ -10,7 +10,8 @@ import xarray as xr
 from sclouds.helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
-from sclouds.io.utils import (dataset_to_numpy, dataset_to_numpy_grid_order,
+from sclouds.io.utils import (dataset_to_numpy, dataset_to_numpy_order,
+                              dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
                               get_xarray_dataset_for_period)
 
@@ -34,7 +35,7 @@ class AR_model:
         Stop date of test data, used in evaluation of the model.
     order : int
         Number of previos time steps included as predictors
-    transformer : bool, default = True
+    transform : bool, default = True
         Whether to standardize the data or not.
     sigmoid : bool, default = False
         Desides if you should siogmoid transform the response.
@@ -70,6 +71,7 @@ class AR_model:
     get_tranformation_properties()
 
     save()
+        Filename becomes timestamp in utctime.
     """
 
     def __init__(self, start = '2012-01-01', stop = '2012-01-31',
@@ -82,19 +84,16 @@ class AR_model:
             Start date of training/ fitting the model. Format: year-month-date
         stop  : str
             Stop date of training/ fitting the model. Format: year-month-date
-
         test_start : str, optional
             Start date of test data, used in evaluation of the model.
         test_stop  : str, optional
             Stop date of test data, used in evaluation of the model.
-
         order : int
             Number of previos time steps included as predictors
         transformer : bool, default = True
             Whether to standardize the data or not.
         sigmoid : bool, default = False
             Desides if you should siogmoid transform the response.
-
         """
         if stop is not None:
             assert start < stop, "Start {} need to be prior to stop {}".format(start, stop)
@@ -115,18 +114,18 @@ class AR_model:
         self.coeff_matrix = None
         self.evaluate_ds  = None
 
-        self.transform   = transformer
+        self.transform   = transform
         self.sigmoid     = sigmoid
 
         # Initialize containers if data should be transformed
         if self.transform:
             self.mean = np.zeros((len(self.latitude),
                                   len(self.longitude),
-                                  len(self.variables)))
+                                  len(self.variables)+self.order))
 
             self.std  = np.zeros((len(self.latitude),
                                   len(self.longitude),
-                                  len(self.variables)))
+                                  len(self.variables)+self.order))
             self.bias = False
         else:
             self.bias = True
@@ -140,9 +139,11 @@ class AR_model:
         # Move some of this to the dataloader part?
         ds     = get_pixel_from_ds(self.dataset, lat, lon)
 
-        # TODO : This should make a proper choice of loader function.
+        if self.order > 0:
+            X, y   = dataset_to_numpy_order(ds, order = self.order, bias = self.bias)
+        else:
+            X, y   = dataset_to_numpy(ds, bias = self.bias)
 
-        X, y   = dataset_to_numpy(ds, bias = self.bias)
         # print('Number of samples prior to removal of nans {}.'.format(len(y)))
         # Removes nan's
         a = np.concatenate([X, y], axis = 1)
@@ -156,7 +157,10 @@ class AR_model:
 
         Parameteres
         ---------------------
-        X : array-like
+        lat : float
+            Latitude coordinate.
+        lon : float
+            Longitude coordinate.
 
         Returns
         ---------------------
@@ -166,8 +170,12 @@ class AR_model:
         from sklearn.preprocessing import StandardScaler
         # Move some of this to the dataloader part?
         ds     = get_pixel_from_ds(self.dataset, lat, lon)
-        X, y   = dataset_to_numpy(ds, bias = self.bias)
-        #print('Number of samples prior to removal of nans {}.'.format(len(y)))
+
+        if self.order > 0:
+            X, y   = dataset_to_numpy_order(ds, order = self.order, bias = self.bias)
+        else:
+            X, y   = dataset_to_numpy(ds, bias = self.bias)
+
         # Removes nan's
         a = np.concatenate([X, y], axis = 1)
         a = a[~np.isnan(a).any(axis = 1)]
@@ -183,36 +191,44 @@ class AR_model:
         X = scaler.fit_transform(X)
         return X, y, scaler.mean_, np.sqrt(scaler.var_)
 
-    def fit_evaluate(self, ):
+    def fit_evaluate(self):
         raise NotImplementedError('Coming soon ... ')
 
     def fit(self):
         """ Fits the data retrieved in the constructor, entire grid.
         """
+
+        num_vars = self.bias + len(self.variables) + self.order
+
         coeff_matrix = np.zeros((len(self.latitude),
                                  len(self.longitude),
-                                 len(self.variables)))
+                                 num_vars))
 
-        _X = np.zeros((len(self.dataset.time.values),
-                      len(self.latitude),
-                      len(self.longitude),
-                      len(self.variables)))
+        _X = np.zeros((len(self.dataset.time.values)-self.order,
+                       len(self.latitude),
+                       len(self.longitude),
+                       num_vars))
 
-        _y = np.zeros((len(self.dataset.time.values),
-                      len(self.latitude),
-                      len(self.longitude), 1))
+        _y = np.zeros((len(self.dataset.time.values)-self.order,
+                       len(self.latitude),
+                       len(self.longitude),
+                       1))
 
         for i, lat in enumerate(self.latitude): # 81
             for j, lon in enumerate(self.longitude): # 161
-                # TODO update this to be a dataloader
+
                 if self.transform:
                     X, y, mean, std = self.load_transform(lat, lon)
                     self.mean[i, j, :]  =  mean.flatten()
                     self.std[i, j, :] =  std.flatten()
                 else:
                     X, y = self.load(lat, lon)
-                _X[:, i, j, :] = X
-                _y[:, i, j, :] = y
+                if self.order > 0:
+                    _X[:, i, j, :] = X
+                    _y[:, i, j, :] = y
+                else:
+                    _X[:, i, j, :] = X
+                    _y[:, i, j, :] = y
                 #print('Number of samples after removal of nans {}.'.format(len(y)))
                 coeffs = fit_pixel(X, y)
                 coeff_matrix[i, j, :] =  coeffs.flatten()
@@ -223,10 +239,38 @@ class AR_model:
         return coeff_matrix
 
     def set_transformer_from_loaded_model(self, mean, std):
-        """ Set old tranformation """
+        """ Set loaded tranformation
+
+        Parameters
+        ---------------------
+        mean : array-like
+            Matrix containing the means used in transformation of different
+            pixels.
+        std : array-like
+            Matrix containing the standarddeviation used in transformation
+            of different pixels.
+        """
         self.transform = True
         self.mean = mean
         self.std = std
+        return
+
+    def set_configuration(self, config_dict):
+        """ Set loaded configuration.
+
+        Parameters
+        --------------------
+        config_dict : dictionary
+            Dictionary containing the config.
+        """
+        self.transform  = config_dict['transform']
+        self.sigmoid    = config_dict['sigmoid']
+        self.order      = config_dict['order']
+        self.start      = config_dict['start']
+        self.stop       = config_dict['stop']
+        self.test_start = config_dict['test_start']
+        self.test_stop  = config_dict['test_stop']
+        self.bias       = config_dict['bias']
         return
 
     def set_weights_from_loaded_model(self, W):
@@ -253,7 +297,7 @@ class AR_model:
         n_lat  = len(self.latitude)
         n_lon  = len(self.longitude)
         Y      = np.zeros( (n_time, n_lat, n_lon, 1)  )
-        print("X shape {}".format(X.shape))
+
         for i in range(n_lat):
             for j in range(n_lon):
                 a = X[:, i, j, :]
@@ -309,14 +353,14 @@ class AR_model:
     def get_configuration(self):
         """Returns dictionary of configuration used to initialize this model.
         """
-        temp_dict = {'transform' : self.transform,
-                     'sigmoid' : self.sigmoid,
-                     'order' : self.order,
-                     'start' : self.start,
-                     'stop'  : self.stop,
+        temp_dict = {'transform'  : self.transform,
+                     'sigmoid'    : self.sigmoid,
+                     'order'      : self.order,
+                     'start'      : self.start,
+                     'stop'       : self.stop,
                      'test_start' : self.test_start,
                      'test_stop'  : self.test_stop,
-                     'bias':self.bias}
+                     'bias'       : self.bias}
         return temp_dict
 
     def get_weights(self):
