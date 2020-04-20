@@ -1,3 +1,6 @@
+""" Utilities for reading routines.
+"""
+
 import os
 import glob
 
@@ -8,13 +11,13 @@ from sclouds.helpers import merge, path_input
 
 def get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31'):
     """ Reads data from the requested period into a xarray dataset.
+    I stop is not provided it defaults to one month of data.
 
     Parameteres
     ----------------------
     start : str
         Start of period. First day included. (default '2012-01-01')
-
-    stop : str
+    stop : str, optional
         end of period. Last day included. (default '2012-01-31')
 
     Returns
@@ -26,7 +29,8 @@ def get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31'):
     files = get_list_of_files(start = start, stop = stop)
     print("Num files {}".format(len(files)))
     data = merge(files)
-    data = data.sel(time = slice(start, stop))
+    if stop is not None:
+        data = data.sel(time = slice(start, stop))
     return data
 
 def get_list_of_files(start = '2012-01-01', stop = '2012-01-31'):
@@ -50,10 +54,13 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31'):
     parts = start.split('-')
     start_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
 
-    parts = stop.split('-')
-    stop_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
+    if stop is not None:
+        parts = stop.split('-')
+        stop_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
+    else:
+        stop_search_str = ''
 
-    if start_search_str == stop_search_str:
+    if (start_search_str == stop_search_str) or (stop is None):
         subset = glob.glob(os.path.join( path_input, '{}*.nc'.format(start_search_str)))
     else:
         min_fil = os.path.join(path_input, start_search_str + '_q.nc')
@@ -65,7 +72,10 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31'):
 
         smaller = files[files <= max_fil]
         subset  = smaller[smaller >= min_fil] # results in all the files
+
     assert len(subset)%5==0, "Not five of each files, missing variables in file list!"
+    assert len(subset)!=0, "No files found, check if you have mounted lagringshotellet."
+
     return subset
 
 
@@ -224,7 +234,7 @@ def dataset_to_numpy_grid_order(dataset, order, bias = True):
     (4 - bias/ intercept)
     5 (4) - tcc previos time step
     """
-    times = dataset.time.values
+    times  = dataset.time.values
     n_time = len(dataset.time.values) - order
     n_lat  = len(dataset.latitude.values)
     n_lon  = len(dataset.longitude.values)
@@ -262,8 +272,6 @@ def dataset_to_numpy_grid_order(dataset, order, bias = True):
 
         remove_from_end = order - temp_order
         if remove_from_end != 0:
-            # remove_from_end = 1
-            # Which clouds to add at which column, remember that they shoudl start from t-1, t-2, t-3 ...
             X[:, :, :, var_index] = tcc[temp_order:, :, :][bo][:-remove_from_end, :, :]
         else:
             X[:, :, :, var_index] = tcc[temp_order:, :, :][bo]
@@ -310,6 +318,7 @@ def dataset_to_numpy_order(dataset, order, bias = True):
         var_index = 4
 
     times = dataset.time.values
+    print("Detected {} samples.".format(len(times)))
     X = np.zeros( (len(times)-order, order + var_index))
     y = np.zeros( (len(times)-order ))
 
@@ -327,7 +336,7 @@ def dataset_to_numpy_order(dataset, order, bias = True):
     if bias:
         X[:, 4] = 1 # bias
 
-    y[:, :, :] = tcc[:-order]
+    y = tcc[:-order, np.newaxis]
 
     # tcc1, tcc2, ..., tcc_n
     for temp_order in range(1, order+1):
@@ -343,6 +352,8 @@ def dataset_to_numpy_order(dataset, order, bias = True):
         else:
             X[:, var_index] = tcc[temp_order:][bo]
         var_index+=1
+    print(X.shape)
+    print(y.shape)
     return X, y
 
 
