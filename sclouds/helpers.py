@@ -12,6 +12,16 @@ TEMPORAL_RESOLUTION = 'h' # TODO: this need to be a proper dt format
 EXTENT = [LAT, LON]
 VARIABLES =  ["t2m", 'sp', 'q', 'r', 'tcc']
 
+LONGNAME = {"t2m":"Temperature", 'q':"Specific Humidity",
+            'sp':"Surface Pressure", 'r': "Relative Humidity",
+            'tcc':"Cloud Fractional Cover"}
+
+UNITS = {"t2m":"K", 'sp':"Pa", 'q':"kg kg^-1", 'r': "1", 'tcc':"1"}
+
+FILTERS = ['coast', 'sea', 'land', 'artefact']
+MONTHS  = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+            'August', 'September', 'October', 'November', 'December']
+
 train_start = '2004-01-01'
 train_stop  = '2015-12-31'
 
@@ -23,6 +33,10 @@ path_input            = '/home/hanna/lagrings/ERA5_monthly/'
 path_ar_results       = '/home/hanna/lagrings/results/ar/'
 path_convlstm_results = '/home/hanna/lagrings/results/convlstm/'
 path_stats_results    = '/home/hanna/lagrings/results/stats/'
+
+# duplicated, available in sclouds.plot.helpers
+path_stor_plots = '/home/hanna/MS-thesis/python_figs/'
+path_filter     = '/home/hanna/MS-suppl/filters/'
 
 def get_lat_array():
     """ Returns array of latitude values. Range [30, 50] and
@@ -49,7 +63,7 @@ def get_lon_array():
                         step = SPATIAL_RESOLUTION)
 
 def merge(files):
-    """ Merging a list of filenames into a dataset.
+    """ Merging a list of filenames into a dataset.open_mfdataset
 
     Parameteres
     -----------
@@ -62,8 +76,9 @@ def merge(files):
         Merged files into one dataset.
     """
     #assert len(files) == 5
-    datasets = [xr.open_dataset(fil) for fil in files]
-    return xr.merge(datasets)
+    #datasets = [xr.open_dataset(fil) for fil in files]
+    #return xr.merge(datasets)
+    return xr.open_mfdataset(files, compat='no_conflicts', join='outer')
 
 def get_list_of_variables_in_ds(ds):
     """ Returs list of variables in dataset
