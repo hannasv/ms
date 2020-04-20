@@ -111,8 +111,8 @@ def fit_pixel(X, y):
     -------------
     coeffs :
     """
-    from scipy.linalg import inv
-    coeffs = np.dot(inv(np.dot(X.T, X)), np.dot(X.T, y))
+    from scipy.linalg import pinv
+    coeffs = np.dot(pinv(np.dot(X.T, X)), np.dot(X.T, y))
     return coeffs
 
 def predict_pixel(X, coeffs):
