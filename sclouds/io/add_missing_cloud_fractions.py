@@ -22,18 +22,22 @@ import numpy as np
 # In[2]:
 
 
-#data_dir = '/home/hanna/MS-suppl/files/'
-data_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
-path = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/'
-save_dir = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/fractions_repo/'
+save_dir = '/home/hanna/lagrings/ERA5_monthly/'
 
-data_monthly_repo = '/uio/lagringshotell/geofag/students/metos/'
+read_dir = '/home/hanna/miphclac/regridded_tcc/'
+raw_grb_file_dir = '/home/hanna/miphclac/hannasv/flekkis/'
+
+#path = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/'
+
+#save_dir = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/fractions_repo/'
+
+#data_monthly_repo = '/uio/lagringshotell/geofag/students/metos/'
 
 import logging
-LOG_FILENAME = 'example.log'
-logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
+#LOG_FILENAME = 'example.log'
+#logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
-logging.debug('This message should go to the log file')
+#logging.debug('This message should go to the log file')
 
 def read_dlon_dlat(data_dir):
     """ Reading in the coordinate information."""
@@ -50,7 +54,7 @@ def read_dlon_dlat(data_dir):
     lon_array  = d['lon']
     return d_phi, d_theta, cell_areas, lat_array, lon_array
 
-d_phi, d_theta, cell_areas, lat_array, lon_array = read_dlon_dlat(data_dir)
+
 
 def clean_file(satfil):
     """Cleaning the raw files. Rewrinting it from 4 digit to binary."""
@@ -73,10 +77,10 @@ def clean_file(satfil):
 
 def area_grid_cell(c_lat, d_lat, d_lon):
     """ Computing the are of a pixel """
-        R = 6371000  # in M
-        # area er egentlig R**2
-        area = R*(np.sin((c_lat + d_lat)*np.pi/180) - np.sin((c_lat - d_lat)*np.pi/180) )*(2*d_lon*np.pi/180) # R**2
-        return np.abs(area)
+    R = 6371000  # in M
+    # area er egentlig R**2
+    area = R*(np.sin((c_lat + d_lat)*np.pi/180) - np.sin((c_lat - d_lat)*np.pi/180) )*(2*d_lon*np.pi/180) # R**2
+    return np.abs(area)
 
 def get_dict_with_all_keys():
     """ Merging all the subcoordinate information to one dictionary.
@@ -91,7 +95,6 @@ def get_dict_with_all_keys():
 
     return merged_dict
 
-data_dict = get_dict_with_all_keys()
 
 def calc_fraction_one_cell(lat = '30.25', lon = '19.25', cmk = None, data = None):
     """Compute fraction in one cell. """
@@ -292,23 +295,10 @@ def merge_ts_to_one_dataset(grb_files,
         #print("completed {}/{} files".format(counter, len(grb_files)))
     return ds
 
-def already_regridded(year, month):
-    """  Checks if a month has been regridded.
-    Returns:
-         boolean
-    """
-    # TODO: Update path
-    path = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/fractions_repo/'
-    #folder = make_folder_str(year = year, month = month)
-    month = "%2.2d"%month # Skriver
-    #key = "*-{}{}*.grb".format(year, month)
-    full = os.path.join( path, '{}_{}.nc'.format(year, month) )
-    return os.path.isfile(full)
-
 def get_filename(year, month):
     month = "%2.2d" % month  # Skriver
     # key = "*-{}{}*.grb".format(year, month)
-    return '{}_{}.nc'.format(year, month)
+    return '{}_{}_tcc.nc'.format(year, month)
 
 def get_year_month_from_filename(grib_file):
     """Returns the year and month of a given file."""
@@ -338,8 +328,8 @@ def add_missing_data_to_existing_nc_files(grb_files,
             # This becomes true if the grib file of the satelite images is corrupt.
             if counter == 0:
                 # If the computation worked
-                if already_regridded(year, month): # if the file is regridded 
-                    ds = xr.open_dataset(os.path.join( data_monthly_repo, get_filename(year, month) ))
+                if True: # if the file is regridded
+                    ds = xr.open_dataset(os.path.join( read_dir, get_filename(year, month) ))
                     new_ds = xr.Dataset({'tcc': (['latitude', 'longitude'], cloud_fraction),
                                          'nr_nans': (['latitude', 'longitude'], nans),
                                          # 'nr_cells':(['latitude', 'longitude'], cnt_cells)
@@ -362,7 +352,7 @@ def add_missing_data_to_existing_nc_files(grb_files,
                         print("Filename not included {}".format(filename))
 
                     counter += 1
-                else: 
+                else:
                     # If not regridded
                     ds = xr.Dataset({'tcc': (['latitude', 'longitude'],   cloud_fraction),
                                      'nr_nans':(['latitude', 'longitude'], nans),
@@ -373,7 +363,7 @@ def add_missing_data_to_existing_nc_files(grb_files,
                                             })
                     ts = timestamp(filename)
                     ds['time'] = ts
-    
+
                     # Add time as a coordinate and dimension.
                     ds = ds.assign_coords(time = ds.time)
                     ds = ds.expand_dims(dim = 'time')
@@ -414,62 +404,124 @@ def compute_one_folder(subset, folder):
                                  lat =  np.arange(30.0, 50.25, 0.25) ,
                                  lon = np.arange(-15.0, 25.25, 0.25) )
 
-    ds.to_netcdf(path = os.path.join(save_dir,'{}.nc'.format(folder)),
+    ds.to_netcdf(path = os.path.join(save_dir,'{}_tcc.nc'.format(folder)),
                  engine='netcdf4',
                  encoding ={'tcc': {'zlib': True, 'complevel': 9},
                            'nr_nans': {'zlib': True, 'complevel': 9} })
 
     return
 
+def get_path(year, month, base = read_dir):
+    month ="%2.2d" %month # includng leading zeros.
+    search_str = '*{}*{}*tcc.nc'.format(year, month)
+    if len(search_str):
+        search_str = '2011_06_tcc.nc'
+    # print(os.path.join(base, '2011_06_tcc.nc'))
+    # return glob.glob(os.path.join(base, search_str))
+    return glob.glob(os.path.join(base, search_str))
 
+def get_missing_hours(year, month):
+    files = get_path(year, month)
 
-def get_list_remainig_files():
-    """
-    REWRITE: tomorrow - Should check whats available in save repo.
+    #print(files)
+    containter_search_str = []
+    if len(files) == 0:
+        print("year: {}, month: {}".format(year, month))
+        return np.nan
+    else:
+        fil = files[0]
+        if month < 10:
+            month1 = "%2.2d" %month
+            month2 = "%2.2d" %(month+1)
+            year2 = year
 
-    TODO: This is outdated.
-    """
-    print("Computes remaining files ...")
-    search_str_finished = '*heilt*.nc'
-    sat_dir = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/'
-    save_dir = '/uio/lagringshotell/geofag/students/metos/hannasv/satelite_data/'
-
-    files = glob.glob(save_dir + search_str_finished)
-
-    failed = []
-    for i, fil in enumerate(files):
-        if i == 0:
-            ds = xr.open_dataset(fil)
+        elif month == 12:
+            year2 = year+1
+            month1 = month
+            month2="01"
         else:
-            try:
-                ds = ds.merge(xr.open_dataset(fil))
-            except xr.MergeError:
-                failed.append(fil)
-            #print(i)
-    sat_files = glob.glob(sat_dir + "*.grb")
+            month1 = month
+            month2 = month + 1
+            year2  = year
 
-    remaining_files = []
-    for fil in sat_files:
-        if not timestamp(fil) in ds.time.values:
-            remaining_files.append(fil)
+        data = xr.open_dataset(fil)
+        start = '{}-{}-01'.format(year, month1)
+        stop = '{}-{}-01'.format(year2, month2)
 
-    return remaining_files
+        timearray = np.arange(start, stop, np.timedelta64(1,'h'), dtype='datetime64[ns]')
+        #print(timearray)
+        ll = data.time.values.astype(np.datetime64)
 
-years = np.arange(2004, 2019)
-months = np.arange(1, 13)
+        counter = 0
 
-for y in years:
-    for m in months:
-        folder = make_folder_str(y, m)
-        files_to_read = removes_duplicates(y, m)
+        for element in timearray:
+            if element not in ll:
+                test = map_numpy_datetime64_to_searchstr(element)
+                #print(test)
+                containter_search_str.append( test )
+                counter += 1
 
-        if len(files_to_read) > 0 and not already_regridded(y, m):
-            print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
-            compute_one_folder(subset=files_to_read, folder=folder)
-            #print(already_regridded(year = y, month = m))
+    return containter_search_str
 
+def map_numpy_datetime64_to_searchstr(number):
+    i = str(number)
+    return "*"+i[:4]+i[5:7]+i[8:10]+i[11:13]+"0000*.grb"
 
-if __name__ != '__main__':
+def get_list_of_files_from_flekkis(y,m):
+    """Return paths downloaded raw data suitable for that folder"""
+    search_strs = get_missing_hours(y,m)
+    #print(search_strs)
+    paths = []
+    for string in search_strs:
+        paths += glob.glob(os.path.join(raw_grb_file_dir, string))
+    return paths
+
+if __name__ == '__main__':
     # looop over all month
     # Check if there is some available times for those files and regridd those.
     print('helllo to avoid errors')
+
+    years = np.arange(2004, 2019)
+    months = np.arange(1, 13)
+
+    #d_phi, d_theta, cell_areas, lat_array, lon_array = read_dlon_dlat(data_dir)
+    #data_dict = get_dict_with_all_keys()
+
+    for y in years:
+        for m in months:
+            folder = make_folder_str(y, m)
+
+            if not folder in ['2004_01', '2004_02', '2004_03']:
+                fil = glob.glob(os.path.join(read_dir, '{}_tcc.nc'.format(folder)))[0]
+                print(fil)
+                files = get_list_of_files_from_flekkis(y, m)
+                # if no files to add an not store in save directory yet.
+                grb_files = get_path(y, m)
+                data = xr.open_dataset(fil)
+
+                if len(files) == 0 and len(glob.glob(os.path.join(save_dir,'{}_tcc.nc'.format(folder)))) == 0:
+                    # Stor data in ERA5_mothly
+                    print("stores {}".format(os.path.join(save_dir,'{}_tcc.nc'.format(folder))))
+                    data.to_netcdf(path = os.path.join(save_dir,'{}_tcc.nc'.format(folder)),
+                                 engine='netcdf4',
+                                 encoding ={'tcc': {'zlib': True, 'complevel': 9},
+                                           'nr_nans': {'zlib': True, 'complevel': 9} })
+                else:
+                    # add files and store
+                    print('adds {} to folder {}'.format(len(files), folder))
+                    ds =  merge_ts_to_one_dataset(files,
+                                                  lat = np.arange(30.0, 50.25, 0.25),
+                                                  lon = np.arange(-15.0, 25.25, 0.25))
+                    ds.merge(data)
+                    ds.to_netcdf(path = os.path.join(save_dir,'{}_tcc.nc'.format(folder)),
+                                 engine='netcdf4',
+                                 encoding ={'tcc': {'zlib': True, 'complevel': 9},
+                                           'nr_nans': {'zlib': True, 'complevel': 9} })
+
+
+            #files_to_read = removes_duplicates(y, m)
+
+            #if len(files_to_read) > 0 and not already_regridded(y, m):
+            #    print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
+            #    compute_one_folder(subset=files_to_read, folder=folder)
+                #print(already_regridded(year = y, month = m))
