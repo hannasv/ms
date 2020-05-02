@@ -5,7 +5,7 @@ import numpy as np
 import cartopy as cp
 
 import pandas as pd
-import matplotlib.pyplot as plt
+
 
 import cartopy.crs as ccrs
 
@@ -19,7 +19,7 @@ matplotlib = import_matplotlib()
 matplotlib.rcParams.update({
     'figure.figsize' : (TEXT_WIDTH_IN, 0.5*TEXT_WIDTH_IN)
 })
-
+import matplotlib.pyplot as plt
 
 def plot_satellite_projection():
     """Stored for future use."""
@@ -32,7 +32,7 @@ def plot_satellite_projection():
 
     ax.set_extent([-15, 25.25, 30, 55.25])
 
-    plt.subplots_adjust(left=0.01, bottom=0.01, right=0.9, top=0.9, wspace=0.1, hspace=0.1)
+    plt.subplots_adjust(left=0.01, bottom=0.1, right=0.9, top=0.9, wspace=0.1, hspace=0.1)
     plt.savefig(os.path.join(save_dir, "Domain_SAT.png"), bbox_inches='tight')
     ax.set_xticklabels([3, 5, 6, 7])
     return
@@ -52,5 +52,5 @@ ax.add_feature(cp.feature.LAND, zorder=0, edgecolor='black')
 
 ax.set_extent([-15, 25., 30, 50])
 
-plt.subplots_adjust(left=0.01, bottom=0.1, right=0.97, top=0.9, wspace=0.1, hspace=0.1)
+plt.subplots_adjust(left=0.05, bottom=0.1, right=0.9, top=0.99, wspace=0.1, hspace=0.1)
 plt.savefig(os.path.join(path_python_figures, "Domain.{}".format(file_format)))

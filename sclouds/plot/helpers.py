@@ -11,11 +11,11 @@ ANGLE_ROTATION = 45
 cmap_contour_plot = 'BuGr_r'
 levels_contourplot = 100
 
-color_maps = {'tcc'  : 'Blues_r', 'sp'   : 'terrain', 'q': 'bone',
-                'r': 'gist_heat', 't2m'  : 'bwr'}
+color_maps = {'tcc'  : 'Blues_r', 'sp'   : 'winter', 'q': 'pink',
+                'r': 'copper', 't2m'  : 'coolwarm'}
 
 path_python_figures = '/home/hanna/MS-thesis/python_figs/'
-file_format = 'png'
+file_format = 'pdf'
 
 SPACEING = {'hspace' : 0.5, 'top':0.97, 'bottom':0.03, 'left' : 0.125, 'right' : 0.97}
 

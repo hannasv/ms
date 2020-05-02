@@ -7,10 +7,12 @@ import pandas as pd
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+#from sclouds.plot.helpers import TEXT_WIDTH_IN, path_python_figures
 from sclouds.helpers import (path_input, path_stats_results, VARIABLES,
-                                UNITS, LONGNAME)
+                             UNITS, LONGNAME)
 from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
-                                    path_python_figures, import_matplotlib)
+                                  path_python_figures, import_matplotlib,
+                                  file_format)
 
 matplotlib = import_matplotlib()
 
@@ -72,14 +74,14 @@ for y in years:
 
 df = pd.DataFrame.from_dict(storage)
 
-from sclouds.plot.helpers import TEXT_WIDTH_IN, path_python_figures
-fig, ax = plt.subplots(1, 1, figsize = (TEXT_WIDTH_IN, 0.5*TEXT_WIDTH_IN))
+#fig, ax = plt.subplots(1, 1, figsize = (TEXT_WIDTH_IN, 0.5*TEXT_WIDTH_IN))
 ytikz = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
-fig, ax = plt.subplots(1, 1, figsize = (TEXT_WIDTH_IN, 0.5*TEXT_WIDTH_IN))
-ax2 = sns.heatmap(df, linewidths=0.1, linecolor='white', vmax = 10,annot=True, # fmt="d",
+fig, ax = plt.subplots(1, 1, figsize = (TEXT_WIDTH_IN, 0.5*TEXT_WIDTH_IN) )
+
+sns.heatmap(df, linewidths=0.1, linecolor='white', vmax = 10, annot=True, # fmt="d",
             cbar_kws={'extend':'max'}, ax = ax, yticklabels=ytikz)
 
 plt.subplots_adjust(hspace = 0.2, top=0.97, bottom=0.15, left = 0.15, right = 1.05)
 plt.xticks(rotation=45)
-fig.savefig(path_python_figures + 'heatmap_missing_values.pdf')
+fig.savefig(path_python_figures + 'heatmap_missing_values.{}'.format(file_format))

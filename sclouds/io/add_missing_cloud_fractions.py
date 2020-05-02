@@ -24,7 +24,7 @@ import numpy as np
 
 save_dir = '/home/hanna/lagrings/ERA5_monthly/'
 
-read_dir = '/home/hanna/miphclac/regridded_tcc/'
+read_dir = '/home/hanna/miphclac/wv_tcc/'
 raw_grb_file_dir = '/home/hanna/miphclac/hannasv/flekkis/'
 
 #path = '/uio/lagringshotell/geofag/projects/miphclac/hannasv/'
@@ -53,8 +53,6 @@ def read_dlon_dlat(data_dir):
     lat_array  = d['lat']
     lon_array  = d['lon']
     return d_phi, d_theta, cell_areas, lat_array, lon_array
-
-
 
 def clean_file(satfil):
     """Cleaning the raw files. Rewrinting it from 4 digit to binary."""
@@ -506,6 +504,8 @@ if __name__ == '__main__':
                                  engine='netcdf4',
                                  encoding ={'tcc': {'zlib': True, 'complevel': 9},
                                            'nr_nans': {'zlib': True, 'complevel': 9} })
+                elif len(glob.glob(os.path.join(save_dir,'{}_tcc.nc'.format(folder)))) == 1:
+                    print('already stored file on lagrings')
                 else:
                     # add files and store
                     print('adds {} to folder {}'.format(len(files), folder))

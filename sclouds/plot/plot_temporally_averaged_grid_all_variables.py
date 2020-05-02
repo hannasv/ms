@@ -7,6 +7,9 @@ import seaborn as sns
 import glob
 import os
 
+from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
+                               AutoMinorLocator)
+
 from sclouds.helpers import (path_input, path_stats_results, VARIABLES,
                                 UNITS, LONGNAME)
 from sclouds.io.utils import get_xarray_dataset_for_period
@@ -14,7 +17,7 @@ from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                     path_python_figures, import_matplotlib,
                                     cmap_contour_plot, levels_contourplot,
                                     color_maps)
-mat = import_matplotlib() for mye
+mat = import_matplotlib() #for mye
 import matplotlib.pyplot as plt
 
 n_rows = len(VARIABLES)
@@ -43,8 +46,12 @@ for var, ax in zip(VARIABLES, axes):
     ax.set_title(LONGNAME[var], fontsize = 14)
     ax.set_ylabel('Latitude')
 
+    ax.xaxis.set_major_locator(MultipleLocator(20))
+    ax.yaxis.set_major_locator(MultipleLocator(20))
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+
     ax.set_yticklabels(labels = np.linspace(30, 50, 5))
-    ax.set_xticklabels(labels = np.linspace(-15, 25, 9), rotation = 45)
+    ax.set_xticklabels(labels = np.linspace(-20, 25, 10), rotation = 45)
     #a.legend()
 plt.xlabel('Longitude')
 plt.subplots_adjust(wspace = 0.2, hspace = 0.2, top=0.97, bottom=0.1, left = 0.14, right = .95)
