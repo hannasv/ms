@@ -9,12 +9,12 @@ save_dir   = '/home/hanna/lagrings/ERA5_stats/results/'
 filter_dir = '/home/hanna/MS-suppl/'
 
 # for wessel -- /uio/lagringshotell/geofag/students/metos/hannasv/results
-read_dir   = '/uio/lagringshotellet/geofag/students/metos/hannasv/ERA5_monthly/'
-save_dir   = '/uio/lagringshotellet/geofag/students/metos/hannasv/results/stats/'
-filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
+#read_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
+#save_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/'
+#filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
 
 STATS         = ['mean', 'median', 'std', 'min', 'max']
-VALID_VARS    = ['tcc', 'r', 'q', 't2m', 'sp']
+VALID_VARS    = ['r', 'q', 't2m', 'sp', 'tcc']
 VALID_FILTERS = ['coast', 'sea', 'land', 'artefact', 'all']
 
 # TODO : Round two only compute the properties for times you have cloud data.
@@ -38,9 +38,11 @@ class Stats:
         self.filter_key   = filter_key
 
         search_str        = '*{}.nc'.format(variable)
+        print('Searching for {}'.format(read_dir+search_str))
         files             = glob.glob(os.path.join(read_dir, search_str))
 
         self.dataset        = self.merge_files(files) # TODO : only select hours you have cloud data.
+        print(self.dataset)
         self.result         = self.produce_results() # store all results as variables in a dataset.
         self.global_result  = self.produce_global_results()
         return
