@@ -112,5 +112,5 @@ if __name__ == "__main__":
     # Generate the satelite data below here.
     for var in VALID_VARS:
         for filter in VALID_FILTERS:
-            Stats(variable=var, filter_key=filer).save()
+            Stats(variable=var, filter_key=filter).save()
             print('Finished variable {} and filter {}'.format(var, filter))
