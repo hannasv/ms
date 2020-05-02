@@ -74,6 +74,8 @@ for i in range(1, 13):
 
     plt.subplots_adjust(hspace = 0.5, top=0.97, bottom=0.1, left = 0.14, right = 0.97)
 
+    print('Warning no requirement for data to compute average from, refer to the ')
+
     for var, ax in zip(VARIABLES, axes):
         #if var != 'tcc':
         vals   = data[var].values

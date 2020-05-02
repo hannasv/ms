@@ -12,7 +12,7 @@ class Resample:
 
     def __init__(self):
 
-        self.path_grb      = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_data_raw/'
+        self.path_grb  = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_data_raw/'
         self.path_era  = '//uio/lagringshotell/geofag/students/metos/hannasv/era_interim_data/'
         self.nc_path   = '//uio/lagringshotell/geofag/students/metos/hannasv/satelite_coordinates/'
         # Update

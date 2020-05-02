@@ -19,11 +19,12 @@ import xarray as xr
 import numpy as np
 
 data_dir = '/home/hanna/MS-suppl/'
-path = '/home/hanna/miphclac/'
+save_dir = '/home/hanna/lagrings/ERA5_monthly/'
+path     = '/home/hanna/miphclac/'
 
-def generate_save_dir(year, month):
-    path = '/home/hanna/miphclac/'
-    return os.path.join(path, '{}_{:02d}'.format(year, month))
+#def generate_save_dir(year, month):
+    #path = '/home/hanna/miphclac/'
+    #return os.path.join(path, '{}_{:02d}'.format(year, month))
 
 import logging
 LOG_FILENAME = 'example.log'
@@ -287,7 +288,7 @@ def compute_one_folder(subset, year, month):
     ds = merge_ts_to_one_dataset(subset,
                                  lat =  np.arange(30.0, 50.25, 0.25) ,
                                  lon = np.arange(-15.0, 25.25, 0.25) )
-    save_dir = generate_save_dir(year, month)
+    #save_dir = generate_save_dir(year, month)
     ds.to_netcdf(path = os.path.join(save_dir,'{}_{:02d}_tcc.nc'.format(year, month)),
                  engine='netcdf4',
                  encoding ={'tcc': {'zlib': True, 'complevel': 9},
@@ -296,24 +297,27 @@ def compute_one_folder(subset, year, month):
     return
 
 def already_regridded(year, month):
-    path = generate_save_dir(year, month)
+    #path = generate_save_dir(year, month)
     #folder = make_folder_str(year = year, month = month)
     month = "%2.2d"%month # Skriver
     #key = "*-{}{}*.grb".format(year, month)
-    full = os.path.join(path, '{}_{}_tcc.nc'.format(year, month) )
+    full = os.path.join(save_dir, '{}_{}_tcc.nc'.format(year, month) )
     return os.path.isfile(full)
 
-if __name__ != '__main__':
-
-    years = np.arange(2004, 2019)
+if __name__ == '__main__':
+    print('arrives')
+    years = np.arange(2011, 2019)
     months = np.arange(1, 13)
 
     for y in years:
         for m in months:
             folder = make_folder_str(y, m)
-            files_to_read = removes_duplicates(y, m)
+            if folder != '2011_01':
+                files_to_read = removes_duplicates(y, m)
+                print('folder {}'.format(folder))
+                print('len files_to_read {}'.format(len(files_to_read)))
 
-            if len(files_to_read) > 0 and not already_regridded(y, m):
-                print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
-                compute_one_folder(subset=files_to_read, year=y, month = m)
-                #print(already_regridded(year = y, month = m))
+                if len(files_to_read) > 0 and not already_regridded(y, m):
+                    print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
+                    compute_one_folder(subset=files_to_read, year=y, month = m)
+                    #print(already_regridded(year = y, month = m))

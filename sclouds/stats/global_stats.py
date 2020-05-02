@@ -8,11 +8,18 @@ read_dir   = '/home/hanna/lagrings/ERA5_monthly/'
 save_dir   = '/home/hanna/lagrings/ERA5_stats/results/'
 filter_dir = '/home/hanna/MS-suppl/'
 
+# for wessel -- /uio/lagringshotell/geofag/students/metos/hannasv/results
+read_dir   = '/uio/lagringshotellet/geofag/students/metos/hannasv/ERA5_monthly/'
+save_dir   = '/uio/lagringshotellet/geofag/students/metos/hannasv/results/stats/'
+filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
+
 STATS         = ['mean', 'median', 'std', 'min', 'max']
 VALID_VARS    = ['tcc', 'r', 'q', 't2m', 'sp']
 VALID_FILTERS = ['coast', 'sea', 'land', 'artefact', 'all']
 
 # TODO : Round two only compute the properties for times you have cloud data.
+
+
 
 class Stats:
     """
@@ -35,7 +42,7 @@ class Stats:
 
         self.dataset        = self.merge_files(files) # TODO : only select hours you have cloud data.
         self.result         = self.produce_results() # store all results as variables in a dataset.
-        self.global_result = self.produce_global_results()
+        self.global_result  = self.produce_global_results()
         return
 
     def produce_results(self):
@@ -78,10 +85,12 @@ class Stats:
 
     def set_filter(self):
         """ Sets the filter as a xarray dataset in the constructor. """
-        filters = glob.glob( os.path.join( filter_dir, '*{}*.nc'.format(self.filter_key)))
+        filters = glob.glob( os.path.join( filter_dir,
+                                '*{}*.nc'.format(self.filter_key)))
         assert len(filters) == 1, 'Detected multiple filters ... '
         filt = xr.open_dataset(filters[0])
-        self.dataset['filtered'] = filt['land_mask'].values*self.dataset[self.variable].values
+        self.dataset['filtered'] = filt['land_mask'].values*np.flipud(
+                                    self.dataset[self.variable].values)
         return
 
     def merge_files(self, files):
@@ -102,5 +111,6 @@ class Stats:
 if __name__ == "__main__":
     # Generate the satelite data below here.
     for var in VALID_VARS:
-        #for filter in VALID_FILTERS:
-        Stats(variable=var, filter_key='all').save()
+        for filter in VALID_FILTERS:
+            Stats(variable=var, filter_key=filer).save()
+            print('Finished variable {} and filter {}'.format(var, filter))
