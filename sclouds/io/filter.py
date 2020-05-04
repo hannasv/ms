@@ -43,7 +43,7 @@ class Filter:
 
     def get_filtered_data(self):
         """Returns the filtered data."""
-        return self.data['filtered']
+        return self.data
 
     def _load(self):
         """ Sets the filter as a xarray dataset in the constructor.
