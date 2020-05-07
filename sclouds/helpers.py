@@ -18,14 +18,19 @@ LONGNAME = {"t2m":"Temperature", 'q':"Specific Humidity",
 
 UNITS = {"t2m":"K", 'sp':"Pa", 'q':"kg kg^-1", 'r': "1", 'tcc':"1"}
 
-FILTERS = ['coast', 'sea', 'land', 'artefact']
+STATISTICS = ['mean', 'min', 'max', 'std', 'median', 'mad']
+
+FILTERS = ['coast', 'sea', 'land', 'artefact', 'all']
+
 MONTHS  = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
             'August', 'September', 'October', 'November', 'December']
 
-train_start = '2004-01-01'
-train_stop  = '2015-12-31'
 
-test_start  = '2016-01-01'
+# The orginal TODO make dictionary of all partitions.
+train_start = '2004-01-01'
+train_stop  = '2013-12-31'
+
+test_start  = '2014-01-01'
 test_stop   = '2018-12-31'
 
 # Directories currently in use
@@ -35,7 +40,7 @@ path_convlstm_results = '/home/hanna/lagrings/results/convlstm/'
 path_stats_results    = '/home/hanna/lagrings/results/stats/'
 
 # duplicated, available in sclouds.plot.helpers
-path_stor_plots = '/home/hanna/MS-thesis/python_figs/'
+path_store_plots = '/home/hanna/MS-thesis/python_figs/'
 path_filter     = '/home/hanna/MS-suppl/filters/'
 
 def get_lat_array():

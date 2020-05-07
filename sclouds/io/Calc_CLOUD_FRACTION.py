@@ -306,13 +306,13 @@ def already_regridded(year, month):
 
 if __name__ == '__main__':
     print('arrives')
-    years = np.arange(2011, 2019)
+    years = np.arange(2018, 2019)
     months = np.arange(1, 13)
 
     for y in years:
         for m in months:
             folder = make_folder_str(y, m)
-            if folder != '2011_01':
+            if folder != '2018_01':
                 files_to_read = removes_duplicates(y, m)
                 print('folder {}'.format(folder))
                 print('len files_to_read {}'.format(len(files_to_read)))

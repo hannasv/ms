@@ -20,6 +20,81 @@ from sclouds.ml.regression.utils import (mean_squared_error, r2_score,
                                          accumulated_squared_error,
                                          sigmoid, inverse_sigmoid)
 
+
+def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
+
+    first_period = get_list_of_files(start = '2004-04-01', stop = start,
+                                include_start = True, include_stop = False)
+    last_period = get_list_of_files(start = stop, stop = '2018-12-31',
+                        include_start = False, include_stop = True)
+    entire_period = list(first_period) + list(last_period)
+    return entire_period
+
+def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True):
+    """ Returns list of files containing data for the requested period.
+
+    Parameteres
+    ----------------------
+    start : str
+        Start of period. First day included. (default '2012-01-01')
+
+    stop : str
+        end of period. Last day included. (default '2012-01-31')
+
+    Returns
+    -----------------------
+    subset : List[str]
+        List of strings containing all the absolute paths of files containing
+        data in the requested period.
+    """
+    # Remove date.
+    parts = start.split('-')
+    start_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
+
+    if stop is not None:
+        parts = stop.split('-')
+        stop_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
+    else:
+        stop_search_str = ''
+
+    if (start_search_str == stop_search_str) or (stop is None):
+        subset = glob.glob(os.path.join( path_input, '{}*.nc'.format(start_search_str)))
+    else:
+        # get all files
+        files = glob.glob(os.path.join( path_input, '*.nc' ))
+        files = np.sort(files) # sorting then for no particular reson
+
+        if include_start and include_stop:
+            min_fil = os.path.join(path_input, start_search_str + '_q.nc')
+            max_fil = os.path.join(path_input, stop_search_str + '_tcc.nc')
+
+            smaller = files[files <= max_fil]
+            subset  = smaller[smaller >= min_fil] # results in all the files
+
+        elif include_start and not include_stop:
+            min_fil = os.path.join(path_input, start_search_str + '_q.nc')
+            max_fil = os.path.join(path_input, stop_search_str + '_q.nc')
+
+            smaller = files[files < max_fil]
+            subset  = smaller[smaller >= min_fil] # results in all the files
+
+        elif not include_start and include_stop:
+            min_fil = os.path.join(path_input, start_search_str + '_tcc.nc')
+            print('detected min fil {}'.format(min_fil))
+            max_fil = os.path.join(path_input, stop_search_str + '_tcc.nc')
+
+            smaller = files[files <= max_fil]
+            subset  = smaller[smaller > min_fil] # results in all the files
+        else:
+            raise ValueError('Something wierd happend. ')
+
+    #assert len(subset)%5==0, "Not five of each files, missing variables in file list!"
+    #assert len(subset)!=0, "No files found, check if you have mounted lagringshotellet."
+
+    return subset
+
+
+
 class AR_model:
     """ Autoregressive models used in this thesis.
 
@@ -74,7 +149,7 @@ class AR_model:
         Filename becomes timestamp in utctime.
     """
 
-    def __init__(self, start = '2012-01-01', stop = '2012-01-31',
+    def __init__(self, start = None, stop = None,
                     test_start = None, test_stop = None,
                     order = 1, transform = False, sigmoid = False):
         """
@@ -97,14 +172,23 @@ class AR_model:
         """
         if stop is not None:
             assert start < stop, "Start {} need to be prior to stop {}".format(start, stop)
+
+        if((start is None and stop is None) and
+                (test_start is not None and test_stop is not None) ):
+
+            files = get_list_of_files_excluding_period(test_start, test_stop)
+            self.dataset = merge(files)
+        else:
+            # Based on start and stop descide which files it gets.
+            self.dataset = get_xarray_dataset_for_period(start = self.start,
+                                                         stop = self.stop)
         self.start = start
         self.stop  = stop
+
         self.test_start = test_start
         self.test_stop  = test_stop
 
-        # Based on start and stop descide which files it gets.
-        self.dataset = get_xarray_dataset_for_period(start = self.start,
-                                                     stop = self.stop)
+
         self.order = order
 
         self.longitude = self.dataset.longitude.values
@@ -119,6 +203,8 @@ class AR_model:
 
         # Initialize containers if data should be transformed
         if self.transform:
+            """ Read transformation from the correct folder in lagringshotellet """
+
             self.mean = np.zeros((len(self.latitude),
                                   len(self.longitude),
                                   len(self.variables)+self.order))
@@ -425,3 +511,10 @@ class AR_model:
                                 })
         ds.to_netcdf(filename)
         return
+
+if __name__ == '__main__':
+
+    m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
+                 test_start = '2012-03-01', test_stop = '2012-03-03',
+                 order = 1,                 transform = True,
+                 sigmoid = False)
