@@ -4,10 +4,9 @@ import glob
 import xarray as xr
 import numpy as np
 
-path_input = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
-path_filter = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/'
+from sclouds.helpers import path_input, path_filter, VARIABLES
 
-VARIABLES  = ['tcc', 'r', 'q', 't2m', 'sp']
+#VARIABLES  = ['tcc', 'r', 'q', 't2m', 'sp']
 VALID_FILTERS = ['coast', 'sea', 'land', 'artefact']
 
 class Filter:

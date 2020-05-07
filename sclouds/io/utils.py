@@ -33,7 +33,16 @@ def get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31'):
         data = data.sel(time = slice(start, stop))
     return data
 
-def get_list_of_files(start = '2012-01-01', stop = '2012-01-31'):
+def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
+
+    first_period = get_list_of_files(start = '2004-04-01', stop = start, include_start = True, include_stop = False)
+    last_period = get_list_of_files(start = stop, stop = '2018-12-31', include_start = False, include_stop = True)
+    #print(first_period)
+    print(last_period)
+    entire_period = list(first_period) + list(last_period)
+    return entire_period
+
+def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True):
     """ Returns list of files containing data for the requested period.
 
     Parameteres
@@ -63,18 +72,36 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31'):
     if (start_search_str == stop_search_str) or (stop is None):
         subset = glob.glob(os.path.join( path_input, '{}*.nc'.format(start_search_str)))
     else:
-        min_fil = os.path.join(path_input, start_search_str + '_q.nc')
-        max_fil = os.path.join(path_input, stop_search_str + '_tcc.nc')
-
         # get all files
         files = glob.glob(os.path.join( path_input, '*.nc' ))
         files = np.sort(files) # sorting then for no particular reson
 
-        smaller = files[files <= max_fil]
-        subset  = smaller[smaller >= min_fil] # results in all the files
+        if include_start and include_stop:
+            min_fil = os.path.join(path_input, start_search_str + '_q.nc')
+            max_fil = os.path.join(path_input, stop_search_str + '_tcc.nc')
 
-    assert len(subset)%5==0, "Not five of each files, missing variables in file list!"
-    assert len(subset)!=0, "No files found, check if you have mounted lagringshotellet."
+            smaller = files[files <= max_fil]
+            subset  = smaller[smaller >= min_fil] # results in all the files
+
+        elif include_start and not include_stop:
+            min_fil = os.path.join(path_input, start_search_str + '_q.nc')
+            max_fil = os.path.join(path_input, stop_search_str + '_q.nc')
+
+            smaller = files[files < max_fil]
+            subset  = smaller[smaller >= min_fil] # results in all the files
+
+        elif not include_start and include_stop:
+            min_fil = os.path.join(path_input, start_search_str + '_tcc.nc')
+            print('detected min fil {}'.format(min_fil))
+            max_fil = os.path.join(path_input, stop_search_str + '_tcc.nc')
+
+            smaller = files[files <= max_fil]
+            subset  = smaller[smaller > min_fil] # results in all the files
+        else:
+            raise ValueError('Something wierd happend. ')
+
+    #assert len(subset)%5==0, "Not five of each files, missing variables in file list!"
+    #assert len(subset)!=0, "No files found, check if you have mounted lagringshotellet."
 
     return subset
 

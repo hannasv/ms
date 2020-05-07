@@ -238,14 +238,12 @@ def merge_ts_to_one_dataset(grb_files,
                             lon = np.arange(-15.0, 25.25, 0.25)):
     """ grib_files : list of files. One month.  updated version of merge_ts_to_one_dataset """
     #data_grid = get_dict_with_all_keys()
-
+    print(grb_files)
     counter = 0
     for filename in grb_files:
         cloud_fraction, nans = compute(filename, lat, lon)
         if cloud_fraction is not None:
             # this becomes true if the grib file of the satelite images is corrupt.
-
-
 
             if counter == 0:
                 # if the computation worked
@@ -412,8 +410,8 @@ def compute_one_folder(subset, folder):
 def get_path(year, month, base = read_dir):
     month ="%2.2d" %month # includng leading zeros.
     search_str = '*{}*{}*tcc.nc'.format(year, month)
-    if len(search_str):
-        search_str = '2011_06_tcc.nc'
+    # if len(search_str):
+    #    search_str = '2011_06_tcc.nc'
     # print(os.path.join(base, '2011_06_tcc.nc'))
     # return glob.glob(os.path.join(base, search_str))
     return glob.glob(os.path.join(base, search_str))
@@ -425,7 +423,7 @@ def get_missing_hours(year, month):
     containter_search_str = []
     if len(files) == 0:
         print("year: {}, month: {}".format(year, month))
-        return np.nan
+        return []
     else:
         fil = files[0]
         if month < 10:
@@ -458,7 +456,7 @@ def get_missing_hours(year, month):
                 #print(test)
                 containter_search_str.append( test )
                 counter += 1
-
+    print('detected {} missing hours'.format(counter))
     return containter_search_str
 
 def map_numpy_datetime64_to_searchstr(number):
@@ -477,7 +475,6 @@ def get_list_of_files_from_flekkis(y,m):
 if __name__ == '__main__':
     # looop over all month
     # Check if there is some available times for those files and regridd those.
-    print('helllo to avoid errors')
 
     years = np.arange(2004, 2019)
     months = np.arange(1, 13)
@@ -490,38 +487,43 @@ if __name__ == '__main__':
             folder = make_folder_str(y, m)
 
             if not folder in ['2004_01', '2004_02', '2004_03']:
-                fil = glob.glob(os.path.join(read_dir, '{}_tcc.nc'.format(folder)))[0]
-                print(fil)
-                files = get_list_of_files_from_flekkis(y, m)
-                # if no files to add an not store in save directory yet.
-                grb_files = get_path(y, m)
-                data = xr.open_dataset(fil)
+                try:
+                    fil = glob.glob(os.path.join(read_dir, '{}_tcc.nc'.format(folder)))[0]
+                    files = get_list_of_files_from_flekkis(y, m)
+                    print(files)
+                    # if no files to add an not store in save directory yet.
+                    grb_files = get_path(y, m)
+                    data = xr.open_dataset(fil)
 
-                if len(files) == 0 and len(glob.glob(os.path.join(save_dir,'{}_tcc.nc'.format(folder)))) == 0:
-                    # Stor data in ERA5_mothly
-                    print("stores {}".format(os.path.join(save_dir,'{}_tcc.nc'.format(folder))))
-                    data.to_netcdf(path = os.path.join(save_dir,'{}_tcc.nc'.format(folder)),
-                                 engine='netcdf4',
-                                 encoding ={'tcc': {'zlib': True, 'complevel': 9},
-                                           'nr_nans': {'zlib': True, 'complevel': 9} })
-                elif len(glob.glob(os.path.join(save_dir,'{}_tcc.nc'.format(folder)))) == 1:
-                    print('already stored file on lagrings')
-                else:
-                    # add files and store
-                    print('adds {} to folder {}'.format(len(files), folder))
-                    ds =  merge_ts_to_one_dataset(files,
-                                                  lat = np.arange(30.0, 50.25, 0.25),
-                                                  lon = np.arange(-15.0, 25.25, 0.25))
-                    ds.merge(data)
-                    ds.to_netcdf(path = os.path.join(save_dir,'{}_tcc.nc'.format(folder)),
-                                 engine='netcdf4',
-                                 encoding ={'tcc': {'zlib': True, 'complevel': 9},
-                                           'nr_nans': {'zlib': True, 'complevel': 9} })
+                    if len(files) == 0 and len(glob.glob(os.path.join(save_dir,'{}_tcc.nc'.format(folder)))) == 0:
+                        """No files to add and """
+                        print('nothing for {} -- moves file'.format(folder))
+                        # Stor data in ERA5_mothly
+                        print("stores {}".format(os.path.join(save_dir,'{}_tcc.nc'.format(folder))))
+                        data.to_netcdf(path = os.path.join(save_dir,'{}_tcc.nc'.format(folder)),
+                                     engine='netcdf4',
+                                     encoding ={'tcc': {'zlib': True, 'complevel': 9},
+                                               'nr_nans': {'zlib': True, 'complevel': 9} })
+                    elif len(glob.glob(os.path.join(save_dir,'{}_tcc.nc'.format(folder)))) == 1:
+                        print('already stored file on lagrings')
+                    else:
+                        # add files and store
+                        print('Detected files {} for folder : {}'.format(len(files), folder))
+                        ds =  merge_ts_to_one_dataset(files,
+                                                      lat = np.arange(30.0, 50.25, 0.25),
+                                                      lon = np.arange(-15.0, 25.25, 0.25))
+                        ds.merge(data)
+                        ds.to_netcdf(path = os.path.join(save_dir,'{}_tcc.nc'.format(folder)),
+                                     engine='netcdf4',
+                                     encoding ={'tcc': {'zlib': True, 'complevel': 9},
+                                               'nr_nans': {'zlib': True, 'complevel': 9} })
 
 
-            #files_to_read = removes_duplicates(y, m)
+                except IndexError:
+                    print('no {} in read_dir  {}'.format(folder, read_dir))
+                #files_to_read = removes_duplicates(y, m)
 
-            #if len(files_to_read) > 0 and not already_regridded(y, m):
-            #    print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
-            #    compute_one_folder(subset=files_to_read, folder=folder)
-                #print(already_regridded(year = y, month = m))
+                #if len(files_to_read) > 0 and not already_regridded(y, m):
+                #    print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
+                #    compute_one_folder(subset=files_to_read, folder=folder)
+                    #print(already_regridded(year = y, month = m))

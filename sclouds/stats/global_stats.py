@@ -4,15 +4,15 @@ import glob
 import xarray as xr
 import numpy as np
 
-#read_dir   = '/home/hanna/lagrings/ERA5_monthly/'
-#save_dir   = '/home/hanna/lagrings/ERA5_stats/results/'
-#save_dir   = '/home/hanna/lagrings/results/stats/'
-#filter_dir = '/home/hanna/MS-suppl/'
+read_dir   = '/home/hanna/lagrings/ERA5_monthly/'
+save_dir   = '/home/hanna/lagrings/ERA5_stats/results/'
+save_dir   = '/home/hanna/lagrings/results/stats/test/'
+filter_dir = '/home/hanna/MS-suppl/filters/'
 
 # for wessel -- /uio/lagringshotell/geofag/students/metos/hannasv/results
-read_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
-save_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/'
-filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
+#read_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
+#save_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/'
+#filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
 
 STATS         = ['mean', 'std', 'min', 'max', 'median'] # 'median',
 VALID_VARS    = ['r', 'q', 't2m', 'sp', 'tcc']
@@ -22,7 +22,8 @@ VALID_FILTERS = ['coast', 'sea', 'land', 'artefact']
 
 # added duplicates since you are using enviornment on wessel
 #from sclouds.helpers import merge
-from filter import Filter
+#from filter import Filter
+from sclouds.io import Filter
 
 def merge(files):
     """ Merging a list of filenames into a dataset.open_mfdataset
@@ -113,8 +114,10 @@ class Stats:
             print('Computing shape {}'.format(np.shape(result)))
             res_dict[statistics] = (dimensions, computing)
 
-        #res = (self.dataset - self.dataset.mean(dim = 'time')).median(dim = 'time')[self.variable].values
-        #res_dict['MAD'] = (dimensions, res)
+        res = np.nanmedian((result - res_dict['mean']), axis = 0)
+        #.median(dim = 'time')[self.variable].values
+        res_dict['mad'] = (dimensions, res)
+
         result = xr.Dataset(res_dict,
                             coords={'longitude': (['longitude'], lon),
                                     'latitude': (['latitude'], lat),
@@ -141,7 +144,7 @@ class Stats:
             res_dict[statistics] = computing
 
         res = np.nanmedian((result - res_dict['mean']))
-        res_dict['MAD'] = res
+        res_dict['mad'] = res
 
         result = xr.Dataset(res_dict)
         return result
