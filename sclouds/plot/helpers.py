@@ -29,6 +29,7 @@ def import_matplotlib():
         'font.size': 12,
         'legend.fontsize': 'small',
         'figure.titlesize': 14,
+        'axes.titlesize':14,
         'text.usetex': True,
         'pgf.rcfonts': False,
     })

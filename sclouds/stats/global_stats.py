@@ -4,11 +4,17 @@ import glob
 import xarray as xr
 import numpy as np
 
+
 # for wessel -- /uio/lagringshotell/geofag/students/metos/hannasv/results
 read_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
 path_input = read_dir
 save_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/'
 filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
+
+# for wessel -- /uio/lagringshotell/geofag/students/metos/hannasv/results
+#read_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
+#save_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/'
+#filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
 
 STATS         = ['mean', 'std', 'min', 'max', 'median'] # 'median',
 VALID_VARS    = ['r', 'q', 't2m', 'sp', 'tcc']
@@ -18,7 +24,8 @@ VALID_FILTERS = ['coast', 'sea', 'land', 'artefact']
 
 # added duplicates since you are using enviornment on wessel
 #from sclouds.helpers import merge
-from filter import Filter
+#from filter import Filter
+from sclouds.io import Filter
 
 def merge(files):
     """ Merging a list of filenames into a dataset.open_mfdataset

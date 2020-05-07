@@ -8,7 +8,7 @@ path_input = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
 path_filter = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/'
 path_filter = '/uio/hume/student-u89/hannasv/MS-suppl/'
 
-VARIABLES  = ['tcc', 'r', 'q', 't2m', 'sp']
+#VARIABLES  = ['tcc', 'r', 'q', 't2m', 'sp']
 VALID_FILTERS = ['coast', 'sea', 'land', 'artefact']
 
 class Filter:

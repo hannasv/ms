@@ -24,7 +24,7 @@ n_rows = len(VARIABLES)
 n_cols = 1
 
 test = get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31')
-
+# TODO updae this with data from stats
 
 data = test.mean('time')
 
