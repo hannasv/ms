@@ -38,7 +38,7 @@ def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'
     first_period = get_list_of_files(start = '2004-04-01', stop = start, include_start = True, include_stop = False)
     last_period = get_list_of_files(start = stop, stop = '2018-12-31', include_start = False, include_stop = True)
     #print(first_period)
-    print(last_period)
+    #print(last_period)
     entire_period = list(first_period) + list(last_period)
     return entire_period
 
@@ -92,7 +92,7 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start =
 
         elif not include_start and include_stop:
             min_fil = os.path.join(path_input, start_search_str + '_tcc.nc')
-            print('detected min fil {}'.format(min_fil))
+            #print('detected min fil {}'.format(min_fil))
             max_fil = os.path.join(path_input, stop_search_str + '_tcc.nc')
 
             smaller = files[files <= max_fil]
@@ -345,7 +345,7 @@ def dataset_to_numpy_order(dataset, order, bias = True):
         var_index = 4
 
     times = dataset.time.values
-    print("Detected {} samples.".format(len(times)))
+    #print("Detected {} samples.".format(len(times)))
     X = np.zeros( (len(times)-order, order + var_index))
     y = np.zeros( (len(times)-order ))
 
@@ -379,9 +379,77 @@ def dataset_to_numpy_order(dataset, order, bias = True):
         else:
             X[:, var_index] = tcc[temp_order:][bo]
         var_index+=1
-    print(X.shape)
-    print(y.shape)
+
+    #print(X.shape)
+    #print(y.shape)
     return X, y
+
+
+
+def dataset_to_numpy_order_traditional_ar(dataset, order, bias = True):
+    """ Tranforms a dataset to matrices.
+
+    Parameters
+    ----------------------------
+    dataset : xr.Dataset
+        Contains the data you want to make a prediction based.
+    order : float
+        The number of previos timesteps included as predictors.
+    bias : bool
+        Determines weather to include a bias column or not (default True)
+    keep the order of xarray time, lat, lon
+
+    Returns
+    ---------------------
+    X : array-like
+        Matrix containing the explanatory variables.
+    y : array-like
+        Responce variable.
+
+    Notes
+    --------------------------
+    Index description:
+
+    5 (4) - tcc previos time step
+
+    """
+
+    if bias:
+        var_index = 1
+    else:
+        var_index = 0
+
+    times = dataset.time.values
+    print("Detected {} samples.".format(len(times)))
+    X = np.zeros( (len(times)-order, order + var_index))
+    y = np.zeros( (len(times)-order ))
+
+    tcc = dataset.tcc.values
+
+
+    if bias:
+        X[:, 0] = 1 # bias
+
+    y = tcc[:-order, np.newaxis]
+
+    # tcc1, tcc2, ..., tcc_n
+    for temp_order in range(1, order+1):
+        a = times[:-temp_order]
+        b = times[temp_order:]
+        bo = [element.astype(int) == temp_order for element in (b-a).astype('timedelta64[h]') ]
+
+        remove_from_end = order - temp_order
+        if remove_from_end != 0:
+            # remove_from_end = 1
+            # Which clouds to add at which column, remember that they shoudl start from t-1, t-2, t-3 ...
+            X[:, var_index] = tcc[temp_order:][bo][:-remove_from_end]
+        else:
+            X[:, var_index] = tcc[temp_order:][bo]
+        var_index+=1
+    #print(X.shape)
+    #print(y.shape)
+    return X, y
+
 
 
 def dataset_to_numpy(pixel, bias = True):

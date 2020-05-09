@@ -485,7 +485,6 @@ if __name__ == '__main__':
     for y in years:
         for m in months:
             folder = make_folder_str(y, m)
-
             if not folder in ['2004_01', '2004_02', '2004_03']:
                 try:
                     fil = glob.glob(os.path.join(read_dir, '{}_tcc.nc'.format(folder)))[0]
@@ -495,7 +494,11 @@ if __name__ == '__main__':
                     grb_files = get_path(y, m)
                     data = xr.open_dataset(fil)
 
-                    if len(files) == 0 and len(glob.glob(os.path.join(save_dir,'{}_tcc.nc'.format(folder)))) == 0:
+                    print(glob.glob(os.path.join(save_dir,'{}_tcc.nc'.format(folder))))
+
+                    if len(glob.glob(os.path.join(save_dir,'{}_tcc.nc'.format(folder)))) == 1 :
+                        print('File is moved')
+                    elif len(files) == 0:
                         """No files to add and """
                         print('nothing for {} -- moves file'.format(folder))
                         # Stor data in ERA5_mothly
@@ -504,8 +507,6 @@ if __name__ == '__main__':
                                      engine='netcdf4',
                                      encoding ={'tcc': {'zlib': True, 'complevel': 9},
                                                'nr_nans': {'zlib': True, 'complevel': 9} })
-                    elif len(glob.glob(os.path.join(save_dir,'{}_tcc.nc'.format(folder)))) == 1:
-                        print('already stored file on lagrings')
                     else:
                         # add files and store
                         print('Detected files {} for folder : {}'.format(len(files), folder))
