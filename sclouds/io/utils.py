@@ -229,6 +229,73 @@ def dataset_to_numpy_grid(dataset, bias = True):
 
     return X, tcc[:, :, :, np.newaxis]
 
+def dataset_to_numpy_order_traditional_ar_grid(dataset, order, bias = True):
+    """ Tranforms a dataset to matrices.
+
+    Parameters
+    ----------------------------
+    dataset : xr.Dataset
+        Contains the data you want to make a prediction based.
+    order : float
+        The number of previos timesteps included as predictors.
+    bias : bool
+        Determines weather to include a bias column or not (default True)
+    keep the order of xarray time, lat, lon
+
+    Returns
+    ---------------------
+    X : array-like
+        Matrix containing the explanatory variables.
+    y : array-like
+        Responce variable.
+
+    Notes
+    --------------------------
+    Index description:
+
+    5 (4) - tcc previos time step
+
+    """
+
+    if bias:
+        var_index = 1
+    else:
+        var_index = 0
+
+    times  = dataset.time.values
+    n_time = len(dataset.time.values) - order
+    n_lat  = len(dataset.latitude.values)
+    n_lon  = len(dataset.longitude.values)
+
+
+    X = np.zeros( (n_time, n_lat, n_lon, order + var_index) )
+    y = np.zeros( (n_time, n_lat, n_lon) )
+
+    tcc = dataset.tcc.values
+
+    if bias:
+        X[:, :, :, 0] = 1 # bias
+
+    y[:, :, :] = tcc[:-order]
+
+    # tcc1, tcc2, ..., tcc_n
+    for temp_order in range(1, order+1):
+        a = times[:-temp_order]
+        b = times[temp_order:]
+        bo = [element.astype(int) == temp_order for element in (b-a).astype('timedelta64[h]') ]
+
+        remove_from_end = order - temp_order
+        if remove_from_end != 0:
+            X[:, :, :, var_index] = tcc[temp_order:, :, :][bo][:-remove_from_end, :, :]
+        else:
+            X[:, :, :, var_index] = tcc[temp_order:, :, :][bo]
+        var_index+=1
+    #print(X.shape)
+    #print(y.shape)
+    return X, y
+
+
+
 def dataset_to_numpy_grid_order(dataset, order, bias = True):
     """ Tranforms a dataset to a grid matrices, based on information on bias
     and order of the ar model.
@@ -420,7 +487,7 @@ def dataset_to_numpy_order_traditional_ar(dataset, order, bias = True):
         var_index = 0
 
     times = dataset.time.values
-    print("Detected {} samples.".format(len(times)))
+    #print("Detected {} samples.".format(len(times)))
     X = np.zeros( (len(times)-order, order + var_index))
     y = np.zeros( (len(times)-order ))
 
