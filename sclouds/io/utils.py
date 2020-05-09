@@ -7,7 +7,10 @@ import glob
 import numpy as np
 import xarray as xr
 
-from sclouds.helpers import merge, path_input
+sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
+from helpers import merge, path_input
+
+
 
 def get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31'):
     """ Reads data from the requested period into a xarray dataset.
@@ -27,6 +30,7 @@ def get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31'):
     """
     #from utils import merge
     files = get_list_of_files(start = start, stop = stop)
+
     print("Num files {}".format(len(files)))
     data = merge(files)
     if stop is not None:
@@ -38,7 +42,6 @@ def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'
     first_period = get_list_of_files(start = '2004-04-01', stop = start, include_start = True, include_stop = False)
     last_period = get_list_of_files(start = stop, stop = '2018-12-31', include_start = False, include_stop = True)
     #print(first_period)
-    print(last_period)
     entire_period = list(first_period) + list(last_period)
     return entire_period
 
@@ -59,6 +62,8 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start =
         List of strings containing all the absolute paths of files containing
         data in the requested period.
     """
+
+    print('\n searchers for files')
     # Remove date.
     parts = start.split('-')
     start_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
@@ -68,6 +73,8 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start =
         stop_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
     else:
         stop_search_str = ''
+
+    print('\n Searching in directory {} \n'.format( path_input))
 
     if (start_search_str == stop_search_str) or (stop is None):
         subset = glob.glob(os.path.join( path_input, '{}*.nc'.format(start_search_str)))
@@ -379,8 +386,8 @@ def dataset_to_numpy_order(dataset, order, bias = True):
         else:
             X[:, var_index] = tcc[temp_order:][bo]
         var_index+=1
-    print(X.shape)
-    print(y.shape)
+    #print(X.shape)
+    #print(y.shape)
     return X, y
 
 

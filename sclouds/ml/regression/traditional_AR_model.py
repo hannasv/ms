@@ -27,6 +27,58 @@ from helpers import (merge, get_list_of_variables_in_ds,
 
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/io/')
 
+def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True):
+    """ Returns list of files containing data for the requested period.
+
+    Parameteres
+    ----------------------
+    start : str
+        Start of period. First day included. (default '2012-01-01')
+
+    stop : str
+        end of period. Last day included. (default '2012-01-31')
+
+    Returns
+    -----------------------
+    subset : List[str]
+        List of strings containing all the absolute paths of files containing
+        data in the requested period.
+    """
+    # Remove date.
+    parts = start.split('-')
+    start_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
+
+    if stop is not None:
+        parts = stop.split('-')
+        stop_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
+    else:
+        stop_search_str = ''
+
+    if (start_search_str == stop_search_str) or (stop is None):
+        subset = glob.glob(os.path.join( path_input, '{}*tcc*.nc'.format(start_search_str)))
+    else:
+        # get all files
+        files = glob.glob(os.path.join( path_input, '*.nc' ))
+        files = np.sort(files) # sorting then for no particular reson
+
+        min_fil = os.path.join(path_input, start_search_str + '_tcc.nc')
+        max_fil = os.path.join(path_input, stop_search_str + '_tcc.nc')
+
+        if include_start and include_stop:
+            smaller = files[files <= max_fil]
+            subset  = smaller[smaller >= min_fil] # results in all the files
+
+        elif include_start and not include_stop:
+            smaller = files[files < max_fil]
+            subset  = smaller[smaller >= min_fil] # results in all the files
+
+        elif not include_start and include_stop:
+            smaller = files[files <= max_fil]
+            subset  = smaller[smaller > min_fil] # results in all the files
+        else:
+            raise ValueError('Something wierd happend. ')
+    return subset
+
 
 def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
 
@@ -102,7 +154,7 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start =
 
 
 
-class AR_model:
+class TRADITIONAL_AR_model:
     """ Autoregressive models used in this thesis.
 
     Attributes
@@ -208,7 +260,7 @@ class AR_model:
 
         self.longitude = self.dataset.longitude.values
         self.latitude  = self.dataset.latitude.values
-        self.variables = ['t2m', 'q', 'r', 'sp'] #get_list_of_variables_in_ds(self.dataset)
+        self.variables = [] #get_list_of_variables_in_ds(self.dataset)
 
         self.coeff_matrix = None
         self.evaluate_ds  = None
@@ -397,7 +449,7 @@ class AR_model:
         n_time = len(self.dataset.time.values)
         n_lat  = len(self.latitude)
         n_lon  = len(self.longitude)
-        Y      = np.zeros( (n_time-self.order, n_lat, n_lon, 1)  )
+        Y      = np.zeros( (n_time, n_lat, n_lon, 1)  )
 
         for i in range(n_lat):
             for j in range(n_lon):
@@ -493,20 +545,6 @@ class AR_model:
         """ Returns dictionary of the properties used in the transformations,
         pixelwise mean and std.
         """
-        temp_dict = {}
-        ar_index = 4
-
-        if self.order > 0:
-            for i in range(self.order):
-                var = 'mean_{}'.format(i+1)
-                temp_dict[var] = (['latitude', 'longitude'], self.mean[:, :, ar_index])
-
-                var = 'std_{}'.format(i+1)
-                temp_dict[var] = (['latitude', 'longitude'], self.std[:, :, ar_index])
-
-
-                ar_index+=1
-
         vars_dict = {'mean_t2m':(['latitude', 'longitude'], self.mean[:, :, 1]),
                      'std_t2m':(['latitude', 'longitude'], self.std[:, :, 1]),
                      'mean_r':(['latitude', 'longitude'], self.mean[:, :, 2]),
@@ -527,12 +565,12 @@ class AR_model:
         config_dict   = self.get_configuration()
         weights_dict  = self.get_weights()
         tranformation = self.get_tranformation_properties()
-        # eval_dict     = self.get_evaluation()
+        eval_dict     = self.get_evaluation()
 
         # Merges dictionaries together
         config_dict.update(weights_dict)
         config_dict.update(tranformation)
-        #config_dict.update(eval_dict)
+        config_dict.update(eval_dict)
 
         ds = xr.Dataset(config_dict,
                          coords={'longitude': (['longitude'], self.longitude),
@@ -542,15 +580,6 @@ class AR_model:
         return
 
 if __name__ == '__main__':
-    m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
-                 test_start = '2012-03-01', test_stop = '2012-03-03',
-                 order = 0,                 transform = True,
-                 sigmoid = False)
-    coeff = m.fit()
-    m.save()
-
-    print(m.get_configuration())
-
 
     m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
                  test_start = '2012-03-01', test_stop = '2012-03-03',

@@ -14,9 +14,9 @@ def read_global_statistics_to_dataframe():
     """
     read_dir   = '/home/hanna/lagrings/ERA5_monthly/'
     save_dir   = '/home/hanna/lagrings/ERA5_stats/results/' # TODO change this when its updated
-    save_dir   = '/home/hanna/lagrings/results/stats/test/'
+    save_dir   = '/home/hanna/lagrings/results/stats/'
 
-    STATS         = ['mean', 'std', 'min', 'max', 'median'] # 'median',
+    STATS         = ['mean', 'std', 'min', 'max', 'median', 'mad'] # 'median',
     VALID_VARS    = ['r', 'q', 't2m', 'sp', 'tcc']
     VALID_FILTERS = ['coast', 'sea', 'land', 'artefact', 'all']
 

@@ -23,7 +23,52 @@ test_portions =  [('2004-04-01', '2008-12-31'),
 
 from AR_model import AR_model
 
+# Test modell
 m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
              test_start = '2012-03-01', test_stop = '2012-03-03',
              order = 1,                 transform = True,
              sigmoid = False)
+
+
+
+
+# Modell 1: Ikke implementert.
+
+
+# Modell 2:
+m = AR_model(start = None,      stop = None,
+             test_start = '2014-01-01', test_stop = '2018-12-31',
+             order = 0,                 transform = True,
+             sigmoid = True)
+coeff = m.fit()
+m.save()
+print(m.get_configuration())
+
+# Modell 3:
+m = AR_model(start = None,      stop = None,
+             test_start = '2014-01-01', test_stop = '2018-12-31',
+             order = 1,                 transform = True,
+             sigmoid = True)
+coeff = m.fit()
+m.save()
+print(m.get_configuration())
+
+
+# Modell 4:
+m = AR_model(start = None,      stop = None,
+             test_start = '2014-01-01', test_stop = '2018-12-31',
+             order = 2,                 transform = True,
+             sigmoid = True)
+coeff = m.fit()
+m.save()
+print(m.get_configuration())
+
+
+# Modell 5:
+m = AR_model(start = None,      stop = None,
+             test_start = '2014-01-01', test_stop = '2018-12-31',
+             order = 3,                 transform = True,
+             sigmoid = True)
+coeff = m.fit()
+m.save()
+print(m.get_configuration())
