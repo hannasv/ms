@@ -24,4 +24,4 @@ plt.ylabel('Average cloud fractional cover')
 plt.title('Signal from artefact; average tcc in area defined as artefact ')
 # impossible to distinguish this signal from whan all area is coverage by all clouds
 plt.subplots_adjust(bottom = 0.15)
-plt.savefig(os.path.join(path_store_plots, 'signal_artefact.png'))
+plt.savefig(os.path.join(path_store_plots, 'signal_artefact.pdf'))

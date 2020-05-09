@@ -38,7 +38,7 @@ n_rows = len(VARIABLES)
 n_cols = 1
 
 fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
-fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1)
+fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1 - 2) # minus to for title 
 counter = 0
 for var, ax in zip(VARIABLES, axes):
     #if var != 'tcc':

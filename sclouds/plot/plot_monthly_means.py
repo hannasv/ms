@@ -1,5 +1,8 @@
 """ Plotting routine used to plot subplots of spatially averages monthly means
 and filtered by land sea and both.
+
+DEPRECATED????
+
 """
 import numpy as np
 import xarray as xr
