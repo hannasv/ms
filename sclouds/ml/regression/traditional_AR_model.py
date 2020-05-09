@@ -12,10 +12,12 @@ from utils import (mean_squared_error, r2_score,
                      accumulated_squared_error,
                      sigmoid, inverse_sigmoid)
 
-from utils import (dataset_to_numpy, dataset_to_numpy_order,
+from sclouds.io.utils import (dataset_to_numpy, dataset_to_numpy_order,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
-                              get_xarray_dataset_for_period)
+                              get_xarray_dataset_for_period,
+                              dataset_to_numpy_order_traditional_ar,
+                              dataset_to_numpy_order_traditional_ar_grid)
 
 import os,sys,inspect
 #currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -88,71 +90,6 @@ def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'
                         include_start = False, include_stop = True)
     entire_period = list(first_period) + list(last_period)
     return entire_period
-
-def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True):
-    """ Returns list of files containing data for the requested period.
-
-    Parameteres
-    ----------------------
-    start : str
-        Start of period. First day included. (default '2012-01-01')
-
-    stop : str
-        end of period. Last day included. (default '2012-01-31')
-
-    Returns
-    -----------------------
-    subset : List[str]
-        List of strings containing all the absolute paths of files containing
-        data in the requested period.
-    """
-    # Remove date.
-    parts = start.split('-')
-    start_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
-
-    if stop is not None:
-        parts = stop.split('-')
-        stop_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
-    else:
-        stop_search_str = ''
-
-    if (start_search_str == stop_search_str) or (stop is None):
-        subset = glob.glob(os.path.join( path_input, '{}*.nc'.format(start_search_str)))
-    else:
-        # get all files
-        files = glob.glob(os.path.join( path_input, '*.nc' ))
-        files = np.sort(files) # sorting then for no particular reson
-
-        if include_start and include_stop:
-            min_fil = os.path.join(path_input, start_search_str + '_q.nc')
-            max_fil = os.path.join(path_input, stop_search_str + '_tcc.nc')
-
-            smaller = files[files <= max_fil]
-            subset  = smaller[smaller >= min_fil] # results in all the files
-
-        elif include_start and not include_stop:
-            min_fil = os.path.join(path_input, start_search_str + '_q.nc')
-            max_fil = os.path.join(path_input, stop_search_str + '_q.nc')
-
-            smaller = files[files < max_fil]
-            subset  = smaller[smaller >= min_fil] # results in all the files
-
-        elif not include_start and include_stop:
-            min_fil = os.path.join(path_input, start_search_str + '_tcc.nc')
-            print('detected min fil {}'.format(min_fil))
-            max_fil = os.path.join(path_input, stop_search_str + '_tcc.nc')
-
-            smaller = files[files <= max_fil]
-            subset  = smaller[smaller > min_fil] # results in all the files
-        else:
-            raise ValueError('Something wierd happend. ')
-
-    #assert len(subset)%5==0, "Not five of each files, missing variables in file list!"
-    #assert len(subset)!=0, "No files found, check if you have mounted lagringshotellet."
-
-    return subset
-
-
 
 class TRADITIONAL_AR_model:
     """ Autoregressive models used in this thesis.
@@ -291,9 +228,9 @@ class TRADITIONAL_AR_model:
 
         # Move some of this to the dataloader part?
         ds     = get_pixel_from_ds(self.dataset, lat, lon)
-
+        #print(ds)
         if self.order > 0:
-            X, y   = dataset_to_numpy_order(ds, order = self.order, bias = self.bias)
+            X, y   = dataset_to_numpy_order_traditional_ar(ds, order = self.order, bias = self.bias)
         else:
             X, y   = dataset_to_numpy(ds, bias = self.bias)
 
@@ -325,7 +262,7 @@ class TRADITIONAL_AR_model:
         ds     = get_pixel_from_ds(self.dataset, lat, lon)
 
         if self.order > 0:
-            X, y   = dataset_to_numpy_order(ds, order = self.order, bias = self.bias)
+            X, y   = dataset_to_numpy_order_traditional_ar(ds, order = self.order, bias = self.bias)
         else:
             X, y   = dataset_to_numpy(ds, bias = self.bias)
 
@@ -449,7 +386,7 @@ class TRADITIONAL_AR_model:
         n_time = len(self.dataset.time.values)
         n_lat  = len(self.latitude)
         n_lon  = len(self.longitude)
-        Y      = np.zeros( (n_time, n_lat, n_lon, 1)  )
+        Y      = np.zeros( (n_time-self.order, n_lat, n_lon, 1)  )
 
         for i in range(n_lat):
             for j in range(n_lon):
@@ -474,33 +411,57 @@ class TRADITIONAL_AR_model:
     def get_evaluation(self):
         """ Get evaluation of data
         """
+        print('Evaluation .... ')
         # Checks if test_start and test_stop is provided.
         if self.test_start is not None and self.test_stop is not None:
             # Based on start and stop descide which files it gets.
-            dataset = get_xarray_dataset_for_period(start = self.test_start,
-                                                    stop = self.test_stop)
+            files = get_list_of_files(start = self.test_start, stop = self.test_stop,
+                            include_start = True, include_stop = True)
+            dataset = merge(files)
+
             if self.order > 0:
-                X, y_true = dataset_to_numpy_grid_order(dataset, self.order, bias = self.bias)
+                X, y_true = dataset_to_numpy_order_traditional_ar_grid(dataset, self.order, bias = self.bias)
+                print('Detects shap Xtest {} and ytest {}'.format( np.shape(X), np.shape(y_true)  ))
             else:
                 X, y_true = dataset_to_numpy_grid(dataset, bias = self.bias)
             y_pred = self.predict(X)
         else:
             #raise NotImplementedError('Coming soon ... get_evaluation()')
             print("X shape {}, y shape {}".format(self.X_train.shape, self.y_train.shape))
-            y_pred = self.predict(self.X_train)
+            y_pred = self.predict(X) # prediction based on testset and
             y_true = self.y_train
+
+        print('before shape pred {}'.format(np.shape(y_pred)))
+        y_pred = y_pred[:,:,:,0]
+        print('after shape pred {}'.format(np.shape(y_pred)))
+
         # Move most of content in store performance to evaluate
         mse  = mean_squared_error(y_true, y_pred)
+        print('mse shape {}'.format(np.shape(mse)))
         ase  = accumulated_squared_error(y_true, y_pred)
         r2   = r2_score(y_true, y_pred)
 
-        vars_dict = {'mse': (['latitude', 'longitude'], mse[:, :, 0]),
-                     'r2':  (['latitude', 'longitude'], r2[:, :, 0]),
-                     'ase': (['latitude', 'longitude'], ase[:, :, 0]),
+        print('(~np.isnan(X)).sum(axis=0) {}'.format(np.shape(
+                                                (~np.isnan(X)).sum(axis=0))))
+        print('(~np.isnan(self. Xtrain)).sum(axis=0) {}'.format(np.shape(
+                                    (~np.isnan(self.X_train)).sum(axis=0))))
+
+
+        vars_dict = {'mse': (['latitude', 'longitude'], mse),
+                     'r2':  (['latitude', 'longitude'], r2),
+                     'ase': (['latitude', 'longitude'], ase),
+
+                     'num_train_samples': (['latitude', 'longitude'],
+                                    (~np.isnan(self.X_train)).sum(axis=0)[:,:,0]),
+                     'num_test_samples': (['latitude', 'longitude'],
+                                    (~np.isnan(X)).sum(axis=0)[:,:,0]),
+
                      'global_mse': np.mean(mse),
                      'global_r2':  np.mean(r2),
-                     'global_ase': np.mean(ase)
+                     'global_ase': np.mean(ase),
+
                       }
+
         return vars_dict
 
     def get_configuration(self):
@@ -522,28 +483,45 @@ class TRADITIONAL_AR_model:
         temp_dict = {}
 
         if self.bias:
-            temp_dict['b'] = (['latitude', 'longitude'], self.coeff_matrix[:, :, 4])
-            ar_index = 5
+            temp_dict['b'] = (['latitude', 'longitude'], self.coeff_matrix[:, :, 0])
+            ar_index = 1
         else:
-            ar_index = 4
+            ar_index = 0
 
         if self.order > 0:
             for i in range(self.order):
                 var = 'W{}'.format(i+1)
                 temp_dict[var] = (['latitude', 'longitude'], self.coeff_matrix[:, :, ar_index])
                 ar_index+=1
-
+        """
         vars_dict = {'Wt2m':(['latitude', 'longitude'], self.coeff_matrix[:, :, 1]),
                      'Wr': (['latitude', 'longitude'], self.coeff_matrix[:, :, 2]),
                      'Wq':(['latitude', 'longitude'], self.coeff_matrix[:, :, 0]),
                      'Wsp': (['latitude', 'longitude'], self.coeff_matrix[:, :, 3]),
                       }
         temp_dict.update(vars_dict) # meges dicts together
+        """
         return temp_dict
 
     def get_tranformation_properties(self):
         """ Returns dictionary of the properties used in the transformations,
         pixelwise mean and std.
+        """
+        # TODO update this based on
+
+        temp_dict = {}
+
+        if self.bias:
+            temp_dict['b'] = (['latitude', 'longitude'], self.coeff_matrix[:, :, 0])
+            ar_index = 1
+        else:
+            ar_index = 0
+
+        if self.order > 0:
+            for i in range(self.order):
+                var = 'W{}'.format(i+1)
+                temp_dict[var] = (['latitude', 'longitude'], self.coeff_matrix[:, :, ar_index])
+                ar_index+=1
         """
         vars_dict = {'mean_t2m':(['latitude', 'longitude'], self.mean[:, :, 1]),
                      'std_t2m':(['latitude', 'longitude'], self.std[:, :, 1]),
@@ -554,13 +532,14 @@ class TRADITIONAL_AR_model:
                      'mean_sp':(['latitude', 'longitude'], self.mean[:, :, 3]),
                      'std_sp':(['latitude', 'longitude'], self.std[:, :, 3]),
                       }
-        return vars_dict
+        """
+        return temp_dict
 
     def save(self):
         """ Saves model configuration, evaluation, transformation into a file
         named by the current time. Repo : /home/hanna/lagrings/results/ar/
         """
-        filename      = os.path.join(path_ar_results, 'AR_{}.nc'.format(np.datetime64('now')))
+        filename      = os.path.join(path_ar_results, 'AR_traditional{}.nc'.format(np.datetime64('now')))
         print('Stores file {}'.format(filename))
         config_dict   = self.get_configuration()
         weights_dict  = self.get_weights()
@@ -581,7 +560,7 @@ class TRADITIONAL_AR_model:
 
 if __name__ == '__main__':
 
-    m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
+    m = TRADITIONAL_AR_model(start = '2012-01-01',      stop = '2012-01-03',
                  test_start = '2012-03-01', test_stop = '2012-03-03',
                  order = 1,                 transform = True,
                  sigmoid = False)

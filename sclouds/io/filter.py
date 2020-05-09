@@ -78,6 +78,18 @@ class Filter:
         self.mean = mean
         return mean
 
+    def get_temporal_mean(self):
+        """ Sum all values and divide by the number of non-zero instances.
+
+        Its safe to assume that only the filtered
+        data is identically equal zero.
+        """
+        matrix = self.data['filtered']
+        mean = np.true_divide(matrix.sum(['time']),
+                                (matrix!=0).sum(['time']))
+        self.mean = mean
+        return mean.copy()
+
     def quick_plot_filtered_data(self):
         """ Quick plot to se the region you are filtering.
         returns ax

@@ -196,12 +196,10 @@ class AR_model:
         elif((start is None and stop is None) and
                 (test_start is None and test_stop is None) ):
                 raise ValueError('Something is wrong with')
-
         else:
             # Based on start and stop descide which files it gets.
             self.dataset = get_xarray_dataset_for_period(start = self.start,
                                                          stop = self.stop)
-
 
         print('Finished loaded the dataset')
         self.order = order
@@ -419,9 +417,11 @@ class AR_model:
                 Y[:, i, j, 0] = y_pred.flatten()
         return Y
 
+
     def get_evaluation(self):
         """ Get evaluation of data
         """
+        print('Evaluation .... ')
         # Checks if test_start and test_stop is provided.
         if self.test_start is not None and self.test_stop is not None:
             # Based on start and stop descide which files it gets.
@@ -437,19 +437,41 @@ class AR_model:
             print("X shape {}, y shape {}".format(self.X_train.shape, self.y_train.shape))
             y_pred = self.predict(self.X_train)
             y_true = self.y_train
+
+        print('before shape pred {}'.format(np.shape(y_pred)))
+        y_pred = y_pred[:,:,:,0]
+        print('after shape pred {}'.format(np.shape(y_pred)))
+
         # Move most of content in store performance to evaluate
         mse  = mean_squared_error(y_true, y_pred)
+        print('mse shape {}'.format(np.shape(mse)))
         ase  = accumulated_squared_error(y_true, y_pred)
         r2   = r2_score(y_true, y_pred)
 
-        vars_dict = {'mse': (['latitude', 'longitude'], mse[:, :, 0]),
-                     'r2':  (['latitude', 'longitude'], r2[:, :, 0]),
-                     'ase': (['latitude', 'longitude'], ase[:, :, 0]),
+        print('(~np.isnan(X)).sum(axis=0) {}'.format(np.shape(
+                                                (~np.isnan(X)).sum(axis=0))))
+        print('(~np.isnan(self. Xtrain)).sum(axis=0) {}'.format(np.shape(
+                                    (~np.isnan(self.X_train)).sum(axis=0))))
+
+
+        vars_dict = {'mse': (['latitude', 'longitude'], mse),
+                     'r2':  (['latitude', 'longitude'], r2),
+                     'ase': (['latitude', 'longitude'], ase),
+
+                     'num_train_samples': (['latitude', 'longitude'],
+                                    (~np.isnan(self.X_train)).sum(axis=0)[:,:,0]),
+                     'num_test_samples': (['latitude', 'longitude'],
+                                    (~np.isnan(X)).sum(axis=0)[:,:,0]),
+
                      'global_mse': np.mean(mse),
                      'global_r2':  np.mean(r2),
-                     'global_ase': np.mean(ase)
+                     'global_ase': np.mean(ase),
+
                       }
+
         return vars_dict
+
+
 
     def get_configuration(self):
         """Returns dictionary of configuration used to initialize this model.
@@ -504,7 +526,6 @@ class AR_model:
                 var = 'std_{}'.format(i+1)
                 temp_dict[var] = (['latitude', 'longitude'], self.std[:, :, ar_index])
 
-
                 ar_index+=1
 
         vars_dict = {'mean_t2m':(['latitude', 'longitude'], self.mean[:, :, 1]),
@@ -516,23 +537,28 @@ class AR_model:
                      'mean_sp':(['latitude', 'longitude'], self.mean[:, :, 3]),
                      'std_sp':(['latitude', 'longitude'], self.std[:, :, 3]),
                       }
-        return vars_dict
+        temp_dict.update(vars_dict)
+        return temp_dict
 
     def save(self):
         """ Saves model configuration, evaluation, transformation into a file
         named by the current time. Repo : /home/hanna/lagrings/results/ar/
         """
+        path_ar_results = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/'
         filename      = os.path.join(path_ar_results, 'AR_{}.nc'.format(np.datetime64('now')))
         print('Stores file {}'.format(filename))
         config_dict   = self.get_configuration()
         weights_dict  = self.get_weights()
-        tranformation = self.get_tranformation_properties()
-        # eval_dict     = self.get_evaluation()
+
+        if self.transform:
+            tranformation = self.get_tranformation_properties()
+            config_dict.update(tranformation)
+
+        eval_dict     = self.get_evaluation()
 
         # Merges dictionaries together
         config_dict.update(weights_dict)
-        config_dict.update(tranformation)
-        #config_dict.update(eval_dict)
+        config_dict.update(eval_dict)
 
         ds = xr.Dataset(config_dict,
                          coords={'longitude': (['longitude'], self.longitude),
@@ -554,7 +580,7 @@ if __name__ == '__main__':
 
     m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
                  test_start = '2012-03-01', test_stop = '2012-03-03',
-                 order = 1,                 transform = True,
+                 order = 1,                 transform = False,
                  sigmoid = False)
     coeff = m.fit()
     m.save()

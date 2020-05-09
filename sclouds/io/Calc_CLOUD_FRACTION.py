@@ -289,11 +289,16 @@ def compute_one_folder(subset, year, month):
                                  lat =  np.arange(30.0, 50.25, 0.25) ,
                                  lon = np.arange(-15.0, 25.25, 0.25) )
     #save_dir = generate_save_dir(year, month)
-    ds.to_netcdf(path = os.path.join(save_dir,'{}_{:02d}_tcc.nc'.format(year, month)),
-                 engine='netcdf4',
-                 encoding ={'tcc': {'zlib': True, 'complevel': 9},
-                           'nr_nans': {'zlib': True, 'complevel': 9} })
-    # TODO : update to save on both lagringshotellet and miphclac
+    try:
+        ds.to_netcdf(path = os.path.join(save_dir,'{}_{:02d}_tcc.nc'.format(year, month)),
+                     engine='netcdf4',
+                     encoding ={'tcc': {'zlib': True, 'complevel': 9},
+                               'nr_nans': {'zlib': True, 'complevel': 9} })
+    except PermissionError:
+            ds.to_netcdf(path = os.path.join('/home/hanna/','{}_{:02d}_tcc.nc'.format(year, month)),
+                         engine='netcdf4',
+                         encoding ={'tcc': {'zlib': True, 'complevel': 9},
+                                   'nr_nans': {'zlib': True, 'complevel': 9} })
     return
 
 def already_regridded(year, month):
@@ -305,19 +310,22 @@ def already_regridded(year, month):
     return os.path.isfile(full)
 
 if __name__ == '__main__':
-    print('arrives')
-    years = np.arange(2018, 2019)
+    years = np.arange(2004, 2019)
     months = np.arange(1, 13)
 
     for y in years:
         for m in months:
             folder = make_folder_str(y, m)
-            if folder != '2018_01':
-                files_to_read = removes_duplicates(y, m)
-                print('folder {}'.format(folder))
-                print('len files_to_read {}'.format(len(files_to_read)))
+            if not folder in ['2004_01', '2004_02', '2004_03']:
+                if len(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))) == 0:
+                    print('search_for {}'.format(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))))
+                    files_to_read = removes_duplicates(y, m)
+                    print('folder {}'.format(folder))
+                    print('len files_to_read {}'.format(len(files_to_read)))
 
-                if len(files_to_read) > 0 and not already_regridded(y, m):
-                    print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
-                    compute_one_folder(subset=files_to_read, year=y, month = m)
-                    #print(already_regridded(year = y, month = m))
+                    if len(files_to_read) > 0 and not already_regridded(y, m):
+                        print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
+                        compute_one_folder(subset=files_to_read, year=y, month = m)
+                        #print(already_regridded(year = y, month = m))
+                else:
+                    print('Found {}'.format(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))))
