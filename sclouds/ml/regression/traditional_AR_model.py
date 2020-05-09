@@ -16,7 +16,8 @@ from sclouds.io.utils import (dataset_to_numpy, dataset_to_numpy_order,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
                               get_xarray_dataset_for_period,
-                              dataset_to_numpy_order_traditional_ar)
+                              dataset_to_numpy_order_traditional_ar,
+                              dataset_to_numpy_order_traditional_ar_grid)
 
 import os,sys,inspect
 #currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -427,7 +428,7 @@ class TRADITIONAL_AR_model:
             dataset = merge(files)
 
             if self.order > 0:
-                X, y_true = dataset_to_numpy_order_traditional_ar(dataset, self.order, bias = self.bias)
+                X, y_true = dataset_to_numpy_order_traditional_ar_grid(dataset, self.order, bias = self.bias)
                 print('Detects shap Xtest {} and ytest {}')
             else:
                 X, y_true = dataset_to_numpy_grid(dataset, bias = self.bias)
@@ -512,7 +513,7 @@ class TRADITIONAL_AR_model:
                 var = 'W{}'.format(i+1)
                 temp_dict[var] = (['latitude', 'longitude'], self.coeff_matrix[:, :, ar_index])
                 ar_index+=1
-
+        """
         vars_dict = {'mean_t2m':(['latitude', 'longitude'], self.mean[:, :, 1]),
                      'std_t2m':(['latitude', 'longitude'], self.std[:, :, 1]),
                      'mean_r':(['latitude', 'longitude'], self.mean[:, :, 2]),
@@ -522,7 +523,8 @@ class TRADITIONAL_AR_model:
                      'mean_sp':(['latitude', 'longitude'], self.mean[:, :, 3]),
                      'std_sp':(['latitude', 'longitude'], self.std[:, :, 3]),
                       }
-        return vars_dict
+        """
+        return temp_dict
 
     def save(self):
         """ Saves model configuration, evaluation, transformation into a file
