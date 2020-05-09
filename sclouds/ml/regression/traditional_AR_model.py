@@ -429,7 +429,7 @@ class TRADITIONAL_AR_model:
 
             if self.order > 0:
                 X, y_true = dataset_to_numpy_order_traditional_ar_grid(dataset, self.order, bias = self.bias)
-                print('Detects shap Xtest {} and ytest {}')
+                print('Detects shap Xtest {} and ytest {}'.format( np.shape(X), np.shape(y_true)  ))
             else:
                 X, y_true = dataset_to_numpy_grid(dataset, bias = self.bias)
             y_pred = self.predict(X)
@@ -438,19 +438,36 @@ class TRADITIONAL_AR_model:
             print("X shape {}, y shape {}".format(self.X_train.shape, self.y_train.shape))
             y_pred = self.predict(X) # prediction based on testset and
             y_true = self.y_train
+
+        print('before shape pred {}'.format(np.shape(y_pred)))
+        y_pred = y_pred[:,:,:,0]
+        print('after shape pred {}'.format(np.shape(y_pred)))
+
         # Move most of content in store performance to evaluate
         mse  = mean_squared_error(y_true, y_pred)
+        print('mse shape {}'.format(np.shape(mse)))
         ase  = accumulated_squared_error(y_true, y_pred)
         r2   = r2_score(y_true, y_pred)
 
-        vars_dict = {'mse': (['latitude', 'longitude'], mse[:, :, 0]),
-                     'r2':  (['latitude', 'longitude'], r2[:, :, 0]),
-                     'ase': (['latitude', 'longitude'], ase[:, :, 0]),
+        print('(~np.isnan(X)).sum(axis=0) {}'.format(np.shape(
+                                                (~np.isnan(X)).sum(axis=0))))
+        print('(~np.isnan(self. Xtrain)).sum(axis=0) {}'.format(np.shape(
+                                    (~np.isnan(self.X_train)).sum(axis=0))))
+
+
+        vars_dict = {'mse': (['latitude', 'longitude'], mse),
+                     'r2':  (['latitude', 'longitude'], r2),
+                     'ase': (['latitude', 'longitude'], ase),
+
+                     'num_train_samples': (['latitude', 'longitude'],
+                                    (~np.isnan(self.X_train)).sum(axis=0)[:,:,0]),
+                     'num_test_samples': (['latitude', 'longitude'],
+                                    (~np.isnan(X)).sum(axis=0)[:,:,0]),
+
                      'global_mse': np.mean(mse),
                      'global_r2':  np.mean(r2),
                      'global_ase': np.mean(ase),
-                     'num_train_samples': (~np.isnan(self.X_train)).sum(axis=0),
-                     'num_test_samples': (~np.isnan(X)).sum(axis=0),
+
                       }
 
         return vars_dict

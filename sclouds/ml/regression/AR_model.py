@@ -173,15 +173,6 @@ class AR_model:
         if stop is not None:
             assert start < stop, "Start {} need to be prior to stop {}".format(start, stop)
 
-        if((start is None and stop is None) and
-                (test_start is not None and test_stop is not None) ):
-
-            files = get_list_of_files_excluding_period(test_start, test_stop)
-            self.dataset = merge(files)
-        else:
-            # Based on start and stop descide which files it gets.
-            self.dataset = get_xarray_dataset_for_period(start = self.start,
-                                                         stop = self.stop)
         self.start = start
         self.stop  = stop
 
@@ -189,6 +180,21 @@ class AR_model:
         self.test_stop  = test_stop
 
 
+        if((start is None and stop is None) and
+                (test_start is not None and test_stop is not None) ):
+
+            files = get_list_of_files_excluding_period(test_start, test_stop)
+            self.dataset = merge(files)
+        elif((start is None and stop is None) and
+                (test_start is None and test_stop is None) ):
+                raise ValueError('Something is wrong with')
+        else:
+            # Based on start and stop descide which files it gets.
+            self.dataset = get_xarray_dataset_for_period(start = self.start,
+                                                         stop = self.stop)
+
+
+        print('Finished loading the dataset ... ')
         self.order = order
 
         self.longitude = self.dataset.longitude.values
@@ -404,9 +410,11 @@ class AR_model:
                 Y[:, i, j, 0] = y_pred.flatten()
         return Y
 
+
     def get_evaluation(self):
         """ Get evaluation of data
         """
+        print('Evaluation .... ')
         # Checks if test_start and test_stop is provided.
         if self.test_start is not None and self.test_stop is not None:
             # Based on start and stop descide which files it gets.
@@ -422,19 +430,41 @@ class AR_model:
             print("X shape {}, y shape {}".format(self.X_train.shape, self.y_train.shape))
             y_pred = self.predict(self.X_train)
             y_true = self.y_train
+
+        print('before shape pred {}'.format(np.shape(y_pred)))
+        y_pred = y_pred[:,:,:,0]
+        print('after shape pred {}'.format(np.shape(y_pred)))
+
         # Move most of content in store performance to evaluate
         mse  = mean_squared_error(y_true, y_pred)
+        print('mse shape {}'.format(np.shape(mse)))
         ase  = accumulated_squared_error(y_true, y_pred)
         r2   = r2_score(y_true, y_pred)
 
-        vars_dict = {'mse': (['latitude', 'longitude'], mse[:, :, 0]),
-                     'r2':  (['latitude', 'longitude'], r2[:, :, 0]),
-                     'ase': (['latitude', 'longitude'], ase[:, :, 0]),
+        print('(~np.isnan(X)).sum(axis=0) {}'.format(np.shape(
+                                                (~np.isnan(X)).sum(axis=0))))
+        print('(~np.isnan(self. Xtrain)).sum(axis=0) {}'.format(np.shape(
+                                    (~np.isnan(self.X_train)).sum(axis=0))))
+
+
+        vars_dict = {'mse': (['latitude', 'longitude'], mse),
+                     'r2':  (['latitude', 'longitude'], r2),
+                     'ase': (['latitude', 'longitude'], ase),
+
+                     'num_train_samples': (['latitude', 'longitude'],
+                                    (~np.isnan(self.X_train)).sum(axis=0)[:,:,0]),
+                     'num_test_samples': (['latitude', 'longitude'],
+                                    (~np.isnan(X)).sum(axis=0)[:,:,0]),
+
                      'global_mse': np.mean(mse),
                      'global_r2':  np.mean(r2),
-                     'global_ase': np.mean(ase)
+                     'global_ase': np.mean(ase),
+
                       }
+
         return vars_dict
+
+
 
     def get_configuration(self):
         """Returns dictionary of configuration used to initialize this model.
@@ -478,6 +508,21 @@ class AR_model:
         """ Returns dictionary of the properties used in the transformations,
         pixelwise mean and std.
         """
+
+        temp_dict = {}
+
+        if self.bias:
+            temp_dict['b'] = (['latitude', 'longitude'], self.coeff_matrix[:, :, 0])
+            ar_index = 1
+        else:
+            ar_index = 0
+
+        if self.order > 0:
+            for i in range(self.order):
+                var = 'W{}'.format(i+1)
+                temp_dict[var] = (['latitude', 'longitude'], self.coeff_matrix[:, :, ar_index])
+                ar_index+=1
+
         vars_dict = {'mean_t2m':(['latitude', 'longitude'], self.mean[:, :, 1]),
                      'std_t2m':(['latitude', 'longitude'], self.std[:, :, 1]),
                      'mean_r':(['latitude', 'longitude'], self.mean[:, :, 2]),
@@ -487,7 +532,8 @@ class AR_model:
                      'mean_sp':(['latitude', 'longitude'], self.mean[:, :, 3]),
                      'std_sp':(['latitude', 'longitude'], self.std[:, :, 3]),
                       }
-        return vars_dict
+        temp_dict.update(vars_dict)
+        return temp_dict
 
     def save(self):
         """ Saves model configuration, evaluation, transformation into a file
@@ -498,12 +544,16 @@ class AR_model:
 
         config_dict   = self.get_configuration()
         weights_dict  = self.get_weights()
-        tranformation = self.get_tranformation_properties()
+
+        if self.transform:
+            tranformation = self.get_tranformation_properties()
+            config_dict.update(tranformation)
+
         eval_dict     = self.get_evaluation()
 
         # Merges dictionaries together
         config_dict.update(weights_dict)
-        config_dict.update(tranformation)
+
         config_dict.update(eval_dict)
 
         ds = xr.Dataset(config_dict,
@@ -517,5 +567,9 @@ if __name__ == '__main__':
 
     m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
                  test_start = '2012-03-01', test_stop = '2012-03-03',
-                 order = 1,                 transform = True,
+                 order = 1,                 transform = False,
                  sigmoid = False)
+    coeff = m.fit()
+    m.save()
+
+    print(m.get_configuration())
