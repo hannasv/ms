@@ -38,7 +38,8 @@ n_rows = len(VARIABLES)
 n_cols = 1
 
 fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
-fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1 - 2) # minus to for title 
+fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1 - 2) # minus to for title
+fig.suptitle('Correlation to Cloud Fractional Cover', fontsize = 16)
 counter = 0
 for var, ax in zip(VARIABLES, axes):
     #if var != 'tcc':
@@ -65,5 +66,5 @@ for var, ax in zip(VARIABLES, axes):
     ax.set_xticklabels(labels = np.linspace(-20, 25, 10), rotation = 45)
     #a.legend()
 plt.xlabel('Longitude')
-plt.subplots_adjust(wspace = 0.2, hspace = 0.2, top=0.97, bottom=0.1, left = 0.14, right = .95)
+plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.9, bottom=0.1, left = 0.14, right = .95)
 plt.savefig(path_python_figures + 'correlation_figure.pdf')

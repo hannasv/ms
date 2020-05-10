@@ -1,7 +1,11 @@
 """ Plotting routine used to plot subplots of spatially averages monthly means
 and filtered by land sea and both.
 
-DEPRECATED????
+
+
+To regenerate this monthly means file go to
+
+MS/notebooks/stats and run compute_monthly_means
 
 """
 import numpy as np
@@ -20,7 +24,7 @@ import matplotlib.pyplot as plt
 n_rows = len(VARIABLES)
 n_cols = 1
 
-data = xr.open_dataset('/home/hanna/lagrings/results/stats/monthly_means.nc')
+data = xr.open_dataset('/home/hanna/lagrings/results/stats/monthly_mean/monthly_means.nc')
 
 fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
 fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1)
@@ -40,6 +44,5 @@ for var, ax in zip(VARIABLES, axes):
     ax.plot(date, f_sea, label = '{}'.format('sea'))
 
     ax.set_ylabel('{} [{}]'.format(var, UNITS[var]))
-    ax.legend()
-
+ax.legend()
 plt.savefig(path_python_figures + 'monthly_means.pdf')

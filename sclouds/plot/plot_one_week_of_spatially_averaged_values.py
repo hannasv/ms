@@ -14,11 +14,11 @@ from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
 n_rows = len(VARIABLES)
 n_cols = 1
 
-data = xr.open_dataset('/home/hanna/lagrings/results/stats/monthly_means.nc')
+#data = xr.open_dataset('/home/hanna/lagrings/results/stats/monthly_means.nc')
 
-fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
-fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1)
-plt.subplots_adjust(hspace = 0.2, top=0.97, bottom=0.03, left = 0.14, right = 0.97)
+#fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
+#fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1)
+#plt.subplots_adjust(hspace = 0.2, top=0.97, bottom=0.03, left = 0.14, right = 0.97)
 
 mat = import_matplotlib()
 import matplotlib.pyplot as plt
@@ -69,10 +69,10 @@ for i in range(1, 13):
     date = df.time.values
 
     fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols)
-    fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1)
+    fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 3)
     fig.autofmt_xdate()
 
-    plt.subplots_adjust(hspace = 0.5, top=0.97, bottom=0.1, left = 0.14, right = 0.97)
+    plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.9, bottom=0.1, left = 0.14, right = .95)
 
     print('Warning no requirement for data to compute average from, refer to the ')
 
@@ -89,7 +89,7 @@ for i in range(1, 13):
         ax.plot(date, f_sea, label = '{}'.format('sea'))
 
         ax.set_ylabel('{} [{}]'.format(var, UNITS[var]))
-        ax.legend()
+
         # rotate and align the tick labels so they look better
 
 
@@ -97,5 +97,5 @@ for i in range(1, 13):
         # toolbar
         ax.fmt_xdata = mdates.DateFormatter('%Y-%m-%d')
         #ax.set_title('fig.autofmt_xdate fixes the labels')
-
+    ax.legend()
     plt.savefig(path_python_figures + 'spatially_averaged_one_week_from_{}.png'.format(start))

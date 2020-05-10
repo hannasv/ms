@@ -1,5 +1,9 @@
 """ Plotting routine used to plot subplots of spatially averages monthly means
 and filtered by land sea and both.
+
+Deprecated, a step in the development of plot_countourplot_one_statisticvs_all_variables.py
+
+
 """
 import numpy as np
 import xarray as xr

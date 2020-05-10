@@ -21,7 +21,7 @@ UNITS = {"t2m":"K", 'sp':"Pa", 'q':"kg kg^-1", 'r': "1", 'tcc':"1"}
 STATISTICS = ['mean', 'min', 'max', 'std', 'median', 'mad']
 
 FILTERS = ['coast', 'sea', 'land', 'artefact', 'all']
-
+SEASONS = ['DJF', 'MAM', 'JJA', 'SON']
 MONTHS  = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
             'August', 'September', 'October', 'November', 'December']
 
@@ -60,7 +60,7 @@ def get_lon_array():
     0.25 degree resolution.
 
     Returns
-    -----------
+    ----------- 
      _ : array-like
         Numpy array of valid longitude values.
     """
@@ -143,15 +143,6 @@ def get_pixel_from_ds(ds, lat, lon):
     """
     return ds.sel(latitude = lat, longitude = lon)
 
-def generate_output_file_name_trained_ar_model():
-    """ Generates output file name, contain all information about the training
-    prosedure.
-
-    Raises
-    ------------
-    NotImplementedError
-    """
-    raise NotImplementedError('Comming soon ...')
 
 def get_list_of_trained_ar_models():
     """ Returns list of trained convolutional lstm modelself.

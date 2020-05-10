@@ -20,6 +20,49 @@ from sclouds.ml.regression.utils import (mean_squared_error, r2_score,
                                          accumulated_squared_error,
                                          sigmoid, inverse_sigmoid)
 
+base = '/home/hanna/lagrings/results/stats/test/'
+#base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/test/'
+
+def min_max_scaling(dummy):
+    """ Forces all values to be between 0 and 1.
+    """
+    n_times, n_lat, n_lon, n_vars = dummy.shape
+    transformed = np.zeros(dummy.shape)
+    for j, var in enumerate(VARIABLES):
+
+        vmin = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['min'].values
+        vmax = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['max'].values
+
+        if var == 'tcc':
+            # Something wierd with the rotation of cloud cover values
+            vmin = np.flipud(vmin)
+            vmax = np.flipud(vmax)
+
+        for i in range(n_times):
+            transformed[i, :, :, j] =  (dummy[i, :, :, j]  - vmin)/(vmax-vmin)
+    return transformed
+
+def normalization(dummy = np.random.random(( 744, 81, 161, 5))):
+    """ Normalizes the distribution. It is centered around the mean with std of 1.
+
+    Subtract the mean divide by the standard deviation. """
+    from sclouds.helpers import VARIABLES
+    n_times, n_lat, n_lon, n_vars = dummy.shape
+    transformed = np.zeros(dummy.shape)
+    for j, var in enumerate(VARIABLES):
+
+        m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].values
+        s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].values
+
+        if var == 'tcc':
+            # Something wierd with the rotation of cloud cover values
+            m = np.flipud(m)
+            s = np.flipud(s)
+
+        for i in range(n_times):
+            transformed[i, :, :, j] =  (dummy[i, :, :, j]  - m)/s
+    return transformed
+
 
 def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
 
