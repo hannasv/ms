@@ -1,7 +1,7 @@
 """ Explenation of the content of this file.
 """
 
-import os
+import os, sys
 import glob
 
 import numpy as np
@@ -12,22 +12,16 @@ from utils import (mean_squared_error, r2_score,
                      accumulated_squared_error,
                      sigmoid, inverse_sigmoid)
 
-from sclouds.io.utils import (dataset_to_numpy, dataset_to_numpy_order,
+from utils import (dataset_to_numpy, dataset_to_numpy_order,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
                               get_xarray_dataset_for_period,
                               dataset_to_numpy_order_traditional_ar,
                               dataset_to_numpy_order_traditional_ar_grid)
 
-import os,sys,inspect
-#currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-#¤parentdir = os.path.dirname(currentdir)
-
 sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
 from helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
-
-#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/io/')
 
 def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True):
     """ Returns list of files containing data for the requested period.
@@ -84,9 +78,9 @@ def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31
 
 def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
 
-    first_period = get_list_of_files(start = '2004-04-01', stop = start,
+    first_period = get_list_of_files_traditional_model(start = '2004-04-01', stop = start,
                                 include_start = True, include_stop = False)
-    last_period = get_list_of_files(start = stop, stop = '2018-12-31',
+    last_period = get_list_of_files_traditional_model(start = stop, stop = '2018-12-31',
                         include_start = False, include_stop = True)
     entire_period = list(first_period) + list(last_period)
     return entire_period
@@ -383,10 +377,11 @@ class TRADITIONAL_AR_model:
         X : array-like
             Matrix containing input data.
         """
+        a, b, c, _ = np.shape(X)
         n_time = len(self.dataset.time.values)
         n_lat  = len(self.latitude)
         n_lon  = len(self.longitude)
-        Y      = np.zeros( (n_time-self.order, n_lat, n_lon, 1)  )
+        Y      = np.zeros( (a, b, c, 1)  )
 
         for i in range(n_lat):
             for j in range(n_lon):
@@ -415,7 +410,7 @@ class TRADITIONAL_AR_model:
         # Checks if test_start and test_stop is provided.
         if self.test_start is not None and self.test_stop is not None:
             # Based on start and stop descide which files it gets.
-            files = get_list_of_files(start = self.test_start, stop = self.test_stop,
+            files = get_list_of_files_traditional_model(start = self.test_start, stop = self.test_stop,
                             include_start = True, include_stop = True)
             dataset = merge(files)
 
@@ -428,7 +423,7 @@ class TRADITIONAL_AR_model:
         else:
             #raise NotImplementedError('Coming soon ... get_evaluation()')
             print("X shape {}, y shape {}".format(self.X_train.shape, self.y_train.shape))
-            y_pred = self.predict(X) # prediction based on testset and
+            y_pred = self.predict(self.X_train) # prediction based on testset and
             y_true = self.y_train
 
         print('before shape pred {}'.format(np.shape(y_pred)))
@@ -539,7 +534,8 @@ class TRADITIONAL_AR_model:
         """ Saves model configuration, evaluation, transformation into a file
         named by the current time. Repo : /home/hanna/lagrings/results/ar/
         """
-        filename      = os.path.join(path_ar_results, 'AR_traditional{}.nc'.format(np.datetime64('now')))
+        filename      = os.path.join('/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/',
+                        'AR_traditional{}.nc'.format(np.datetime64('now')))
         print('Stores file {}'.format(filename))
         config_dict   = self.get_configuration()
         weights_dict  = self.get_weights()
@@ -562,7 +558,7 @@ if __name__ == '__main__':
 
     m = TRADITIONAL_AR_model(start = '2012-01-01',      stop = '2012-01-03',
                  test_start = '2012-03-01', test_stop = '2012-03-03',
-                 order = 1,                 transform = True,
+                 order = 1,                 transform = False,
                  sigmoid = False)
     coeff = m.fit()
     m.save()

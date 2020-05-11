@@ -32,7 +32,7 @@ from traditional_AR_model import TRADITIONAL_AR_model
 # Test modell
 m = AR_model(start = None,      stop = None,
              test_start = '2014-01-01', test_stop = '2018-12-31',
-             order = 1,                 transform = True,
+             order = 1,                 transform = False,
              sigmoid = False)
 
 coeff = m.fit()
@@ -43,7 +43,7 @@ print(m.get_configuration())
 # Modell 1: Ikke implementert.
 m = TRADITIONAL_AR_model(start = '2012-01-01',      stop = '2012-01-03',
              test_start = '2014-01-01', test_stop = '2018-12-31',
-                     order = 1,                 transform = True,
+                     order = 1,                 transform = False,
                      sigmoid = False)
 
 coeff = m.fit()
@@ -63,7 +63,7 @@ print(m.get_configuration())
 # Modell 3:
 m = AR_model(start = None,      stop = None,
              test_start = '2014-01-01', test_stop = '2018-12-31',
-             order = 1,                 transform = True,
+             order = 1,                 transform = False,
              sigmoid = True)
 coeff = m.fit()
 m.save()
@@ -73,7 +73,7 @@ print(m.get_configuration())
 # Modell 4:
 m = AR_model(start = None,      stop = None,
              test_start = '2014-01-01', test_stop = '2018-12-31',
-             order = 2,                 transform = True,
+             order = 2,                 transform = False,
              sigmoid = True)
 coeff = m.fit()
 m.save()
@@ -83,7 +83,7 @@ print(m.get_configuration())
 # Modell 5:
 m = AR_model(start = None,      stop = None,
              test_start = '2014-01-01', test_stop = '2018-12-31',
-             order = 3,                 transform = True,
+             order = 3,                 transform = False,
              sigmoid = True)
 coeff = m.fit()
 m.save()

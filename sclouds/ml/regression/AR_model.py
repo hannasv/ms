@@ -570,17 +570,7 @@ class AR_model:
 if __name__ == '__main__':
     m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
                  test_start = '2012-03-01', test_stop = '2012-03-03',
-                 order = 0,                 transform = True,
-                 sigmoid = False)
-    coeff = m.fit()
-    m.save()
-
-    print(m.get_configuration())
-
-
-    m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
-                 test_start = '2012-03-01', test_stop = '2012-03-03',
-                 order = 1,                 transform = False,
+                 order = 0,                 transform = False,
                  sigmoid = False)
     coeff = m.fit()
     m.save()

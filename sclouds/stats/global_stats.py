@@ -24,8 +24,8 @@ VALID_FILTERS = ['coast', 'sea', 'land', 'artefact']
 
 # added duplicates since you are using enviornment on wessel
 #from sclouds.helpers import merge
-#from filter import Filter
-from sclouds.io import Filter
+from filter import Filter
+#from sclouds.io import Filter
 
 def merge(files):
     """ Merging a list of filenames into a dataset.open_mfdataset
@@ -278,11 +278,27 @@ def compute_stats_for_normalization():
     pass
 
 if __name__ == "__main__":
+     # TODO run everything again including cloud cover
     # Generate the satelite data below here.
-    for var in ['r', 'q', 't2m', 'sp']: # todo add cloud cover later
+    for var in ['r', 'q', 't2m', 'sp', 'tcc']:
         for start, stop in [('2004-04-01', '2008-12-31'),
                             ('2009-01-01', '2013-12-31'),
                             ('2014-01-01', '2018-12-31')]:
-            stat = Stats(var = var, variable=var, local = False, start = start, stop = stop)
-            #data = stat.get_data()
-            #stat.save()
+            stat = Stats(var = var, variable=var, local = True, start = start, stop = stop)
+        """
+        for key in VALID_FILTERS:
+            stat = Stats(var = var, variable=var)
+            data = stat.get_data()
+
+            for key in VALID_FILTERS:
+                print('Applying filter {}'.format(key))
+                filter = Filter(key).set_data(data, var)
+                print('Generated filter')
+                filtered_data = filter.get_filtered_data()
+                print('Recieved data from filter ')
+                print(filtered_data)
+                st = Stats(var = var,
+                           variable  = 'filtered',
+                           dataset= filtered_data,
+                           filter_key = key, local = False)
+        """
