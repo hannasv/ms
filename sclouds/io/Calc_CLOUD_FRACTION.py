@@ -316,16 +316,16 @@ if __name__ == '__main__':
     for y in years:
         for m in months:
             folder = make_folder_str(y, m)
-            if not folder in ['2004_01', '2004_02', '2004_03']:
-                if len(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))) == 0:
-                    print('search_for {}'.format(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))))
-                    files_to_read = removes_duplicates(y, m)
-                    print('folder {}'.format(folder))
-                    print('len files_to_read {}'.format(len(files_to_read)))
+            if folder in ['2015_11', '2015_12', '2017_12']:
+                #if len(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))) == 0:
+                print('search_for {}'.format(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))))
+                files_to_read = removes_duplicates(y, m)
+                print('folder {}'.format(folder))
+                print('len files_to_read {}'.format(len(files_to_read)))
 
-                    if len(files_to_read) > 0 and not already_regridded(y, m):
-                        print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
-                        compute_one_folder(subset=files_to_read, year=y, month = m)
+                #if len(files_to_read) > 0 and not already_regridded(y, m):
+                #    print("Starts computation for folder : {}, containing {} files.".format(folder, len(files_to_read)))
+                compute_one_folder(subset=files_to_read, year=y, month = m)
                         #print(already_regridded(year = y, month = m))
-                else:
-                    print('Found {}'.format(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))))
+                #else:
+                #    print('Found {}'.format(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))))

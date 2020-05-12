@@ -27,6 +27,92 @@ from helpers import (merge, get_list_of_variables_in_ds,
 
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/io/')
 
+base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
+#base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/test/'
+
+def min_max_scaling(dummy):
+    """ Forces all values to be between 0 and 1.
+    """
+    n_times, n_lat, n_lon, n_vars = dummy.shape
+    transformed = np.zeros(dummy.shape)
+    from sclouds.helpers import VARIABLES
+    for j, var in enumerate(VARIABLES):
+
+        vmin = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['min'].values
+        vmax = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['max'].values
+
+        if var == 'tcc':
+            # Something wierd with the rotation of cloud cover values
+            vmin = np.flipud(vmin)
+            vmax = np.flipud(vmax)
+
+        for i in range(n_times):
+            transformed[i, :, :, j] =  (dummy[i, :, :, j]  - vmin)/(vmax-vmin)
+    return transformed
+
+def normalization(dummy = np.random.random(( 744, 81, 161, 5))):
+    """ Normalizes the distribution. It is centered around the mean with std of 1.
+
+    Subtract the mean divide by the standard deviation. """
+    from sclouds.helpers import VARIABLES
+    n_times, n_lat, n_lon, n_vars = dummy.shape
+    transformed = np.zeros(dummy.shape)
+    for j, var in enumerate(VARIABLES):
+
+        m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].values
+        s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].values
+
+        if var == 'tcc':
+            # Something wierd with the rotation of cloud cover values
+            m = np.flipud(m)
+            s = np.flipud(s)
+
+        for i in range(n_times):
+            transformed[i, :, :, j] =  (dummy[i, :, :, j]  - m)/s
+    return transformed
+
+def reverse_min_max_scaling():
+    """ Forces all values to be between 0 and 1.
+    """
+    n_times, n_lat, n_lon, n_vars = dummy.shape
+    from sclouds.helpers import VARIABLES
+    transformed = np.zeros(dummy.shape)
+    for j, var in enumerate(VARIABLES):
+
+        vmin = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['min'].values
+        vmax = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['max'].values
+
+        if var == 'tcc':
+            # Something wierd with the rotation of cloud cover values
+            vmin = np.flipud(vmin)
+            vmax = np.flipud(vmax)
+
+        for i in range(n_times):
+            transformed[i, :, :, j] =  (dummy[i, :, :, j] + vmin)*(vmax-vmin)
+    return transformed
+
+def reverse_normalization(dummy = np.random.random(( 744, 81, 161, 5))):
+    """ Normalizes the distribution. It is centered around the mean with std of 1.
+
+    Subtract the mean divide by the standard deviation. """
+    from sclouds.helpers import VARIABLES
+    n_times, n_lat, n_lon, n_vars = dummy.shape
+    transformed = np.zeros(dummy.shape)
+    for j, var in enumerate(VARIABLES):
+
+        m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].values
+        s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].values
+
+        if var == 'tcc':
+            # Something wierd with the rotation of cloud cover values
+            m = np.flipud(m)
+            s = np.flipud(s)
+
+        for i in range(n_times):
+            transformed[i, :, :, j] =  (dummy[i, :, :, j]  + m)*s
+    return transformed
+
+
 
 def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
 
@@ -208,8 +294,16 @@ class AR_model:
         self.latitude  = self.dataset.latitude.values
         self.variables = ['t2m', 'q', 'r', 'sp'] #get_list_of_variables_in_ds(self.dataset)
 
+        self.test_dataset = None
         self.coeff_matrix = None
         self.evaluate_ds  = None
+
+        self.mse = None
+        self.r2 = None
+        self.ase = None
+
+        self.num_test_samples = None
+        self.num_train_samples = None
 
         self.transform   = transform
         self.sigmoid     = sigmoid
@@ -217,14 +311,6 @@ class AR_model:
         # Initialize containers if data should be transformed
         if self.transform:
             """ Read transformation from the correct folder in lagringshotellet """
-
-            self.mean = np.zeros((len(self.latitude),
-                                  len(self.longitude),
-                                  len(self.variables)+self.order))
-
-            self.std  = np.zeros((len(self.latitude),
-                                  len(self.longitude),
-                                  len(self.variables)+self.order))
             self.bias = False
         else:
             self.bias = True
@@ -232,6 +318,60 @@ class AR_model:
         self.X_train = None
         self.y_train = None
         return
+
+    def transform_data(self, X, y):
+        """ Standardisation X by equation x_new = (x-mean(x))/std(x)
+
+        Parameteres
+        ---------------------
+        lat : float
+            Latitude coordinate.
+        lon : float
+            Longitude coordinate.
+
+        Returns
+        ---------------------
+        mean, std : float
+            Values used in transformation
+        """
+        """ Normalizes the distribution. It is centered around the mean with std of 1.
+
+        Subtract the mean divide by the standard deviation. """
+
+        # Removes nan's
+        #a = np.concatenate([X, y], axis = 1)
+        #a = a[~np.isnan(a).any(axis = 1)]
+
+        #X = a[:, :, :, :-1]
+
+        #if self.sigmoid:
+        #    y = inverse_sigmoid(a[:-1, np.newaxis]) # not tested
+        #else:
+        #y_removed_nans = a[:, :, :, -1, np.newaxis]
+
+        order = self.order
+        n_times, n_lat, n_lon, n_vars = X.shape
+        #VARIABLES = ['t2m', 'q', 'r', 'sp']
+        transformed = np.zeros((n_times, n_lat, n_lon, n_vars ))
+
+
+        for j, var in enumerate(self.variables):
+
+            m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].values
+            s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].values
+
+            for i in range(n_times):
+                transformed[i, :, :, j] =  (X[i, :, :, j]  + m)*s
+
+        if order > 0:
+            var = 'tcc'
+            m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].values
+            s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].values
+            for k in range(order):
+                # Something wierd with the rotation of cloud cover values
+                transformed[:, :, :, k+j+1] = (X[:, :, :, k+j+1]- m)/s
+
+        return transformed
 
     def load(self, lat, lon):
 
@@ -250,6 +390,44 @@ class AR_model:
         X = B[:, :-1]
         y = B[:, -1, np.newaxis] # not tested
         return X, y
+    """
+    def load_transform(self, lat, lon):
+
+        from sklearn.preprocessing import StandardScaler
+        scaler = StandardScaler()
+        X = scaler.fit_transform(X)
+        return X, y, scaler.mean_, np.sqrt(scaler.var_)
+    """
+
+    def reverse_normalization(self, order, X):
+        """ Normalizes the distribution. It is centered around the mean with std of 1.
+
+        Subtract the mean divide by the standard deviation. """
+        from sclouds.helpers import VARIABLES
+        n_times, n_lat, n_lon, n_vars =  X.shape
+
+        transformed = np.zeros((n_times, n_lat, n_lon, 4 + order ))
+
+        for j, var in enumerate(VARIABLES):
+
+            m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].values
+            s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].values
+
+            for i in range(n_times):
+                transformed[i, :, :, j] =  (X[i, :, :, j]  + m)*s
+
+        if order > 0:
+            var = 'tcc'
+            for k in range(order):
+                m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].values
+                s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].values
+                # Something wierd with the rotation of cloud cover values
+                m = np.flipud(m)
+                s = np.flipud(s)
+                for i in range(n_times):
+                    transformed[i, :, :, k+j+1] =  (X[i, :, :, k+j+1]  + m)*s
+
+        return transformed
 
     def load_transform(self, lat, lon):
         """ Standardisation X by equation x_new = (x-mean(x))/std(x)
@@ -266,7 +444,9 @@ class AR_model:
         mean, std : float
             Values used in transformation
         """
-        from sklearn.preprocessing import StandardScaler
+        """ Normalizes the distribution. It is centered around the mean with std of 1.
+
+        Subtract the mean divide by the standard deviation. """
         # Move some of this to the dataloader part?
         ds     = get_pixel_from_ds(self.dataset, lat, lon)
 
@@ -286,57 +466,281 @@ class AR_model:
         else:
             y = a[:, -1, np.newaxis]
 
-        scaler = StandardScaler()
-        X = scaler.fit_transform(X)
-        return X, y, scaler.mean_, np.sqrt(scaler.var_)
+        order = self.order
+        n_times, n_vars = X.shape
+        VARIABLES = ['t2m', 'q', 'r', 'sp']
+        transformed = np.zeros((n_times, 4 + order ))
 
-    def fit_evaluate(self):
-        raise NotImplementedError('Coming soon ... ')
+        for j, var in enumerate(self.variables):
+
+            m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+            s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+
+            transformed[:, j] = (X[:, j]- m)/s
+            #for i in range(n_times):
+            #    transformed[i, :, :, j] =  (X[i, :, :, j]  - m)/s
+        if order > 0:
+            var = 'tcc'
+            m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+            s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+
+            for k in range(order):
+                # Something wierd with the rotation of cloud cover values
+                transformed[:, k+j+1] = (X[:, j+k+1]- m)/s
+
+        return transformed, y
+
+    def transform_data(self, X, y, lat, lon):
+        """ Standardisation X by equation x_new = (x-mean(x))/std(x)
+
+        Parameteres
+        ---------------------
+        lat : float
+            Latitude coordinate.
+        lon : float
+            Longitude coordinate.
+
+        Returns
+        ---------------------
+        mean, std : float
+            Values used in transformation
+        """
+        """ Normalizes the distribution. It is centered around the mean with std of 1.
+
+        Subtract the mean divide by the standard deviation. """
+
+        # Removes nan's
+        a = np.concatenate([X, y], axis = 1)
+        a = a[~np.isnan(a).any(axis = 1)]
+
+        X = a[:, :-1]
+
+        #if self.sigmoid:
+        #    y = inverse_sigmoid(a[:-1, np.newaxis]) # not tested
+        #else:
+        y_removed_nans = a[:, -1, np.newaxis]
+
+        order = self.order
+        #n_times, n_lat, n_lon, n_vars = X.shape[0]
+        VARIABLES = ['t2m', 'q', 'r', 'sp']
+        transformed = np.zeros((X.shape[0], 4 + order ))
+
+        for j, var in enumerate(self.variables):
+
+            m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+            s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+
+            transformed[:, j] = (X[:, j]- m)/s
+            #for i in range(n_times):
+            #    transformed[i, :, :, j] =  (X[i, :, :, j]  - m)/s
+        if order > 0:
+            var = 'tcc'
+            for k in range(order):
+                m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+                s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+                # Something wierd with the rotation of cloud cover values
+                transformed[:, k+j+1] = (X[:, j+k+1]- m)/s
+
+        return transformed, y_removed_nans
 
     def fit(self):
-        """ Fits the data retrieved in the constructor, entire grid.
+        """ New fit function
         """
-        print('Traines model ....')
+
+        if self.test_start is not None and self.test_stop is not None:
+            # Load test data
+            print('Loads test data')
+            files = get_list_of_files(start = self.test_start, stop = self.test_stop,
+                        include_start = True, include_stop = True)
+            self.test_dataset = merge(files)
+
+
+
         num_vars = self.bias + len(self.variables) + self.order
 
         coeff_matrix = np.zeros((len(self.latitude),
                                  len(self.longitude),
                                  num_vars))
 
-        _X = np.zeros((len(self.dataset.time.values)-self.order,
-                       len(self.latitude),
-                       len(self.longitude),
-                       num_vars))
+        mse_storage = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
 
-        _y = np.zeros((len(self.dataset.time.values)-self.order,
-                       len(self.latitude),
-                       len(self.longitude),
-                       1))
+        r2_storage = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+        ase_storage = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+
+        num_train_samples = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+        num_test_samples = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
 
         for i, lat in enumerate(self.latitude): # 81
             for j, lon in enumerate(self.longitude): # 161
 
                 if self.transform:
-                    X, y, mean, std = self.load_transform(lat, lon)
-                    self.mean[i, j, :]  =  mean.flatten()
-                    self.std[i, j, :] =  std.flatten()
+                    coeff, mse, ase, r2, num_test, num_train = self.load_transform_fit(lat, lon)
+                    coeff_matrix[i, j, :] = coeff
+                    mse_storage[i, j] = mse
+                    r2_storage[i, j] = r2
+                    ase_storage[i, j] = ase
+                    num_train_samples[i,j] = num_test
+                    num_test_samples[i,j] = num_train
                 else:
-                    X, y = self.load(lat, lon)
-                if self.order > 0:
-                    _X[:, i, j, :] = X
-                    _y[:, i, j, :] = y
-                else:
-                    _X[:, i, j, :] = X
-                    _y[:, i, j, :] = y
-                #print('Number of samples after removal of nans {}.'.format(len(y)))
-                coeffs = fit_pixel(X, y)
-                coeff_matrix[i, j, :] =  coeffs.flatten()
-            print('Finished with pixel {}/{}'.format((i+1)*j, 81*161))
-        self.X_train = _X
-        self.y_train = _y
-        self.coeff_matrix = coeff_matrix
-        return coeff_matrix
 
+                    coeff, mse, ase, r2, num_test, num_train = self.load_fit(lat, lon)
+                    coeff_matrix[i, j, :] = coeff
+                    mse_storage[i, j] = mse
+                    r2_storage[i, j] = r2
+                    ase_storage[i, j] = ase
+                    num_train_samples[i,j] = num_test
+                    num_test_samples[i,j] = num_train
+
+            print('Finished with pixel {}/{}'.format((i+1)*j, 81*161))
+
+        self.coeff_matrix = coeff_matrix
+        self.mse = mse_storage
+        self.ase = ase_storage
+        self.r2 = r2_storage
+        self.num_test_samples = num_test_samples
+        self.num_train_samples = num_train_samples
+        return
+
+
+    def load_transform_fit(self, lat, lon):
+        """ Standardisation X by equation x_new = (x-mean(x))/std(x)
+
+        Parameteres
+        ---------------------
+        lat : float
+            Latitude coordinate.
+        lon : float
+            Longitude coordinate.
+
+        Returns
+        ---------------------
+        mean, std : float
+            Values used in transformation
+        """
+        """ Normalizes the distribution. It is centered around the mean with std of 1.
+
+        Subtract the mean divide by the standard deviation. """
+        # Move some of this to the dataloader part?
+        ds     = get_pixel_from_ds(self.dataset, lat, lon)
+
+        if self.order > 0:
+            X, y   = dataset_to_numpy_order(ds, order = self.order, bias = self.bias)
+
+        #print(X.shape)
+        #print(y.shape)
+        # else:
+        #    X, y   = dataset_to_numpy_r_traditional_ar(ds, bias = self.bias)
+
+        # Removes nan's
+        a = np.concatenate([X, y], axis = 1)
+        a = a[~np.isnan(a).any(axis = 1)]
+
+        X = a[:, :-1]
+        #print(X.shape)
+        if self.sigmoid:
+            y = inverse_sigmoid(a[:, -1, np.newaxis]) # not tested
+        else:
+            y = a[:, -1, np.newaxis]
+        #print(y.shape)
+
+        order = self.order
+        n_times, n_vars = X.shape
+        #VARIABLES = ['t2m', 'q', 'r', 'sp']
+        if self.transform:
+            transformed_train = np.zeros((X.shape[0], 4 + order ))
+
+            for j, var in enumerate(self.variables):
+
+                m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+                s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+
+                transformed_train[:, j] = (X[:, j]- m)/s
+                #for i in range(n_times):
+                #    transformed[i, :, :, j] =  (X[i, :, :, j]  - m)/s
+            if order > 0:
+                var = 'tcc'
+                for k in range(order):
+                    m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+                    s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+                    # Something wierd with the rotation of cloud cover values
+                    transformed_train[:, k+j+1] = (X[:, j+k+1]- m)/s
+
+            X_train = transformed_train
+
+        if self.test_start is not None and self.test_stop is not None:
+            # Based on start and stop descide which files it gets.
+
+            ds     = get_pixel_from_ds(self.test_dataset, lat, lon)
+            #print(ds)
+            if self.order > 0:
+                X_test, y_test_true = dataset_to_numpy_order(ds, self.order, bias = self.bias)
+                n_times, n_vars = X_test.shape
+                #VARIABLES = ['t2m', 'q', 'r', 'sp']
+                if self.transform:
+                    transformed_test = np.zeros((n_times, n_vars ))
+
+                    for j, var in enumerate(self.variables):
+
+                        m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+                        s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+
+                        transformed_test[:, j] = (X_test[:, j]- m)/s
+
+                    if order > 0:
+                        var = 'tcc'
+                        m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+                        s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+
+                        for k in range(order):
+                            # Something wierd with the rotation of cloud cover values
+                            transformed_test[:, k+j+1] = (X_test[:, k+j+1]- m)/s
+
+                    X_test = transformed_test
+
+                print('Detects shap Xtest {} and ytest {}'.format( np.shape(X_test), np.shape(y_test_true)  ))
+
+        num_test = (~np.isnan(X_test)).sum(axis=0)[0]
+        #print(num_test)
+        num_train = (~np.isnan(X_train)).sum(axis=0)[0]
+        coeffs = fit_pixel(X, y)
+        #print(coeffs)
+        #print(X_test)
+        y_test_pred = predict_pixel(X_test, coeffs)
+
+        if self.sigmoid:
+            y_test_pred = inverse_sigmoid(y_test_pred)
+
+        # TODO: upgrade this to compute train  score as well as test score.
+        # y_pred = self.predict(X) # prediction based on testset and
+        # y_true = self.y_train
+
+        #print('before shape pred {}'.format(np.shape(y_pred)))
+        #y_pred = y_pred[:,:,:,0]
+        #print('after shape pred {}'.format(np.shape(y_pred)))
+
+        print(y_test_true.shape, y_test_pred.shape)
+
+        # Move most of content in store performance to evaluate
+        mse  = mean_squared_error(y_test_true, y_test_pred)[0]
+        print('mse shape {}'.format(np.shape(mse)))
+        ase  = accumulated_squared_error(y_test_true, y_test_pred)[0]
+        r2   = r2_score(y_test_true, y_test_pred)[0]
+        #print(mse, ase, r2)
+        return coeffs.flatten(), mse, ase, r2, num_test, num_train
+
+
+    def fit_evaluate(self):
+        raise NotImplementedError('Coming soon ... ')
+
+  
     def set_transformer_from_loaded_model(self, mean, std):
         """ Set loaded tranformation
 
@@ -348,6 +752,7 @@ class AR_model:
         std : array-like
             Matrix containing the standarddeviation used in transformation
             of different pixels.
+        Deprecated
         """
         self.transform = True
         self.mean = mean
@@ -397,28 +802,41 @@ class AR_model:
         n_lon  = len(self.longitude)
         Y      = np.zeros( (n_time-self.order, n_lat, n_lon, 1)  )
 
-        for i in range(n_lat):
-            for j in range(n_lon):
+        for i, lat in enumerate(self.latitude.values):
+            for j, lon in enumerate(self.longitude.values):
                 a = X[:, i, j, :]
 
                 # Checks if data should be transformed and performs
                 # transformation.
                 if self.transform:
-                    a = (a - self.mean[i, j, :])/self.std[i, j, :]
+                    _X, _y = transform(X, y, lat, lon)
 
-                _X = a[~np.isnan(a).any(axis=1)]
+
+                #_X = a[~np.isnan(a).any(axis=1)]
                 _w = self.coeff_matrix[i, j, :, np.newaxis]
 
                 y_pred = predict_pixel(_X, _w)
-
-                if self.sigmoid:
-                    y_pred = sigmoid(y_pred)
+                # if trained on sigmoid this contains values in that range.
 
                 Y[:, i, j, 0] = y_pred.flatten()
         return Y
-
-
     def get_evaluation(self):
+        """Evaluation"""
+        vars_dict = {'mse': (['latitude', 'longitude'], self.mse),
+                     'r2':  (['latitude', 'longitude'], self.r2),
+                     'ase': (['latitude', 'longitude'], self.ase),
+                     'num_train_samples': (['latitude', 'longitude'],
+                                    self.num_train_samples),
+                     'num_test_samples': (['latitude', 'longitude'],
+                                    self.num_test_samples),
+                     'global_mse': np.mean(self.mse),
+                     'global_r2':  np.mean(self.r2),
+                     'global_ase': np.mean(self.ase),
+                      }
+
+        return vars_dict
+
+    def get_evaluation_old(self):
         """ Get evaluation of data
         """
         print('Evaluation .... ')
@@ -431,16 +849,25 @@ class AR_model:
                 X, y_true = dataset_to_numpy_grid_order(dataset, self.order, bias = self.bias)
             else:
                 X, y_true = dataset_to_numpy_grid(dataset, bias = self.bias)
+
+            # TODO add tranformations and transform back.
+
+            if self.transform:
+                X, y_true = self.transform_data(X, y_true)
+
             y_pred = self.predict(X)
+
+            if self.sigmoid:
+                y_pred = self.inverse_sigmoid(y_pred)
+
         else:
             #raise NotImplementedError('Coming soon ... get_evaluation()')
-            print("X shape {}, y shape {}".format(self.X_train.shape, self.y_train.shape))
             y_pred = self.predict(self.X_train)
-            y_true = self.y_train
 
-        print('before shape pred {}'.format(np.shape(y_pred)))
+            if self.sigmoid:
+                y_true = self.inverse_sigmoid(self.y_train)
+
         y_pred = y_pred[:,:,:,0]
-        print('after shape pred {}'.format(np.shape(y_pred)))
 
         # Move most of content in store performance to evaluate
         mse  = mean_squared_error(y_true, y_pred)
@@ -452,21 +879,16 @@ class AR_model:
                                                 (~np.isnan(X)).sum(axis=0))))
         print('(~np.isnan(self. Xtrain)).sum(axis=0) {}'.format(np.shape(
                                     (~np.isnan(self.X_train)).sum(axis=0))))
-
-
         vars_dict = {'mse': (['latitude', 'longitude'], mse),
                      'r2':  (['latitude', 'longitude'], r2),
                      'ase': (['latitude', 'longitude'], ase),
-
                      'num_train_samples': (['latitude', 'longitude'],
                                     (~np.isnan(self.X_train)).sum(axis=0)[:,:,0]),
                      'num_test_samples': (['latitude', 'longitude'],
                                     (~np.isnan(X)).sum(axis=0)[:,:,0]),
-
                      'global_mse': np.mean(mse),
                      'global_r2':  np.mean(r2),
                      'global_ase': np.mean(ase),
-
                       }
 
         return vars_dict
@@ -485,6 +907,67 @@ class AR_model:
                      'test_stop'  : self.test_stop,
                      'bias'       : self.bias}
         return temp_dict
+
+    def fit(self):
+        """ New fit function
+        """
+
+        if self.test_start is not None and self.test_stop is not None:
+            # Load test data
+            print('Loads test data')
+            files = get_list_of_files(start = self.test_start, stop = self.test_stop,
+                        include_start = True, include_stop = True)
+            self.test_dataset = merge(files)
+
+
+        ######### FIT
+        # TODO disse må flytten til den funksjonen som
+        num_vars = self.bias + len(self.variables) + self.order
+
+        coeff_matrix = np.zeros((len(self.latitude),
+                                 len(self.longitude),
+                                 num_vars))
+
+        mse_storage = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+        r2_storage = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+        ase_storage = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+
+        num_train_samples = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+        num_test_samples = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+        for i, lat in enumerate(self.latitude): # 81
+            for j, lon in enumerate(self.longitude): # 161
+
+                if self.transform:
+                    coeff, mse, ase, r2, num_test, num_train = self.load_transform_fit(lat, lon)
+                    coeff_matrix[i, j, :] = coeff
+                    mse_storage[i, j] = mse
+                    r2_storage[i, j] = r2
+                    ase_storage[i, j] = ase
+                    num_train_samples[i,j] = num_test
+                    num_test_samples[i,j] = num_train
+                else:
+                    raise NotImplementedError('Implement this shit .... ')
+            print('Finished with pixel {}/{}'.format((i+1)*j, 81*161))
+
+        self.coeff_matrix = coeff_matrix
+        self.mse = mse_storage
+        self.ase = ase_storage
+        self.r2 = r2_storage
+        self.num_test_samples = num_test_samples
+        self.num_train_samples = num_train_samples
+        return
+
+
 
     def get_weights(self):
         """Returns dictionary of weigths fitted using this model.
@@ -550,9 +1033,9 @@ class AR_model:
         config_dict   = self.get_configuration()
         weights_dict  = self.get_weights()
 
-        if self.transform:
-            tranformation = self.get_tranformation_properties()
-            config_dict.update(tranformation)
+        #if self.transform:
+        #    tranformation = self.get_tranformation_properties()
+        #    config_dict.update(tranformation)
 
         eval_dict     = self.get_evaluation()
 
@@ -578,9 +1061,16 @@ if __name__ == '__main__':
     print(m.get_configuration())
 
 
-    m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
-                 test_start = '2012-03-01', test_stop = '2012-03-03',
-                 order = 1,                 transform = False,
+    start = None
+    stop  = None
+    test_start = '2014-01-01'
+    test_stop  = '2018-12-31'
+    sig = False
+    trans = True
+
+    m = AR_model(start = None,      stop = None,
+                 test_start = '2014-01-01', test_stop = '2018-12-31',
+                 order = 1,                 transform = True,
                  sigmoid = False)
     coeff = m.fit()
     m.save()

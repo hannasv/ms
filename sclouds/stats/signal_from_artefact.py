@@ -46,7 +46,6 @@ var = 'tcc'
 
 
 files =glob.glob(os.path.join(read_dir, '*tcc*.nc'))
-files = files[:2] # test files
 print('Merges files {}'.format(files))
 
 data = merge(files)
