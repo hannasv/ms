@@ -37,11 +37,14 @@ train_stop  = '2013-12-31'
 test_start  = '2014-01-01'
 test_stop   = '2018-12-31'
 
+base = '/home/hanna/lagrings/'
+base = '/uio/lagringshotell/geofag/students/metos/hannasv/'
+
 # Directories currently in use
-path_input            = '/home/hanna/lagrings/ERA5_monthly/'
-path_ar_results       = '/home/hanna/lagrings/results/ar/'
-path_convlstm_results = '/home/hanna/lagrings/results/convlstm/'
-path_stats_results    = '/home/hanna/lagrings/results/stats/'
+path_input            = os.path.join(base, 'ERA5_monthly/')
+path_ar_results       = os.path.join(base,'/results/ar/')
+path_convlstm_results = os.path.join(base,'/results/convlstm/')
+path_stats_results    = os.path.join(base,'/results/stats/')
 
 # duplicated, available in sclouds.plot.helpers
 path_store_plots = '/home/hanna/MS-thesis/python_figs/'
@@ -84,10 +87,10 @@ def merge(files):
      _ : xr.dataset
         Merged files into one dataset.
     """
-    #assert len(files) == 5
+    assert len(files) != 0, 'No files to merge'
     #datasets = [xr.open_dataset(fil) for fil in files]
     #return xr.merge(datasets)
-    return xr.open_mfdataset(files, compat='no_conflicts', join='outer')
+    return xr.open_mfdataset(files, compat='no_conflicts') # , join='outer'
 
 def get_list_of_variables_in_ds(ds):
     """ Returs list of variables in dataset

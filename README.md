@@ -6,6 +6,14 @@ Describe the topic of this thesis.
 
 ## Structure
 The notebooks for conducting the experiments can be found in MS/notebooks/experiments.
+### download_reanalysis_data
+Instructions for downloading reanalyse data. Inspired by ECMWF own description.
+### notebooks 
+Conatins notebooks used to perform experiments.
+### sclouds
+Source code for project.
+
+
 
 ## Project enviornment and friend repositories
 

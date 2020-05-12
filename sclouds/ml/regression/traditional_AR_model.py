@@ -7,7 +7,7 @@ import glob
 import numpy as np
 import xarray as xr
 
-from sclouds.ml.regression.utils import (mean_squared_error, r2_score,
+from utils import (mean_squared_error, r2_score,
                      fit_pixel, predict_pixel,
                      accumulated_squared_error,
                      sigmoid, inverse_sigmoid)
@@ -23,11 +23,12 @@ import os,sys,inspect
 #currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 #¤parentdir = os.path.dirname(currentdir)
 
-#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
-from sclouds.helpers import (merge, get_list_of_variables_in_ds,
+sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
+from helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/io/')
+
 base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
 
 def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
@@ -39,7 +40,9 @@ def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'
     entire_period = list(first_period) + list(last_period)
     return entire_period
 
-def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True):
+
+
+def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True):
     """ Returns list of files containing data for the requested period.
 
     Parameteres
@@ -70,8 +73,9 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start =
         subset = glob.glob(os.path.join( path_input, '{}*tcc*.nc'.format(start_search_str)))
     else:
         # get all files
-        files = glob.glob(os.path.join( path_input, '*tcc*.nc' ))
+        files = glob.glob(os.path.join( path_input, '*.nc' ))
         files = np.sort(files) # sorting then for no particular reson
+
         min_fil = os.path.join(path_input, start_search_str + '_tcc.nc')
         max_fil = os.path.join(path_input, stop_search_str + '_tcc.nc')
 
@@ -88,13 +92,17 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start =
             subset  = smaller[smaller > min_fil] # results in all the files
         else:
             raise ValueError('Something wierd happend. ')
-
-    #assert len(subset)%5==0, "Not five of each files, missing variables in file list!"
-    #assert len(subset)!=0, "No files found, check if you have mounted lagringshotellet."
-
     return subset
 
 
+def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
+
+    first_period = get_list_of_files(start = '2004-04-01', stop = start,
+                                include_start = True, include_stop = False)
+    last_period = get_list_of_files(start = stop, stop = '2018-12-31',
+                        include_start = False, include_stop = True)
+    entire_period = list(first_period) + list(last_period)
+    return entire_period
 
 class TRADITIONAL_AR_model:
     """ Autoregressive models used in this thesis.
@@ -193,9 +201,8 @@ class TRADITIONAL_AR_model:
 
         else:
             # Based on start and stop descide which files it gets.
-            files = get_list_of_files(start = self.start, stop = self.stop,
-                            include_start = True, include_stop = True)
-            self.dataset = merge(files)
+            self.dataset = get_xarray_dataset_for_period(start = self.start,
+                                                         stop = self.stop)
 
 
         print('Finished loaded the dataset')
@@ -203,8 +210,6 @@ class TRADITIONAL_AR_model:
 
         self.longitude = self.dataset.longitude.values
         self.latitude  = self.dataset.latitude.values
-        self.enviornmental_vars = False
-
         self.variables = [] #get_list_of_variables_in_ds(self.dataset)
 
         self.test_dataset = None

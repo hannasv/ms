@@ -7,18 +7,25 @@ import glob
 import numpy as np
 import xarray as xr
 
-from sclouds.helpers import (merge, get_list_of_variables_in_ds,
-                             get_pixel_from_ds, path_input, path_ar_results)
+from utils import (mean_squared_error, r2_score,
+                     fit_pixel, predict_pixel,
+                     accumulated_squared_error,
+                     sigmoid, inverse_sigmoid)
 
-from sclouds.io.utils import (dataset_to_numpy, dataset_to_numpy_order,
+from utils import (dataset_to_numpy, dataset_to_numpy_order,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
                               get_xarray_dataset_for_period)
 
-from sclouds.ml.regression.utils import (mean_squared_error, r2_score,
-                                         fit_pixel, predict_pixel,
-                                         accumulated_squared_error,
-                                         sigmoid, inverse_sigmoid)
+import os,sys,inspect
+#currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+#¤parentdir = os.path.dirname(currentdir)
+
+sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
+from helpers import (merge, get_list_of_variables_in_ds,
+                             get_pixel_from_ds, path_input, path_ar_results)
+
+#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/io/')
 
 base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
 #base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/test/'
@@ -271,6 +278,7 @@ class AR_model:
 
             files = get_list_of_files_excluding_period(test_start, test_stop)
             self.dataset = merge(files)
+
         elif((start is None and stop is None) and
                 (test_start is None and test_stop is None) ):
                 raise ValueError('Something is wrong with')
@@ -279,8 +287,7 @@ class AR_model:
             self.dataset = get_xarray_dataset_for_period(start = self.start,
                                                          stop = self.stop)
 
-
-        print('Finished loading the dataset ... ')
+        print('Finished loaded the dataset')
         self.order = order
 
         self.longitude = self.dataset.longitude.values
@@ -548,8 +555,7 @@ class AR_model:
             self.test_dataset = merge(files)
 
 
-        ######### FIT
-        # TODO disse må flytten til den funksjonen som
+
         num_vars = self.bias + len(self.variables) + self.order
 
         coeff_matrix = np.zeros((len(self.latitude),
@@ -584,7 +590,7 @@ class AR_model:
                     num_train_samples[i,j] = num_test
                     num_test_samples[i,j] = num_train
                 else:
-                    raise NotImplementedError('Implement this shit .... ')
+
                     coeff, mse, ase, r2, num_test, num_train = self.load_fit(lat, lon)
                     coeff_matrix[i, j, :] = coeff
                     mse_storage[i, j] = mse
@@ -673,7 +679,7 @@ class AR_model:
             # Based on start and stop descide which files it gets.
 
             ds     = get_pixel_from_ds(self.test_dataset, lat, lon)
-            print(ds)
+            #print(ds)
             if self.order > 0:
                 X_test, y_test_true = dataset_to_numpy_order(ds, self.order, bias = self.bias)
                 n_times, n_vars = X_test.shape
@@ -734,56 +740,7 @@ class AR_model:
     def fit_evaluate(self):
         raise NotImplementedError('Coming soon ... ')
 
-    #def fit(self):
-    """ Fits the data retrieved in the constructor, entire grid.
-    """
-    """
-    num_vars = self.bias + len(self.variables) + self.order
-
-    coeff_matrix = np.zeros((len(self.latitude),
-                             len(self.longitude),
-                             num_vars))
-
-    _X = np.zeros((len(self.dataset.time.values)-self.order,
-                   len(self.latitude),
-                   len(self.longitude),
-                   num_vars))
-
-    _y = np.zeros((len(self.dataset.time.values)-self.order,
-                   len(self.latitude),
-                   len(self.longitude),
-                   1))
-
-    for i, lat in enumerate(self.latitude): # 81
-        for j, lon in enumerate(self.longitude): # 161
-
-            if self.transform:
-                X, y = self.load_transform(lat, lon)
-                #self.mean[i, j, :]  =  mean.flatten()
-                #self.std[i, j, :] =  std.flatten()
-            else:
-                X, y = self.load(lat, lon)
-
-            _X[:, i, j, :] = X
-            _y[:, i, j, :] = y
-    """
-    """
-            if self.order > 0:
-                _X[:, i, j, :] = X
-                _y[:, i, j, :] = y
-            else:
-                _X[:, i, j, :] = X
-                _y[:, i, j, :] = y"""
-            #print('Number of samples after removal of nans {}.'.format(len(y)))
-    """
-    coeffs = fit_pixel(X, y)
-            coeff_matrix[i, j, :] =  coeffs.flatten()
-        print('fit {}/{}'.format((i+1)*j), 81*161)
-    self.X_train = _X
-    self.y_train = _y
-    self.coeff_matrix = coeff_matrix
-    return coeff_matrix"""
-
+  
     def set_transformer_from_loaded_model(self, mean, std):
         """ Set loaded tranformation
 
@@ -1041,19 +998,17 @@ class AR_model:
         """ Returns dictionary of the properties used in the transformations,
         pixelwise mean and std.
         """
-
         temp_dict = {}
-
-        if self.bias:
-            temp_dict['b'] = (['latitude', 'longitude'], self.coeff_matrix[:, :, 0])
-            ar_index = 1
-        else:
-            ar_index = 0
+        ar_index = 4
 
         if self.order > 0:
             for i in range(self.order):
-                var = 'W{}'.format(i+1)
-                temp_dict[var] = (['latitude', 'longitude'], self.coeff_matrix[:, :, ar_index])
+                var = 'mean_{}'.format(i+1)
+                temp_dict[var] = (['latitude', 'longitude'], self.mean[:, :, ar_index])
+
+                var = 'std_{}'.format(i+1)
+                temp_dict[var] = (['latitude', 'longitude'], self.std[:, :, ar_index])
+
                 ar_index+=1
 
         vars_dict = {'mean_t2m':(['latitude', 'longitude'], self.mean[:, :, 1]),
@@ -1074,7 +1029,7 @@ class AR_model:
         """
         path_ar_results = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/'
         filename      = os.path.join(path_ar_results, 'AR_{}.nc'.format(np.datetime64('now')))
-
+        print('Stores file {}'.format(filename))
         config_dict   = self.get_configuration()
         weights_dict  = self.get_weights()
 
@@ -1086,7 +1041,6 @@ class AR_model:
 
         # Merges dictionaries together
         config_dict.update(weights_dict)
-
         config_dict.update(eval_dict)
 
         ds = xr.Dataset(config_dict,
@@ -1097,6 +1051,15 @@ class AR_model:
         return
 
 if __name__ == '__main__':
+    m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
+                 test_start = '2012-03-01', test_stop = '2012-03-03',
+                 order = 0,                 transform = True,
+                 sigmoid = False)
+    coeff = m.fit()
+    m.save()
+
+    print(m.get_configuration())
+
 
     start = None
     stop  = None
