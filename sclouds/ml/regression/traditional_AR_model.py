@@ -23,6 +23,12 @@ sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
 from helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
+
+#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/io/')
+
+base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
+
+
 def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True):
     """ Returns list of files containing data for the requested period.
 
@@ -193,8 +199,17 @@ class TRADITIONAL_AR_model:
         self.latitude  = self.dataset.latitude.values
         self.variables = [] #get_list_of_variables_in_ds(self.dataset)
 
+        self.test_dataset = None
         self.coeff_matrix = None
         self.evaluate_ds  = None
+
+        self.mse = None
+        self.r2 = None
+        self.ase = None
+
+        self.num_test_samples = None
+        self.num_train_samples = None
+
 
         self.transform   = transform
         self.sigmoid     = sigmoid
@@ -251,14 +266,16 @@ class TRADITIONAL_AR_model:
         mean, std : float
             Values used in transformation
         """
-        from sklearn.preprocessing import StandardScaler
+        """ Normalizes the distribution. It is centered around the mean with std of 1.
+
+        Subtract the mean divide by the standard deviation. """
         # Move some of this to the dataloader part?
         ds     = get_pixel_from_ds(self.dataset, lat, lon)
 
         if self.order > 0:
             X, y   = dataset_to_numpy_order_traditional_ar(ds, order = self.order, bias = self.bias)
-        else:
-            X, y   = dataset_to_numpy(ds, bias = self.bias)
+        #else:
+        #    X, y   = dataset_to_numpy_r_traditional_ar(ds, bias = self.bias)
 
         # Removes nan's
         a = np.concatenate([X, y], axis = 1)
@@ -267,60 +284,251 @@ class TRADITIONAL_AR_model:
         X = a[:, :-1]
 
         if self.sigmoid:
-            y = inverse_sigmoid(a[:-1, np.newaxis]) # not tested
+            y = inverse_sigmoid(a[:, -1, np.newaxis]) # not tested
         else:
             y = a[:, -1, np.newaxis]
 
-        scaler = StandardScaler()
-        X = scaler.fit_transform(X)
-        return X, y, scaler.mean_, np.sqrt(scaler.var_)
+        order = self.order
+        n_times, n_vars = X.shape
+        #VARIABLES = ['t2m', 'q', 'r', 'sp']
+        transformed = np.zeros((n_times, order ))
+
+        if order > 0:
+            var = 'tcc'
+            m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+            s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+
+            for k in range(order):
+                # Something wierd with the rotation of cloud cover values
+                transformed[:, k] = (X[:, k]- m)/s
+
+        return transformed, y
+
+    def transform_data(self, X, y):
+        """ Standardisation X by equation x_new = (x-mean(x))/std(x)
+
+        Parameteres
+        ---------------------
+        lat : float
+            Latitude coordinate.
+        lon : float
+            Longitude coordinate.
+
+        Returns
+        ---------------------
+        mean, std : float
+            Values used in transformation
+        """
+        """ Normalizes the distribution. It is centered around the mean with std of 1.
+
+        Subtract the mean divide by the standard deviation. """
+
+        # Removes nan's
+        #a = np.concatenate([X, y], axis = 1)
+        #a = a[~np.isnan(a).any(axis = 1)]
+
+        #X = a[:, :, :, :-1]
+
+        #if self.sigmoid:
+        #    y = inverse_sigmoid(a[:-1, np.newaxis]) # not tested
+        #else:
+        #y_removed_nans = a[:, :, :, -1, np.newaxis]
+
+        order = self.order
+        n_times, n_lat, n_lon, n_vars = X.shape
+        #VARIABLES = ['t2m', 'q', 'r', 'sp']
+        transformed = np.zeros((n_times, n_lat, n_lon, order ))
+
+        if order > 0:
+            var = 'tcc'
+            m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].values
+            s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].values
+            for k in range(order):
+                # Something wierd with the rotation of cloud cover values
+                transformed[:, :, :, k] = (X[:, :, :, k]- m)/s
+
+        return transformed
+
+
 
     def fit_evaluate(self):
         raise NotImplementedError('Coming soon ... ')
 
-    def fit(self):
-        """ Fits the data retrieved in the constructor, entire grid.
+    def load_transform_fit(self, lat, lon):
+        """ Standardisation X by equation x_new = (x-mean(x))/std(x)
+
+        Parameteres
+        ---------------------
+        lat : float
+            Latitude coordinate.
+        lon : float
+            Longitude coordinate.
+
+        Returns
+        ---------------------
+        mean, std : float
+            Values used in transformation
         """
-        print('Traines model ....')
+        """ Normalizes the distribution. It is centered around the mean with std of 1.
+
+        Subtract the mean divide by the standard deviation. """
+        # Move some of this to the dataloader part?
+        ds     = get_pixel_from_ds(self.dataset, lat, lon)
+
+        if self.order > 0:
+            X, y   = dataset_to_numpy_order_traditional_ar(ds, order = self.order, bias = self.bias)
+
+        print(X.shape)
+        print(y.shape)
+        #else:
+        #    X, y   = dataset_to_numpy_r_traditional_ar(ds, bias = self.bias)
+
+        # Removes nan's
+        a = np.concatenate([X, y], axis = 1)
+        a = a[~np.isnan(a).any(axis = 1)]
+
+        X = a[:, :-1]
+        print(X.shape)
+        if self.sigmoid:
+            y = inverse_sigmoid(a[:, -1, np.newaxis]) # not tested
+        else:
+            y = a[:, -1, np.newaxis]
+        print(y.shape)
+
+        order = self.order
+        n_times, n_vars = X.shape
+        #VARIABLES = ['t2m', 'q', 'r', 'sp']
+        if self.transform:
+            transformed_train = np.zeros((n_times, order ))
+
+            if order > 0:
+                var = 'tcc'
+                m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+                s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+
+                for k in range(order):
+                    # Something wierd with the rotation of cloud cover values
+                    transformed_train[:, k] = (X[:, k]- m)/s
+
+            X_train = transformed_train
+
+        if self.test_start is not None and self.test_stop is not None:
+            # Based on start and stop descide which files it gets.
+
+            ds     = get_pixel_from_ds(self.test_dataset, lat, lon)
+            print(ds)
+            if self.order > 0:
+                X_test, y_test_true = dataset_to_numpy_order_traditional_ar(ds, self.order, bias = self.bias)
+                n_times, n_vars = X.shape
+                #VARIABLES = ['t2m', 'q', 'r', 'sp']
+                if self.transform:
+                    transformed_test = np.zeros((n_times, order ))
+
+                    if order > 0:
+                        var = 'tcc'
+                        m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+                        s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+
+                        for k in range(order):
+                            # Something wierd with the rotation of cloud cover values
+                            transformed_test[:, k] = (X_test[:, k]- m)/s
+
+                    X_test = transformed_test
+
+                print('Detects shap Xtest {} and ytest {}'.format( np.shape(X_test), np.shape(y_test_true)  ))
+
+        # TODO add this
+        #print('(~np.isnan(X)).sum(axis=0) {}'.format(np.shape(
+        #                                        (~np.isnan(X)).sum(axis=0))))
+        #print('(~np.isnan(self. Xtrain)).sum(axis=0) {}'.format(np.shape(
+        #                            (~np.isnan(self.X_train)).sum(axis=0))))
+        num_test = (~np.isnan(X_test)).sum(axis=0)[0]
+        #print(num_test)
+        num_train = (~np.isnan(X_train)).sum(axis=0)[0]
+        coeffs = fit_pixel(X, y)
+        #print(coeffs)
+        #print(X_test)
+        y_test_pred = predict_pixel(X_test, coeffs)
+
+        if self.sigmoid:
+            y_test_pred = inverse_sigmoid(y_test_pred)
+
+        # TODO: upgrade this to compute train  score as well as test score.
+        # y_pred = self.predict(X) # prediction based on testset and
+        # y_true = self.y_train
+
+        #print('before shape pred {}'.format(np.shape(y_pred)))
+        #y_pred = y_pred[:,:,:,0]
+        #print('after shape pred {}'.format(np.shape(y_pred)))
+
+        print(y_test_true.shape, y_test_pred.shape)
+
+        # Move most of content in store performance to evaluate
+        mse  = mean_squared_error(y_test_true, y_test_pred)[0]
+        print('mse shape {}'.format(np.shape(mse)))
+        ase  = accumulated_squared_error(y_test_true, y_test_pred)[0]
+        r2   = r2_score(y_test_true, y_test_pred)[0]
+        #print(mse, ase, r2)
+        return coeffs.flatten(), mse, ase, r2, num_test, num_train
+
+    def fit(self):
+        """ New fit function
+        """
+
+        if self.test_start is not None and self.test_stop is not None:
+            # Load test data
+            print('Loads test data')
+            files = get_list_of_files(start = self.test_start, stop = self.test_stop,
+                        include_start = True, include_stop = True)
+            self.test_dataset = merge(files)
+
+
+        ######### FIT
+        # TODO disse må flytten til den funksjonen som
         num_vars = self.bias + len(self.variables) + self.order
 
         coeff_matrix = np.zeros((len(self.latitude),
                                  len(self.longitude),
                                  num_vars))
 
-        _X = np.zeros((len(self.dataset.time.values)-self.order,
-                       len(self.latitude),
-                       len(self.longitude),
-                       num_vars))
+        mse_storage = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
 
-        _y = np.zeros((len(self.dataset.time.values)-self.order,
-                       len(self.latitude),
-                       len(self.longitude),
-                       1))
+        r2_storage = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+        ase_storage = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+
+        num_train_samples = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+        num_test_samples = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
 
         for i, lat in enumerate(self.latitude): # 81
             for j, lon in enumerate(self.longitude): # 161
 
                 if self.transform:
-                    X, y, mean, std = self.load_transform(lat, lon)
-                    self.mean[i, j, :]  =  mean.flatten()
-                    self.std[i, j, :] =  std.flatten()
+                    coeff, mse, ase, r2, num_test, num_train = self.load_transform_fit(lat, lon)
+                    coeff_matrix[i, j, :] = coeff
+                    mse_storage[i, j] = mse
+                    r2_storage[i, j] = r2
+                    ase_storage[i, j] = ase
+                    num_train_samples[i,j] = num_test
+                    num_test_samples[i,j] = num_train
                 else:
-                    X, y = self.load(lat, lon)
-                if self.order > 0:
-                    _X[:, i, j, :] = X
-                    _y[:, i, j, :] = y
-                else:
-                    _X[:, i, j, :] = X
-                    _y[:, i, j, :] = y
-                #print('Number of samples after removal of nans {}.'.format(len(y)))
-                coeffs = fit_pixel(X, y)
-                coeff_matrix[i, j, :] =  coeffs.flatten()
+                    raise NotImplementedError('Implement this shit .... ')
             print('Finished with pixel {}/{}'.format((i+1)*j, 81*161))
-        self.X_train = _X
-        self.y_train = _y
+
         self.coeff_matrix = coeff_matrix
-        return coeff_matrix
+        self.mse = mse_storage
+        self.ase = ase_storage
+        self.r2 = r2_storage
+        self.num_test_samples = num_test_samples
+        self.num_train_samples = num_train_samples
+        return
 
     def set_transformer_from_loaded_model(self, mean, std):
         """ Set loaded tranformation
@@ -368,6 +576,8 @@ class TRADITIONAL_AR_model:
         self.coeff_matrix = W
         return
 
+
+
     def predict(self, X):
         """ Make prediction for the entire grid/ Domain.
         Keeps nan's.
@@ -386,19 +596,16 @@ class TRADITIONAL_AR_model:
         for i in range(n_lat):
             for j in range(n_lon):
                 a = X[:, i, j, :]
-
                 # Checks if data should be transformed and performs
                 # transformation.
                 if self.transform:
-                    a = (a - self.mean[i, j, :])/self.std[i, j, :]
+                    _X, _y = transform(X, y, lat, lon)
 
-                _X = a[~np.isnan(a).any(axis=1)]
+                #_X = a[~np.isnan(a).any(axis=1)]
                 _w = self.coeff_matrix[i, j, :, np.newaxis]
 
                 y_pred = predict_pixel(_X, _w)
-
-                if self.sigmoid:
-                    y_pred = sigmoid(y_pred)
+                # if trained on sigmoid this contains values in that range.
 
                 Y[:, i, j, 0] = y_pred.flatten()
         return Y
@@ -408,6 +615,7 @@ class TRADITIONAL_AR_model:
         """
         print('Evaluation .... ')
         # Checks if test_start and test_stop is provided.
+        """
         if self.test_start is not None and self.test_stop is not None:
             # Based on start and stop descide which files it gets.
             files = get_list_of_files_traditional_model(start = self.test_start, stop = self.test_stop,
@@ -419,7 +627,16 @@ class TRADITIONAL_AR_model:
                 print('Detects shap Xtest {} and ytest {}'.format( np.shape(X), np.shape(y_true)  ))
             else:
                 X, y_true = dataset_to_numpy_grid(dataset, bias = self.bias)
+
+
+            if self.transform:
+                X = self.transform_data(X, y_true)
+
             y_pred = self.predict(X)
+
+            if self.sigmoid:
+                y_pred = self.inverse_sigmoid(y_pred)
+
         else:
             #raise NotImplementedError('Coming soon ... get_evaluation()')
             print("X shape {}, y shape {}".format(self.X_train.shape, self.y_train.shape))
@@ -435,26 +652,17 @@ class TRADITIONAL_AR_model:
         print('mse shape {}'.format(np.shape(mse)))
         ase  = accumulated_squared_error(y_true, y_pred)
         r2   = r2_score(y_true, y_pred)
-
-        print('(~np.isnan(X)).sum(axis=0) {}'.format(np.shape(
-                                                (~np.isnan(X)).sum(axis=0))))
-        print('(~np.isnan(self. Xtrain)).sum(axis=0) {}'.format(np.shape(
-                                    (~np.isnan(self.X_train)).sum(axis=0))))
-
-
-        vars_dict = {'mse': (['latitude', 'longitude'], mse),
-                     'r2':  (['latitude', 'longitude'], r2),
-                     'ase': (['latitude', 'longitude'], ase),
-
+        """
+        vars_dict = {'mse': (['latitude', 'longitude'], self.mse),
+                     'r2':  (['latitude', 'longitude'], self.r2),
+                     'ase': (['latitude', 'longitude'], self.ase),
                      'num_train_samples': (['latitude', 'longitude'],
-                                    (~np.isnan(self.X_train)).sum(axis=0)[:,:,0]),
+                                    self.num_train_samples),
                      'num_test_samples': (['latitude', 'longitude'],
-                                    (~np.isnan(X)).sum(axis=0)[:,:,0]),
-
-                     'global_mse': np.mean(mse),
-                     'global_r2':  np.mean(r2),
-                     'global_ase': np.mean(ase),
-
+                                    self.num_test_samples),
+                     'global_mse': np.mean(self.mse),
+                     'global_r2':  np.mean(self.r2),
+                     'global_ase': np.mean(self.ase),
                       }
 
         return vars_dict
@@ -488,22 +696,12 @@ class TRADITIONAL_AR_model:
                 var = 'W{}'.format(i+1)
                 temp_dict[var] = (['latitude', 'longitude'], self.coeff_matrix[:, :, ar_index])
                 ar_index+=1
-        """
-        vars_dict = {'Wt2m':(['latitude', 'longitude'], self.coeff_matrix[:, :, 1]),
-                     'Wr': (['latitude', 'longitude'], self.coeff_matrix[:, :, 2]),
-                     'Wq':(['latitude', 'longitude'], self.coeff_matrix[:, :, 0]),
-                     'Wsp': (['latitude', 'longitude'], self.coeff_matrix[:, :, 3]),
-                      }
-        temp_dict.update(vars_dict) # meges dicts together
-        """
         return temp_dict
 
     def get_tranformation_properties(self):
         """ Returns dictionary of the properties used in the transformations,
         pixelwise mean and std.
         """
-        # TODO update this based on
-
         temp_dict = {}
 
         if self.bias:
@@ -517,17 +715,6 @@ class TRADITIONAL_AR_model:
                 var = 'W{}'.format(i+1)
                 temp_dict[var] = (['latitude', 'longitude'], self.coeff_matrix[:, :, ar_index])
                 ar_index+=1
-        """
-        vars_dict = {'mean_t2m':(['latitude', 'longitude'], self.mean[:, :, 1]),
-                     'std_t2m':(['latitude', 'longitude'], self.std[:, :, 1]),
-                     'mean_r':(['latitude', 'longitude'], self.mean[:, :, 2]),
-                     'std_r':(['latitude', 'longitude'], self.std[:, :, 2]),
-                     'mean_q':(['latitude', 'longitude'], self.mean[:, :, 0]),
-                     'std_q':(['latitude', 'longitude'], self.std[:, :, 0]),
-                     'mean_sp':(['latitude', 'longitude'], self.mean[:, :, 3]),
-                     'std_sp':(['latitude', 'longitude'], self.std[:, :, 3]),
-                      }
-        """
         return temp_dict
 
     def save(self):
@@ -539,12 +726,12 @@ class TRADITIONAL_AR_model:
         print('Stores file {}'.format(filename))
         config_dict   = self.get_configuration()
         weights_dict  = self.get_weights()
-        tranformation = self.get_tranformation_properties()
+        #tranformation = self.get_tranformation_properties()
         eval_dict     = self.get_evaluation()
 
         # Merges dictionaries together
         config_dict.update(weights_dict)
-        config_dict.update(tranformation)
+        #config_dict.update(tranformation)
         config_dict.update(eval_dict)
 
         ds = xr.Dataset(config_dict,
@@ -555,6 +742,15 @@ class TRADITIONAL_AR_model:
         return
 
 if __name__ == '__main__':
+    """
+    m = TRADITIONAL_AR_model(start = '2012-01-01',      stop = '2012-01-03',
+                 test_start = '2012-03-01', test_stop = '2012-03-03',
+                 order = 2,                 transform = True,
+                 sigmoid = False)
+    coeff = m.fit()
+    m.save()
+
+    print(m.get_configuration())
 
     m = TRADITIONAL_AR_model(start = '2012-01-01',      stop = '2012-01-03',
                  test_start = '2012-03-01', test_stop = '2012-03-03',
@@ -564,3 +760,78 @@ if __name__ == '__main__':
     m.save()
 
     print(m.get_configuration())
+    """
+
+    start = None
+    stop  = None
+    test_start = '2014-01-01'
+    test_stop  = '2018-12-31'
+    sig = False
+    trans = True
+    # Tester ikke sigmoid
+    m = TRADITIONAL_AR_model(start = None, stop = None,
+                             test_start = test_start,
+                             test_stop = test_stop,
+                             order = 1, transform = trans,
+                             sigmoid = sig)
+    coeff = m.fit()
+    m.save()
+
+    print(m.get_configuration())
+
+    # tester sigmoid
+    m = TRADITIONAL_AR_model(start = None, stop = None,
+                             test_start = test_start, test_stop = test_stop,
+                             order = 1, transform = trans,
+                 |           sigmoid = sig)
+    coeff = m.fit()
+    m.save()
+
+    print(m.get_configuration())
+
+
+    #def fit(self):
+    """ Fits the data retrieved in the constructor, entire grid.
+
+    print('Traines model ....')
+    num_vars = self.bias + len(self.variables) + self.order
+
+    coeff_matrix = np.zeros((len(self.latitude),
+                             len(self.longitude),
+                             num_vars))
+
+    _X = np.zeros((len(self.dataset.time.values)-self.order,
+                   len(self.latitude),
+                   len(self.longitude),
+                   num_vars))
+
+    _y = np.zeros((len(self.dataset.time.values)-self.order,
+                   len(self.latitude),
+                   len(self.longitude),
+                   1))
+
+    for i, lat in enumerate(self.latitude): # 81
+        for j, lon in enumerate(self.longitude): # 161
+
+            if self.transform:
+                X, y = self.load_transform(lat, lon)
+            else:
+                X, y = self.load(lat, lon)
+            print(y.shape)
+            if self.order > 0:
+                _X[:, i, j, :] = X
+                _y[:, i, j, :] = y
+            else
+    """
+    """
+            _X[:, i, j, :] = X
+            _y[:, i, j, :] = y[:]
+            #print('Number of samples after removal of nans {}.'.format(len(y)))
+            coeffs = fit_pixel(X, y)
+            coeff_matrix[i, j, :] =  coeffs.flatten()
+        print('Finished with pixel {}/{}'.format((i+1)*j, 81*161))
+    self.X_train = _X
+    self.y_train = _y
+    self.coeff_matrix = coeff_matrix
+    return coeff_matrix
+    """

@@ -11,7 +11,7 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
 
 from sclouds.helpers import (path_input, path_stats_results, VARIABLES,
-                                UNITS, LONGNAME, STATISTICS)
+                                UNITS, LONGNAME, STATISTICS, LONGNAME_STATISTICS)
 from sclouds.io.utils import get_xarray_dataset_for_period
 from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                     path_python_figures, import_matplotlib,
@@ -25,10 +25,10 @@ n_cols = 1
 levels_contourplot = 100
 
 
-for stat in STATISTICS:
+for stat in STATISTICS: #['mean']:#STATISTICS:
     fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
     fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1 - 2)
-
+    fig.suptitle(LONGNAME_STATISTICS[stat], fontsize = 16)
     for var, ax in zip(VARIABLES, axes):
         #if var != 'tcc':
         #print('Warning this duplicates the RH in plot for tcc')
@@ -37,11 +37,11 @@ for stat in STATISTICS:
             print(files)
         data = xr.open_dataset(files[0])
 
-        #if var != 'tcc':
-        vals   = np.flipud(data[stat].values)
-        #else:
-        #        print('detected cloud cover ')
-        #    vals   = data[stat].values
+        vals = data[stat].values
+
+        if var != 'tcc':
+            vals   = np.flipud(vals)
+
         cntours = ax.contourf(vals, levels=levels_contourplot, cmap=color_maps[var])
 
         # Removes white lines
@@ -61,6 +61,6 @@ for stat in STATISTICS:
         ax.set_xticklabels(labels = np.linspace(-20, 25, 10), rotation = 45)
 
     plt.xlabel('Longitude')
-    plt.subplots_adjust(wspace = 0.2, hspace = 0.2, top=0.97, bottom=0.1, left = 0.14, right = .95)
+    plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.9, bottom=0.1, left = 0.14, right = .95)
     plt.savefig(path_python_figures + 'contourplot_all_variables_{}.pdf'.format(stat))
     print('Finished {}'.format(stat))

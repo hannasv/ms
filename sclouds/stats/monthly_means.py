@@ -16,8 +16,6 @@ filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
 
 VARIABLES    = ['r', 'q', 't2m', 'sp', 'tcc']
 
-# TODO : Round two only compute the properties for times you have cloud data.
-
 # added duplicates since you are using enviornment on wessel
 #from sclouds.helpers import merge
 from filter import Filter
