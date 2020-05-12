@@ -19,8 +19,8 @@ from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                     color_maps)
 mat = import_matplotlib() #for mye
 import matplotlib.pyplot as plt
-
-
+fil = '/home/hanna/lagrings/results/stats/monthly_mean/correlation.nc'
+"""
 path_input = '/home/hanna/lagrings/ERA5_monthly/'
 files = glob.glob(os.path.join(path_input, '2012_02*.nc'))
 data = xr.open_mfdataset(files, compat='no_conflicts', join='outer')
@@ -32,10 +32,13 @@ for k, var in enumerate(['r', 'q', 't2m', 'sp']):
     for i in range(81):
         for j in range(161):
             storang[i,j,k] = np.corrcoef(ref_data[:, i, j], dta[:, i, j])[0][1]
-
+"""
 VARIABLES = ['r', 'q', 't2m', 'sp']
 n_rows = len(VARIABLES)
 n_cols = 1
+
+data = xr.open_dataset(fil)
+print(data)
 
 fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
 fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1 - 2) # minus to for title
@@ -45,7 +48,7 @@ for var, ax in zip(VARIABLES, axes):
     #if var != 'tcc':
     #print('Warning this duplicates the RH in plot for tcc')
     #vals   = data[var].values
-    cntours = ax.contourf(storang[:, :, counter],
+    cntours = ax.contourf(data[var].values,
                           levels=levels_contourplot,
                           cmap=color_maps[var])
     counter += 1

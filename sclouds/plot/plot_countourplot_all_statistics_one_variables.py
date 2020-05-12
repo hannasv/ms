@@ -11,7 +11,7 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
 
 from sclouds.helpers import (path_input, path_stats_results, VARIABLES,
-                                UNITS, LONGNAME, STATISTICS)
+                                UNITS, LONGNAME, STATISTICS, LONGNAME_STATISTICS)
 from sclouds.io.utils import get_xarray_dataset_for_period
 from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                     path_python_figures, import_matplotlib,
@@ -53,7 +53,7 @@ for var in VARIABLES: #['mean']:#STATISTICS:
 
         fig.colorbar(cntours, ax=ax, label = '{} [{}]'.format(var, UNITS[var]))
         #a = sns.heatmap(vals, ax = ax, cbar = True, cmap = 'viridis', linewidths=0)
-        ax.set_title(stat, fontsize = 14)
+        ax.set_title(LONGNAME_STATISTICS[stat], fontsize = 14)
         ax.set_ylabel('Latitude')
 
         ax.xaxis.set_major_locator(MultipleLocator(20))
@@ -65,5 +65,5 @@ for var in VARIABLES: #['mean']:#STATISTICS:
 
     plt.xlabel('Longitude')
     plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.95, bottom=0.1, left = 0.14, right = .95)
-    plt.savefig(path_python_figures + 'all_stat_variables_{}.pdf'.format(var))
+    plt.savefig(path_python_figures + 'all_stat_variable_{}.pdf'.format(var))
     print('Finished {}'.format(var))

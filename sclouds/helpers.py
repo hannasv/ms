@@ -20,6 +20,10 @@ UNITS = {"t2m":"K", 'sp':"Pa", 'q':"kg kg^-1", 'r': "1", 'tcc':"1"}
 
 STATISTICS = ['mean', 'min', 'max', 'std', 'median', 'mad']
 
+LONGNAME_STATISTICS = {'mean': 'Mean value', 'min':'Minimum value',
+                'max':'Maximum value', 'std': 'Standard deviation',
+                'median' : 'Median', 'mad':'Mean absolute deviation'}
+
 FILTERS = ['coast', 'sea', 'land', 'artefact', 'all']
 SEASONS = ['DJF', 'MAM', 'JJA', 'SON']
 MONTHS  = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
@@ -60,7 +64,7 @@ def get_lon_array():
     0.25 degree resolution.
 
     Returns
-    ----------- 
+    -----------
      _ : array-like
         Numpy array of valid longitude values.
     """
