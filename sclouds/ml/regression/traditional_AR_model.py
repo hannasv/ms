@@ -28,7 +28,7 @@ from sclouds.helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/io/')
-base = '/home/hanna/lagrings/results/stats/test/'
+base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
 
 def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
 
@@ -768,22 +768,28 @@ if __name__ == '__main__':
     print(m.get_configuration())
     """
 
-    # tester sigmoid
-    m = TRADITIONAL_AR_model(start = '2012-01-01',      stop = '2012-01-03',
-                 test_start = '2012-03-01', test_stop = '2012-03-03',
-                 order = 2,                 transform = True,
-                 sigmoid = True)
+    start = None
+    stop  = None
+    test_start = '2014-01-01'
+    test_stop  = '2018-12-31'
+    sig = False
+    trans = True
+    # Tester ikke sigmoid
+    m = TRADITIONAL_AR_model(start = None, stop = None,
+                             test_start = test_start,
+                             test_stop = test_stop,
+                             order = 1, transform = trans,
+                             sigmoid = sig)
     coeff = m.fit()
     m.save()
 
     print(m.get_configuration())
 
-
     # tester sigmoid
-    m = TRADITIONAL_AR_model(start = '2012-01-01',      stop = '2012-01-03',
-                 test_start = '2012-03-01', test_stop = '2012-03-03',
-                 order = 1,                 transform = True,
-                 sigmoid = True)
+    m = TRADITIONAL_AR_model(start = None, stop = None,
+                             test_start = test_start, test_stop = test_stop,
+                             order = 1, transform = trans,
+                 |           sigmoid = sig)
     coeff = m.fit()
     m.save()
 

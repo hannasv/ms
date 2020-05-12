@@ -20,7 +20,7 @@ from sclouds.ml.regression.utils import (mean_squared_error, r2_score,
                                          accumulated_squared_error,
                                          sigmoid, inverse_sigmoid)
 
-base = '/home/hanna/lagrings/results/stats/test/'
+base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
 #base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/test/'
 
 def min_max_scaling(dummy):
@@ -1098,8 +1098,15 @@ class AR_model:
 
 if __name__ == '__main__':
 
-    m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
-                 test_start = '2012-03-01', test_stop = '2012-03-03',
+    start = None
+    stop  = None
+    test_start = '2014-01-01'
+    test_stop  = '2018-12-31'
+    sig = False
+    trans = True
+
+    m = AR_model(start = None,      stop = None,
+                 test_start = '2014-01-01', test_stop = '2018-12-31',
                  order = 1,                 transform = True,
                  sigmoid = False)
     coeff = m.fit()
