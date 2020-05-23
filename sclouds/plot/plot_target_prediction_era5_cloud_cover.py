@@ -11,7 +11,7 @@ from sclouds.helpers import (path_input, path_stats_results, VARIABLES,
 from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                     path_python_figures, import_matplotlib,
                                     cmap_contour_plot, levels_contourplot,
-                                    file_format)
+                                    file_format, add_ticks)
 mat = import_matplotlib() # for mye
 import matplotlib.pyplot as plt
 
@@ -78,13 +78,9 @@ fig.colorbar(cntours, ax = axes, anchor = (1.0, 0.0), label = '{} [{}]'.format(v
 
 axes[0].set_ylabel('Latitude')
 
-axes[0].set_yticklabels(labels = np.linspace(30, 50, 5))
-
-axes[0].set_xticklabels(labels = np.linspace(-15, 25, 9), rotation = 45) # need to fix this
-axes[1].set_xticklabels(labels = np.linspace(-15, 25, 9), rotation = 45) # need to fix this done this for precip timeseriesplot
-axes[2].set_xticklabels(labels = np.linspace(-15, 25, 9), rotation = 45) # need to fix this done this for precip timeseriesplot
-
-#a.legend()
+axes[0] = add_ticks(axes[0], x_num_tikz = 5, y_num_tikz = 5)
+axes[1] = add_ticks(axes[1], x_num_tikz = 5, y_num_tikz = 5)
+axes[2] = add_ticks(axes[2], x_num_tikz = 5, y_num_tikz = 5)
 
 axes[0].set_xlabel('Longitude')
 axes[1].set_xlabel('Longitude')

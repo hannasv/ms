@@ -24,11 +24,11 @@ import matplotlib.pyplot as plt
 n_rows = len(VARIABLES)
 n_cols = 1
 
-data = xr.open_dataset('/home/hanna/lagrings/results/stats/monthly_mean/monthly_means.nc')
+data = xr.open_dataset('/home/hanna/lagrings/results/stats/monthly_mean/monthly_means_updated.nc')
 
 fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
-fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1)
-plt.subplots_adjust(hspace = 0.2, top=0.97, bottom=0.03, left = 0.14, right = 0.97)
+fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 3)
+#plt.subplots_adjust(hspace = 0.2, top=0.97, bottom=0.03, left = 0.14, right = 0.97)
 
 for var, ax in zip(VARIABLES, axes):
     #if var != 'tcc':
@@ -39,10 +39,12 @@ for var, ax in zip(VARIABLES, axes):
     date   = data['date_{}'.format(var)].values
 
     ax.set_title(LONGNAME[var], fontsize = 14)
-    ax.plot(date, vals, label = '{}'.format('both'))
+    ax.plot(date, vals, label = '{}'.format('no filter'))
     ax.plot(date, f_land, label = '{}'.format('land'))
     ax.plot(date, f_sea, label = '{}'.format('sea'))
 
     ax.set_ylabel('{} [{}]'.format(var, UNITS[var]))
-ax.legend()
+
+plt.legend(ncol = 3, frameon = False, bbox_to_anchor=(0.8, -0.25))
+plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.9, bottom=0.1, left = 0.14, right = .95)
 plt.savefig(path_python_figures + 'monthly_means.pdf')
