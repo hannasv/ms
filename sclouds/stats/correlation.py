@@ -61,9 +61,9 @@ for k, var in enumerate(['r', 'q', 't2m', 'sp']):
     lat = data.latitude.values
     dictionary_to_store[var] = (['latitude', 'longitude'], storang[:, :, k])
 
-    result = xr.Dataset(dictionary_to_store,
-                            coords={'longitude': (['longitude'], lon),
-                                    'latitude': (['latitude'], lat),
-                                    })
+result = xr.Dataset(dictionary_to_store,
+                        coords={'longitude': (['longitude'], lon),
+                                'latitude': (['latitude'], lat),
+                                })
 
-    result.to_netcdf(os.path.join(save_dir, 'correlation.nc'))
+result.to_netcdf(os.path.join(save_dir, 'correlation_updated.nc'))

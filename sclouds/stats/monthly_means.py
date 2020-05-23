@@ -90,5 +90,5 @@ for var in VARIABLES: # VARIABLES[:-1]
     storage['date_{}'.format(var)] = dates # just to check that they are equal
 
 data = xr.Dataset(storage)
-data.to_netcdf(save_dir + 'monthly_means.nc')
+data.to_netcdf(save_dir + 'monthly_means_updated.nc')
 print('Computet monthly means ... ')

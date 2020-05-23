@@ -231,8 +231,8 @@ class SeasonalStats:
 if __name__ == "__main__":
     # Generate the satelite data below here.
     for season in SEASONS:
-        for var in VALID_VARS:
-            stat = SeasonalStats(season = season,var = var, variable=var)
+        for var in ['tcc']:
+            stat = SeasonalStats(season = season,var = var, variable=var, local = True)
             #data = stat.get_data()
             #stat.save()
             """

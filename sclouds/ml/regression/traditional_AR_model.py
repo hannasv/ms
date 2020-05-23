@@ -26,7 +26,7 @@ from helpers import (merge, get_list_of_variables_in_ds,
 
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/io/')
 
-base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
+base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/'#2014-01-01_2018-12-31/'
 
 
 def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True):
@@ -378,8 +378,8 @@ class TRADITIONAL_AR_model:
         if self.order > 0:
             X, y   = dataset_to_numpy_order_traditional_ar(ds, order = self.order, bias = self.bias)
 
-        print(X.shape)
-        print(y.shape)
+        #print(X.shape)
+        #print(y.shape)
         #else:
         #    X, y   = dataset_to_numpy_r_traditional_ar(ds, bias = self.bias)
 
@@ -388,7 +388,7 @@ class TRADITIONAL_AR_model:
         a = a[~np.isnan(a).any(axis = 1)]
 
         X = a[:, :-1]
-        print(X.shape)
+        #print(X.shape)
         if self.sigmoid:
             y = inverse_sigmoid(a[:, -1, np.newaxis]) # not tested
         else:
@@ -416,10 +416,10 @@ class TRADITIONAL_AR_model:
             # Based on start and stop descide which files it gets.
 
             ds     = get_pixel_from_ds(self.test_dataset, lat, lon)
-            print(ds)
+            #print(ds)
             if self.order > 0:
                 X_test, y_test_true = dataset_to_numpy_order_traditional_ar(ds, self.order, bias = self.bias)
-                n_times, n_vars = X.shape
+                n_times, n_vars = X_test.shape
                 #VARIABLES = ['t2m', 'q', 'r', 'sp']
                 if self.transform:
                     transformed_test = np.zeros((n_times, order ))
@@ -435,7 +435,7 @@ class TRADITIONAL_AR_model:
 
                     X_test = transformed_test
 
-                print('Detects shap Xtest {} and ytest {}'.format( np.shape(X_test), np.shape(y_test_true)  ))
+                #print('Detects shap Xtest {} and ytest {}'.format( np.shape(X_test), np.shape(y_test_true)  ))
 
         # TODO add this
         #print('(~np.isnan(X)).sum(axis=0) {}'.format(np.shape(
@@ -457,15 +457,17 @@ class TRADITIONAL_AR_model:
         # y_pred = self.predict(X) # prediction based on testset and
         # y_true = self.y_train
 
-        #print('before shape pred {}'.format(np.shape(y_pred)))
-        #y_pred = y_pred[:,:,:,0]
-        #print('after shape pred {}'.format(np.shape(y_pred)))
+        if len(y_test_true) == 4:
+            y_test_true = y_test_true[:, :, :, 0]
 
-        print(y_test_true.shape, y_test_pred.shape)
+
+        if len(y_test_pred) == 4:
+            y_test_pred = y_test_pred[:, :, :, 0]
+
 
         # Move most of content in store performance to evaluate
         mse  = mean_squared_error(y_test_true, y_test_pred)[0]
-        print('mse shape {}'.format(np.shape(mse)))
+        #print('mse shape {}'.format(np.shape(mse)))
         ase  = accumulated_squared_error(y_test_true, y_test_pred)[0]
         r2   = r2_score(y_test_true, y_test_pred)[0]
         #print(mse, ase, r2)
@@ -477,14 +479,13 @@ class TRADITIONAL_AR_model:
 
         if self.test_start is not None and self.test_stop is not None:
             # Load test data
-            print('Loads test data')
-            files = get_list_of_files(start = self.test_start, stop = self.test_stop,
+	    #            print('Loads test data')
+            files = get_list_of_files_traditional_model(start = self.test_start,
+                    stop = self.test_stop,
                         include_start = True, include_stop = True)
             self.test_dataset = merge(files)
 
 
-        ######### FIT
-        # TODO disse må flytten til den funksjonen som
         num_vars = self.bias + len(self.variables) + self.order
 
         coeff_matrix = np.zeros((len(self.latitude),
@@ -768,8 +769,17 @@ if __name__ == '__main__':
     test_stop  = '2018-12-31'
     sig = False
     trans = True
+
+    start = '2011-01-01'
+    stop  = '2011-12-31'
+    test_start = '2012-01-01'
+    test_stop  = '2012-12-31'
+    sig = False
+    trans = True
+
+
     # Tester ikke sigmoid
-    m = TRADITIONAL_AR_model(start = None, stop = None,
+    m = TRADITIONAL_AR_model(start = start, stop = stop,
                              test_start = test_start,
                              test_stop = test_stop,
                              order = 1, transform = trans,
@@ -778,12 +788,12 @@ if __name__ == '__main__':
     m.save()
 
     print(m.get_configuration())
-
+    sig = True
     # tester sigmoid
-    m = TRADITIONAL_AR_model(start = None, stop = None,
+    m = TRADITIONAL_AR_model(start = start, stop = stop,
                              test_start = test_start, test_stop = test_stop,
                              order = 1, transform = trans,
-                 |           sigmoid = sig)
+                             sigmoid = sig)
     coeff = m.fit()
     m.save()
 
