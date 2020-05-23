@@ -37,8 +37,8 @@ train_stop  = '2013-12-31'
 test_start  = '2014-01-01'
 test_stop   = '2018-12-31'
 
+
 base = '/home/hanna/lagrings/'
-#base = '/uio/lagringshotell/geofag/students/metos/hannasv/'
 
 # Directories currently in use
 path_input            = os.path.join(base, 'ERA5_monthly/')

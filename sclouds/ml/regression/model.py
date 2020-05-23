@@ -6,7 +6,7 @@ import glob
 
 import numpy as np
 import xarray as xr
-
+https://www.finn.no/bap/forsale/ad.html?finnkode=177604374
 from timeit import default_timer as timer
 
 from utils import (mean_squared_error, r2_score, fit_pixel, predict_pixel,
@@ -22,7 +22,7 @@ from utils import (dataset_to_numpy, dataset_to_numpy_order,
                               get_list_of_files,
                               get_list_of_files_excluding_period_traditional_model,
                               get_list_of_files_traditional_model)
-import os,sys,inspect
+import os,sys,inspecthttps://www.finn.no/bap/forsale/ad.html?finnkode=177604374
 sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
 from helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
@@ -147,6 +147,10 @@ class Model:
         self.r2 = None
         self.ase = None
 
+        self.mse_train = None
+        self.r2_train = None
+        self.ase_train = None
+
         self.num_test_samples = None
         self.num_train_samples = None
 
@@ -239,6 +243,14 @@ class Model:
         ase_storage = np.zeros((len(self.latitude),
                                  len(self.longitude)))
 
+        mse_storage_train = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+        r2_storage_train = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
+
+        ase_storage_train = np.zeros((len(self.latitude),
+                                 len(self.longitude)))
 
         num_train_samples = np.zeros((len(self.latitude),
                                  len(self.longitude)))
@@ -249,12 +261,17 @@ class Model:
         for i, lat in enumerate(self.latitude): # 81
             for j, lon in enumerate(self.longitude): # 161
                 # Loads
-                coeff, mse, ase, r2, num_test, num_train = self.load_transform_fit(lat, lon)
-                #print('shape recieved coeffs {}'.format(coeff.shape))
+                coeff, mse, ase, r2, num_test, num_train, mse_tr, ase_tr, r2_tr = self.load_transform_fit(lat, lon)
+
                 coeff_matrix[i, j, :] = coeff
                 mse_storage[i, j] = mse
                 r2_storage[i, j] = r2
                 ase_storage[i, j] = ase
+
+                mse_storage_train[i, j] = mse_tr
+                r2_storage_train[i, j]  = r2_tr
+                ase_storage_train[i, j] = ase_tr
+      
                 num_train_samples[i,j] = num_test
                 num_test_samples[i,j] = num_train
 
@@ -264,6 +281,11 @@ class Model:
         self.mse = mse_storage
         self.ase = ase_storage
         self.r2 = r2_storage
+
+        self.mse_train = mse_storage_train
+        self.ase_train = ase_storage_train
+        self.r2_train = r2_storage_train
+
         self.num_test_samples = num_test_samples
         self.num_train_samples = num_train_samples
         return
@@ -333,7 +355,6 @@ class Model:
         print('Finished computing mse, ase, r2 data in load_transform_fit after {} seconds'.format(timer() - self.timer_start))
         print('mse {}, ase {}, r2 {}'.format(mse, ase, r2))
         return mse, ase, r2
-
 
     def load_transform_fit(self, lat, lon):
         """ Standardisation X by equation x_new = (x-mean(x))/std(x)
@@ -451,7 +472,6 @@ class Model:
             X_test = transformed_test
             print('Finished transforming test data in load_transform_fit after {} seconds'.format(timer() - self.timer_start))
 
-
         num_test = (~np.isnan(X_test)).sum(axis=0)[0]
         num_train = (~np.isnan(X_train)).sum(axis=0)[0]
         #print('Xtrain shape {} y train.shape {}'.format(X_train.shape, y.shape))
@@ -459,6 +479,7 @@ class Model:
         #print('coeff {}'.format(coeffs))
         print('Finished fitting pixel test data in load_transform_fit after {} seconds'.format(timer() - self.timer_start))
         y_test_pred = predict_pixel(X_test, coeffs)
+        y_train_pred = predict_pixel(X_train, coeffs)
         print('Finished predicting test pixel data in load_transform_fit after {} seconds'.format(timer() - self.timer_start))
 
         if self.sigmoid:
@@ -476,11 +497,14 @@ class Model:
         print('mse shape {}'.format(np.shape(mse)))
         ase  = accumulated_squared_error(y_test_true, y_test_pred)[0]
         r2   = r2_score(y_test_true, y_test_pred)[0]
+        mse_tr = mean_squared_error(y, y_train_pred)[0]
+        ase_tr = accumulated_squared_error(y, y_train_pred)[0]
+        r2_tr  = r2_score(y, y_train_pred)[0]
+
         #print(mse, ase, r2)
         print('Finished computing mse, ase, r2 data in load_transform_fit after {} seconds'.format(timer() - self.timer_start))
         print('mse {}, ase {}, r2 {}'.format(mse, ase, r2))
-        return coeffs.flatten(), mse, ase, r2, num_test, num_train
-
+        return coeffs.flatten(), mse, ase, r2, num_test, num_train, mse_tr, ase_tr, r2_tr
 
     def fit_evaluate(self):
         raise NotImplementedError('Coming soon ... ')
@@ -520,10 +544,16 @@ class Model:
         vars_dict = {'mse': (['latitude', 'longitude'], self.mse),
                      'r2':  (['latitude', 'longitude'], self.r2),
                      'ase': (['latitude', 'longitude'], self.ase),
+                     
                      'num_train_samples': (['latitude', 'longitude'],
                                     self.num_train_samples),
                      'num_test_samples': (['latitude', 'longitude'],
                                     self.num_test_samples),
+
+                     'mse_train': (['latitude', 'longitude'], self.mse_train),
+                     'r2_train':  (['latitude', 'longitude'], self.r2_train),
+                     'ase_train': (['latitude', 'longitude'], self.ase_train),
+
                      'global_mse': np.mean(self.mse),
                      'global_r2':  np.mean(self.r2),
                      'global_ase': np.mean(self.ase),
@@ -660,8 +690,9 @@ if __name__ == '__main__':
                  test_start = test_start, test_stop = test_stop,
                  train_dataset = train_dataset, test_dataset = test_dataset,
                  order = 1,                 transform = trans,
-                 sigmoid = sig, latitude = [30], longitude = [0],
+                 sigmoid = sig, latitude = None, longitude = None,
                  type = type)
+
     coeff = m.fit()
     m.save()
     print(m.get_configuration())

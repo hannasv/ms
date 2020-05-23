@@ -109,7 +109,6 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start =
 
     #assert len(subset)%5==0, "Not five of each files, missing variables in file list!"
     #assert len(subset)!=0, "No files found, check if you have mounted lagringshotellet."
-
     return subset
 
 
@@ -454,8 +453,6 @@ def dataset_to_numpy_order(dataset, order, bias = True):
             X[:, var_index] = tcc[temp_order:][bo]
         var_index+=1
 
-    #print(X.shape)
-    #print(y.shape)
     return X, y
 
 
@@ -523,8 +520,6 @@ def dataset_to_numpy_order_traditional_ar(dataset, order, bias = True):
     #print(X.shape)
     #print(y.shape)
     return X, y
-
-
 
 def dataset_to_numpy(pixel, bias = True):
     """ Takes a xr.dataset and transforms it to a numpy matrix.

@@ -11,7 +11,7 @@ filter_dir = '/home/hanna/MS-suppl/filters/'
 
 # for wessel -- /uio/lagringshotell/geofag/students/metos/hannasv/results
 read_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
-save_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/'
+save_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/monthly_mean/'
 filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
 
 VARIABLES    = ['r', 'q', 't2m', 'sp', 'tcc']
@@ -23,7 +23,7 @@ from filter import Filter
 
 def get_all_filesnames_from_one_variable(var):
     """Get all filenames from one variable."""
-    return glob.glob(os.path.join(path_input, '*{}*.nc'.format(var)))
+    return glob.glob(os.path.join(read_dir, '*{}*.nc'.format(var)))
 
 
 def get_date_and_mean_from_one_filename(absolute_path = '/home/hanna/lagrings/ERA5_monthly/2012_01_t2m.nc'):
@@ -62,7 +62,8 @@ def get_date_and_mean_from_one_filename(absolute_path = '/home/hanna/lagrings/ER
         print("Didn't find file ... {}".format(absolute_path))
         return date, np.nan, np.nan, np.nan
 
-a,b,c,d = get_date_and_mean_from_one_filename(absolute_path = '/home/hanna/lagrings/ERA5_monthly/2012_01_t2m.nc')
+#a,b,c,d = get_date_and_mean_from_one_filename(absolute_path = '/home/hanna/lagrings/ERA5_monthly/2012_01_t2m.nc')
+
 storage = {}
 for var in VARIABLES: # VARIABLES[:-1]
 
@@ -89,5 +90,5 @@ for var in VARIABLES: # VARIABLES[:-1]
     storage['date_{}'.format(var)] = dates # just to check that they are equal
 
 data = xr.Dataset(storage)
-data.to_netcdf(save_dir + 'monthly_means.nc')
+data.to_netcdf(save_dir + 'monthly_means_updated.nc')
 print('Computet monthly means ... ')

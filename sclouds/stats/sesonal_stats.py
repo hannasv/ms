@@ -4,14 +4,14 @@ import glob
 import xarray as xr
 import numpy as np
 
-read_dir   = '/home/hanna/lagrings/ERA5_monthly/'
-save_dir   = '/home/hanna/lagrings/results/stats/season/'
-filter_dir = '/home/hanna/MS-suppl/filters/'
+#read_dir   = '/home/hanna/lagrings/ERA5_monthly/'
+#save_dir   = '/home/hanna/lagrings/results/stats/season/'
+#filter_dir = '/home/hanna/MS-suppl/filters/'
 
 # for wessel -- /uio/lagringshotell/geofag/students/metos/hannasv/results
-#read_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
-#save_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/results/season/'
-#filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
+read_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
+save_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/season/'
+filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
 
 STATS         = ['mean', 'std', 'min', 'max', 'median'] # 'median',
 VALID_VARS    = ['r', 'q', 't2m', 'sp', 'tcc']
@@ -22,7 +22,7 @@ SEASONS = ['DJF', 'MAM', 'JJA', 'SON']
 # added duplicates since you are using enviornment on wessel
 #from sclouds.helpers import merge
 #from filter import Filter
-from sclouds.io import Filter
+#from sclouds.io import Filter
 
 
 def get_list_of_files_for_season(season, var):
@@ -89,7 +89,7 @@ def merge(files):
     #assert len(files) == 5
     #datasets = [xr.open_dataset(fil) for fil in files]
     #return xr.merge(datasets)
-    return xr.open_mfdataset(files, compat='no_conflicts', join='outer')
+    return xr.open_mfdataset(files, compat='no_conflicts')
 
 
 class SeasonalStats:
@@ -113,7 +113,6 @@ class SeasonalStats:
 
             files = get_list_of_files_for_season(season, variable)
 
-            files = files[:3]
             print('Found {} files ..'.format(files))
             print("Test example using three files ... ")
 
@@ -232,8 +231,8 @@ class SeasonalStats:
 if __name__ == "__main__":
     # Generate the satelite data below here.
     for season in SEASONS:
-        for var in VALID_VARS:
-            stat = SeasonalStats(season = season,var = var, variable=var)
+        for var in ['tcc']:
+            stat = SeasonalStats(season = season,var = var, variable=var, local = True)
             #data = stat.get_data()
             #stat.save()
             """

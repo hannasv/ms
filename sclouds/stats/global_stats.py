@@ -24,8 +24,8 @@ VALID_FILTERS = ['coast', 'sea', 'land', 'artefact']
 
 # added duplicates since you are using enviornment on wessel
 #from sclouds.helpers import merge
-#from filter import Filter
-from sclouds.io import Filter
+from filter import Filter
+#from sclouds.io import Filter
 
 def merge(files):
     """ Merging a list of filenames into a dataset.open_mfdataset
@@ -123,21 +123,22 @@ class Stats:
     """
 
     def __init__(self, var = None, variable = None, dataset = None,
-                    filter_key = 'all', local = True, start = None, stop = None):
+                    filter_key = 'all', local = True, start = None, stop = None,
+                    global_stat = True):
 
         #if not filter_key in VALID_FILTERS:
         #    raise ValueError('Provided filter {} is not valid. Available filters are {}.'.format(filter_key, VALID_FILTERS))
-        self.save_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/'
+        self.reserve_dir = '/uio/hume/student-u89/hannasv/reserve_results/'
+        self.save_dir    = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/'
         print('enters')
         if start is not None and stop is not None:
-            print('updated self save dir')
             self.save_dir = os.path.join(self.save_dir,'{}_{}'.format(start, stop))
-
+            print('updated self save dir {}'.format(self.save_dir))
         self.filter_key = filter_key # used in filename
         self.var = var
         self.start = start
         self.stop = stop
-
+        self.global_stat = global_stat
         if variable is not None:
             #if not variable in VALID_VARS:
             #    raise ValueError('Provided variable {} is not valid. Available variables are {}.'.format(variable, VALID_VARS))
@@ -164,13 +165,14 @@ class Stats:
         #    raise ValueError('Please provide either a variable or a dataset.')
 
         generated_files = glob.glob(os.path.join(self.save_dir, '*.nc'))
-        print('Number of already generated files {}'.format(len(generated_files)))
+        #print('Number of already generated files {}'.format(len(generated_files)))
         if not self.generate_pixel_output_filename() in generated_files and local and filter_key == 'all':
-            print('Starting to produce local results.')
+            print('Starting to produce local results. for var {}'.format(var))
             self.result         = self.produce_results() # store all results as variables in a dataset.
+            print('about to save pixel')
             self.save_pixel()
 
-        if not self.generate_global_output_filename() in generated_files:
+        if not self.generate_global_output_filename() in generated_files and global_stat:
             print('Starting to produce global results.')
             self.global_result  = self.produce_global_results()
             self.save_global()
@@ -199,9 +201,10 @@ class Stats:
             #
             print('Computing shape {}'.format(np.shape(result)))
             res_dict[statistics] = (dimensions, computing)
-
+        print('Detected mad started computing')
         res = np.nanmedian(result - res_dict['mean'][1], axis = 0)
         res_dict['mad'] = (dimensions, res)
+        print('Updates the netcdf dataset')
         result = xr.Dataset(res_dict,
                             coords={'longitude': (['longitude'], lon),
                                     'latitude': (['latitude'], lat),
@@ -245,13 +248,23 @@ class Stats:
 
     def save_pixel(self):
         print("Saving file for variable {}, filter {}".format(self.var, self.filter_key))
-        self.result.to_netcdf(os.path.join(save_dir, 'stats_pixel_{}_{}.nc'.format(self.var, self.filter_key)))
+
+        try:
+            self.result.to_netcdf(os.path.join(self.save_dir,
+                    'stats_pixel_{}_{}.nc'.format(self.var, self.filter_key)))
+        except PermissionError:
+            self.result.to_netcdf(os.path.join(self.reserve_dir,
+                    'stats_pixel_{}_{}_{}_{}.nc'.format(self.var, self.filter_key, self.start, self.stop)))
         return
 
     def save_global(self):
         print('atrtemps to save')
-        self.global_result.to_netcdf(os.path.join(self.save_dir,
-                'stats_global_{}_{}.nc'.format(self.var, self.filter_key)))
+        try:
+            self.global_result.to_netcdf(os.path.join(self.save_dir,
+                    'stats_global_{}_{}.nc'.format(self.var, self.filter_key)))
+        except PermissionError:
+            self.global_result.to_netcdf(os.path.join(self.reserve_dir,
+                    'stats_global_{}_{}_{}_{}.nc'.format(self.var, self.filter_key, self.start, self.stop)))
         return self
 
 def compute_stats_entire_period():
@@ -278,11 +291,41 @@ def compute_stats_for_normalization():
     pass
 
 if __name__ == "__main__":
+     # TODO run everything again including cloud cover
     # Generate the satelite data below here.
-    for var in ['r', 'q', 't2m', 'sp']: # todo add cloud cover later
+    for var in ['tcc']: #
         for start, stop in [('2004-04-01', '2008-12-31'),
                             ('2009-01-01', '2013-12-31'),
                             ('2014-01-01', '2018-12-31')]:
-            stat = Stats(var = var, variable=var, local = False, start = start, stop = stop)
-            #data = stat.get_data()
-            #stat.save()
+            # Computes stat by excluding the above period.
+            stat = Stats(var = var, variable=var,
+                        local = False, start = start, stop = stop,
+                        filter_key = 'all', global_stat = True)
+
+
+    for var in ['r', 'q', 't2m', 'sp']: #
+        for start, stop in [('2004-04-01', '2008-12-31'),
+                            ('2009-01-01', '2013-12-31'),
+                            ('2014-01-01', '2018-12-31')]:
+            # Computes stat by excluding the above period.
+            stat = Stats(var = var, variable=var,
+                        local = True, start = start, stop = stop,
+                        filter_key = 'all', global_stat = False)
+
+        """
+        for key in VALID_FILTERS:
+            stat = Stats(var = var, variable=var)
+            data = stat.get_data()
+
+            for key in VALID_FILTERS:
+                print('Applying filter {}'.format(key))
+                filter = Filter(key).set_data(data, var)
+                print('Generated filter')
+                filtered_data = filter.get_filtered_data()
+                print('Recieved data from filter ')
+                print(filtered_data)
+                st = Stats(var = var,
+                           variable  = 'filtered',
+                           dataset= filtered_data,
+                           filter_key = key, local = False)
+        """

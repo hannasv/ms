@@ -9,8 +9,7 @@ import xarray as xr
 
 
 from sclouds.ml.regression.utils import (mean_squared_error, r2_score,
-                     fit_pixel, predict_pixel,
-                     accumulated_squared_error,
+                     fit_pixel, predict_pixel, accumulated_squared_error,
                      sigmoid, inverse_sigmoid)
 
 
@@ -18,19 +17,16 @@ from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_orde
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
                               get_xarray_dataset_for_period)
-
 import os,sys,inspect
-#currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-#¤parentdir = os.path.dirname(currentdir)
 
-#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
 from sclouds.helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/io/')
 
 base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
-#base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/test/'
+# base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/test/'
+# base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/' #2014-01-01_2018-12-31/'
 
 def min_max_scaling(dummy):
     """ Forces all values to be between 0 and 1.
@@ -142,7 +138,7 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start =
         List of strings containing all the absolute paths of files containing
         data in the requested period.
     """
-    # Remove date.
+
     parts = start.split('-')
     start_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
 
@@ -548,7 +544,7 @@ class AR_model:
     def fit(self):
         """ New fit function
         """
-
+        print('uses this one')
         if self.test_start is not None and self.test_stop is not None:
             # Load test data
             print('Loads test data')
@@ -582,18 +578,8 @@ class AR_model:
 
         for i, lat in enumerate(self.latitude): # 81
             for j, lon in enumerate(self.longitude): # 161
-
-                if self.transform:
+                    # Loda transform fit seems to hand
                     coeff, mse, ase, r2, num_test, num_train = self.load_transform_fit(lat, lon)
-                    coeff_matrix[i, j, :] = coeff
-                    mse_storage[i, j] = mse
-                    r2_storage[i, j] = r2
-                    ase_storage[i, j] = ase
-                    num_train_samples[i,j] = num_test
-                    num_test_samples[i,j] = num_train
-                else:
-
-                    coeff, mse, ase, r2, num_test, num_train = self.load_fit(lat, lon)
                     coeff_matrix[i, j, :] = coeff
                     mse_storage[i, j] = mse
                     r2_storage[i, j] = r2
@@ -635,11 +621,8 @@ class AR_model:
 
         if self.order > 0:
             X, y   = dataset_to_numpy_order(ds, order = self.order, bias = self.bias)
-
-        #print(X.shape)
-        #print(y.shape)
-        # else:
-        #    X, y   = dataset_to_numpy_r_traditional_ar(ds, bias = self.bias)
+        else:
+            X, y   = dataset_to_numpy(ds, bias = self.bias)
 
         # Removes nan's
         a = np.concatenate([X, y], axis = 1)
@@ -685,29 +668,33 @@ class AR_model:
             if self.order > 0:
                 X_test, y_test_true = dataset_to_numpy_order(ds, self.order, bias = self.bias)
                 n_times, n_vars = X_test.shape
-                #VARIABLES = ['t2m', 'q', 'r', 'sp']
-                if self.transform:
-                    transformed_test = np.zeros((n_times, n_vars ))
+            else:
+                X_test, y_test_true  = dataset_to_numpy(ds, bias = self.bias)
+                n_times, n_vars = X_test.shape
 
-                    for j, var in enumerate(self.variables):
+            #VARIABLES = ['t2m', 'q', 'r', 'sp']
+            if self.transform:
+                transformed_test = np.zeros((n_times, n_vars ))
 
-                        m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
-                        s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+                for j, var in enumerate(self.variables):
 
-                        transformed_test[:, j] = (X_test[:, j]- m)/s
+                    m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+                    s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
 
-                    if order > 0:
-                        var = 'tcc'
-                        m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
-                        s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
+                    transformed_test[:, j] = (X_test[:, j]- m)/s
 
-                        for k in range(order):
-                            # Something wierd with the rotation of cloud cover values
-                            transformed_test[:, k+j+1] = (X_test[:, k+j+1]- m)/s
+                if order > 0:
+                    var = 'tcc'
+                    m = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['mean'].sel(latitude = lat, longitude = lon).values
+                    s = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))['std'].sel(latitude = lat, longitude = lon).values
 
-                    X_test = transformed_test
+                    for k in range(order):
+                        # Something wierd with the rotation of cloud cover values
+                        transformed_test[:, k+j+1] = (X_test[:, k+j+1]- m)/s
 
-                print('Detects shap Xtest {} and ytest {}'.format( np.shape(X_test), np.shape(y_test_true)  ))
+                X_test = transformed_test
+
+                #print('Detects shap Xtest {} and ytest {}'.format( np.shape(X_test), np.shape(y_test_true)  ))
 
         num_test = (~np.isnan(X_test)).sum(axis=0)[0]
         #print(num_test)
@@ -725,8 +712,16 @@ class AR_model:
         # y_true = self.y_train
 
         #print('before shape pred {}'.format(np.shape(y_pred)))
-        #y_pred = y_pred[:,:,:,0]
+        #y_test_pred = y_test_pred[:,:,:,0]
         #print('after shape pred {}'.format(np.shape(y_pred)))
+
+        if len(y_test_true) == 4:
+            y_test_true = y_test_true[:, :, :, 0]
+
+
+        if len(y_test_pred) == 4:
+            y_test_pred = y_test_pred[:, :, :, 0]
+
 
         print(y_test_true.shape, y_test_pred.shape)
 
@@ -822,6 +817,7 @@ class AR_model:
 
                 Y[:, i, j, 0] = y_pred.flatten()
         return Y
+
     def get_evaluation(self):
         """Evaluation"""
         vars_dict = {'mse': (['latitude', 'longitude'], self.mse),
@@ -852,8 +848,6 @@ class AR_model:
             else:
                 X, y_true = dataset_to_numpy_grid(dataset, bias = self.bias)
 
-            # TODO add tranformations and transform back.
-
             if self.transform:
                 X, y_true = self.transform_data(X, y_true)
 
@@ -869,18 +863,19 @@ class AR_model:
             if self.sigmoid:
                 y_true = self.inverse_sigmoid(self.y_train)
 
-        y_pred = y_pred[:,:,:,0]
+        if len(y_pred.shape):
+            y_pred = y_pred[:,:,:,0]
 
         # Move most of content in store performance to evaluate
         mse  = mean_squared_error(y_true, y_pred)
-        print('mse shape {}'.format(np.shape(mse)))
+        #print('mse shape {}'.format(np.shape(mse)))
         ase  = accumulated_squared_error(y_true, y_pred)
         r2   = r2_score(y_true, y_pred)
 
-        print('(~np.isnan(X)).sum(axis=0) {}'.format(np.shape(
-                                                (~np.isnan(X)).sum(axis=0))))
-        print('(~np.isnan(self. Xtrain)).sum(axis=0) {}'.format(np.shape(
-                                    (~np.isnan(self.X_train)).sum(axis=0))))
+        #print('(~np.isnan(X)).sum(axis=0) {}'.format(np.shape(
+        #                                        (~np.isnan(X)).sum(axis=0))))
+        #print('(~np.isnan(self. Xtrain)).sum(axis=0) {}'.format(np.shape(
+        #                                (~np.isnan(self.X_train)).sum(axis=0))))
         vars_dict = {'mse': (['latitude', 'longitude'], mse),
                      'r2':  (['latitude', 'longitude'], r2),
                      'ase': (['latitude', 'longitude'], ase),
@@ -923,7 +918,7 @@ class AR_model:
 
 
         ######### FIT
-        # TODO disse må flytten til den funksjonen som
+        # TODO disse maa flytten til den funksjonen som
         num_vars = self.bias + len(self.variables) + self.order
 
         coeff_matrix = np.zeros((len(self.latitude),
@@ -1030,7 +1025,8 @@ class AR_model:
         named by the current time. Repo : /home/hanna/lagrings/results/ar/
         """
         path_ar_results = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/'
-        filename      = os.path.join(path_ar_results, 'AR_{}.nc'.format(np.datetime64('now')))
+        filename      = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/AR_{}.nc'.format(np.datetime64('now'))
+        #os.path.join(path_ar_results, )
         print('Stores file {}'.format(filename))
         config_dict   = self.get_configuration()
         weights_dict  = self.get_weights()
@@ -1053,16 +1049,6 @@ class AR_model:
         return
 
 if __name__ == '__main__':
-    m = AR_model(start = '2012-01-01',      stop = '2012-01-03',
-                 test_start = '2012-03-01', test_stop = '2012-03-03',
-                 order = 0,                 transform = True,
-                 sigmoid = False)
-    coeff = m.fit()
-    m.save()
-
-    print(m.get_configuration())
-
-
     start = None
     stop  = None
     test_start = '2014-01-01'

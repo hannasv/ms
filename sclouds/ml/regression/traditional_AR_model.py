@@ -1,7 +1,7 @@
 """ Explenation of the content of this file.
 """
 
-import os
+import os, sys
 import glob
 
 import numpy as np
@@ -12,7 +12,7 @@ from sclouds.ml.regression.utils import (mean_squared_error, r2_score,
                      accumulated_squared_error,
                      sigmoid, inverse_sigmoid)
 
-from sclouds.io.utils import (dataset_to_numpy, dataset_to_numpy_order,
+from utils import (dataset_to_numpy, dataset_to_numpy_order,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
                               get_xarray_dataset_for_period,
@@ -27,19 +27,8 @@ import os,sys,inspect
 from sclouds.helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
-#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/io/')
 
-base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
-
-def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
-
-    first_period = get_list_of_files(start = '2004-04-01', stop = start,
-                                include_start = True, include_stop = False)
-    last_period = get_list_of_files(start = stop, stop = '2018-12-31',
-                        include_start = False, include_stop = True)
-    entire_period = list(first_period) + list(last_period)
-    return entire_period
-
+base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/'#2014-01-01_2018-12-31/'
 
 
 def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True):
@@ -97,9 +86,9 @@ def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31
 
 def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
 
-    first_period = get_list_of_files(start = '2004-04-01', stop = start,
+    first_period = get_list_of_files_traditional_model(start = '2004-04-01', stop = start,
                                 include_start = True, include_stop = False)
-    last_period = get_list_of_files(start = stop, stop = '2018-12-31',
+    last_period = get_list_of_files_traditional_model(start = stop, stop = '2018-12-31',
                         include_start = False, include_stop = True)
     entire_period = list(first_period) + list(last_period)
     return entire_period
@@ -391,8 +380,8 @@ class TRADITIONAL_AR_model:
         if self.order > 0:
             X, y   = dataset_to_numpy_order_traditional_ar(ds, order = self.order, bias = self.bias)
 
-        print(X.shape)
-        print(y.shape)
+        #print(X.shape)
+        #print(y.shape)
         #else:
         #    X, y   = dataset_to_numpy_r_traditional_ar(ds, bias = self.bias)
 
@@ -401,7 +390,7 @@ class TRADITIONAL_AR_model:
         a = a[~np.isnan(a).any(axis = 1)]
 
         X = a[:, :-1]
-        print(X.shape)
+        #print(X.shape)
         if self.sigmoid:
             y = inverse_sigmoid(a[:, -1, np.newaxis]) # not tested
         else:
@@ -429,10 +418,10 @@ class TRADITIONAL_AR_model:
             # Based on start and stop descide which files it gets.
 
             ds     = get_pixel_from_ds(self.test_dataset, lat, lon)
-            print(ds)
+            #print(ds)
             if self.order > 0:
                 X_test, y_test_true = dataset_to_numpy_order_traditional_ar(ds, self.order, bias = self.bias)
-                n_times, n_vars = X.shape
+                n_times, n_vars = X_test.shape
                 #VARIABLES = ['t2m', 'q', 'r', 'sp']
                 if self.transform:
                     transformed_test = np.zeros((n_times, order ))
@@ -448,7 +437,7 @@ class TRADITIONAL_AR_model:
 
                     X_test = transformed_test
 
-                print('Detects shap Xtest {} and ytest {}'.format( np.shape(X_test), np.shape(y_test_true)  ))
+                #print('Detects shap Xtest {} and ytest {}'.format( np.shape(X_test), np.shape(y_test_true)  ))
 
         # TODO add this
         #print('(~np.isnan(X)).sum(axis=0) {}'.format(np.shape(
@@ -470,15 +459,17 @@ class TRADITIONAL_AR_model:
         # y_pred = self.predict(X) # prediction based on testset and
         # y_true = self.y_train
 
-        #print('before shape pred {}'.format(np.shape(y_pred)))
-        #y_pred = y_pred[:,:,:,0]
-        #print('after shape pred {}'.format(np.shape(y_pred)))
+        if len(y_test_true) == 4:
+            y_test_true = y_test_true[:, :, :, 0]
 
-        print(y_test_true.shape, y_test_pred.shape)
+
+        if len(y_test_pred) == 4:
+            y_test_pred = y_test_pred[:, :, :, 0]
+
 
         # Move most of content in store performance to evaluate
         mse  = mean_squared_error(y_test_true, y_test_pred)[0]
-        print('mse shape {}'.format(np.shape(mse)))
+        #print('mse shape {}'.format(np.shape(mse)))
         ase  = accumulated_squared_error(y_test_true, y_test_pred)[0]
         r2   = r2_score(y_test_true, y_test_pred)[0]
         #print(mse, ase, r2)
@@ -490,14 +481,13 @@ class TRADITIONAL_AR_model:
 
         if self.test_start is not None and self.test_stop is not None:
             # Load test data
-            print('Loads test data')
-            files = get_list_of_files(start = self.test_start, stop = self.test_stop,
+	    #            print('Loads test data')
+            files = get_list_of_files_traditional_model(start = self.test_start,
+                    stop = self.test_stop,
                         include_start = True, include_stop = True)
             self.test_dataset = merge(files)
 
 
-        ######### FIT
-        # TODO disse må flytten til den funksjonen som
         num_vars = self.bias + len(self.variables) + self.order
 
         coeff_matrix = np.zeros((len(self.latitude),
@@ -600,10 +590,11 @@ class TRADITIONAL_AR_model:
         X : array-like
             Matrix containing input data.
         """
+        a, b, c, _ = np.shape(X)
         n_time = len(self.dataset.time.values)
         n_lat  = len(self.latitude)
         n_lon  = len(self.longitude)
-        Y      = np.zeros( (n_time-self.order, n_lat, n_lon, 1)  )
+        Y      = np.zeros( (a, b, c, 1)  )
 
         for i in range(n_lat):
             for j in range(n_lon):
@@ -630,7 +621,7 @@ class TRADITIONAL_AR_model:
         """
         if self.test_start is not None and self.test_stop is not None:
             # Based on start and stop descide which files it gets.
-            files = get_list_of_files(start = self.test_start, stop = self.test_stop,
+            files = get_list_of_files_traditional_model(start = self.test_start, stop = self.test_stop,
                             include_start = True, include_stop = True)
             dataset = merge(files)
 
@@ -652,7 +643,7 @@ class TRADITIONAL_AR_model:
         else:
             #raise NotImplementedError('Coming soon ... get_evaluation()')
             print("X shape {}, y shape {}".format(self.X_train.shape, self.y_train.shape))
-            y_pred = self.predict(X) # prediction based on testset and
+            y_pred = self.predict(self.X_train) # prediction based on testset and
             y_true = self.y_train
 
         print('before shape pred {}'.format(np.shape(y_pred)))
@@ -733,7 +724,8 @@ class TRADITIONAL_AR_model:
         """ Saves model configuration, evaluation, transformation into a file
         named by the current time. Repo : /home/hanna/lagrings/results/ar/
         """
-        filename      = os.path.join(path_ar_results, 'AR_traditional{}.nc'.format(np.datetime64('now')))
+        filename      = os.path.join('/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/',
+                        'AR_traditional{}.nc'.format(np.datetime64('now')))
         print('Stores file {}'.format(filename))
         config_dict   = self.get_configuration()
         weights_dict  = self.get_weights()
@@ -765,7 +757,7 @@ if __name__ == '__main__':
 
     m = TRADITIONAL_AR_model(start = '2012-01-01',      stop = '2012-01-03',
                  test_start = '2012-03-01', test_stop = '2012-03-03',
-                 order = 1,                 transform = True,
+                 order = 1,                 transform = False,
                  sigmoid = False)
     coeff = m.fit()
     m.save()
@@ -779,8 +771,17 @@ if __name__ == '__main__':
     test_stop  = '2018-12-31'
     sig = False
     trans = True
+
+    start = '2011-01-01'
+    stop  = '2011-12-31'
+    test_start = '2012-01-01'
+    test_stop  = '2012-12-31'
+    sig = False
+    trans = True
+
+
     # Tester ikke sigmoid
-    m = TRADITIONAL_AR_model(start = None, stop = None,
+    m = TRADITIONAL_AR_model(start = start, stop = stop,
                              test_start = test_start,
                              test_stop = test_stop,
                              order = 1, transform = trans,
@@ -789,12 +790,12 @@ if __name__ == '__main__':
     m.save()
 
     print(m.get_configuration())
-
+    sig = True
     # tester sigmoid
-    m = TRADITIONAL_AR_model(start = None, stop = None,
+    m = TRADITIONAL_AR_model(start = start, stop = stop,
                              test_start = test_start, test_stop = test_stop,
                              order = 1, transform = trans,
-                 |           sigmoid = sig)
+                             sigmoid = sig)
     coeff = m.fit()
     m.save()
 

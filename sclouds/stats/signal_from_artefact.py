@@ -10,14 +10,14 @@ import glob
 import xarray as xr
 import numpy as np
 
-read_dir   = '/home/hanna/lagrings/ERA5_monthly/'
-save_dir   = '/home/hanna/lagrings/results/'
-filter_dir = '/home/hanna/MS-suppl/filters/'
+#read_dir   = '/home/hanna/lagrings/ERA5_monthly/'
+#save_dir   = '/home/hanna/lagrings/results/'
+#filter_dir = '/home/hanna/MS-suppl/filters/'
 
 # for wessel -- /uio/lagringshotell/geofag/students/metos/hannasv/results
-#read_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
-#save_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/results/'
-#filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
+read_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
+save_dir   = '/uio/lagringshotell/geofag/students/metos/hannasv/results/'
+filter_dir = '/uio/hume/student-u89/hannasv/MS-suppl/'
 
 def merge(files):
     """ Merging a list of filenames into a dataset.open_mfdataset
@@ -35,9 +35,9 @@ def merge(files):
     #assert len(files) == 5
     #datasets = [xr.open_dataset(fil) for fil in files]
     #return xr.merge(datasets)
-    return xr.open_mfdataset(files, compat='no_conflicts', join='outer')
+    return xr.open_mfdataset(files, compat='no_conflicts')
 
-from sclouds.io import Filter
+from filter import Filter
 
 
 filter_key = 'artefact'
@@ -47,11 +47,12 @@ var = 'tcc'
 
 files =glob.glob(os.path.join(read_dir, '*tcc*.nc'))
 print('Merges files {}'.format(files))
-
 data = merge(files)
-
+print('Finished merging files')
 filter = Filter(filter_key).set_data(data, var)
+print('Added data to filter')
 means = filter.get_spatial_mean()
-print(type(means))
+print('Finished computing spatial mean ...')
+#print(type(means))
 means.to_netcdf( path = os.path.join(save_dir, 'temporal_signal_artefact.nc' ))
-print(means)
+print('Stored signal from arteact')
