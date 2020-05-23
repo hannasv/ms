@@ -6,7 +6,7 @@ import xarray as xr
 import seaborn as sns
 
 from sclouds.helpers import (path_input, path_stats_results, VARIABLES,
-                                UNITS, LONGNAME, SEASONS, STATISTICS)
+                                UNITS, LONGNAME, SEASONS, STATISTICS, LONGNAME_STATISTICS)
 
 from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                     path_python_figures, import_matplotlib,
@@ -16,7 +16,7 @@ mat = import_matplotlib() # for mye
 import matplotlib.pyplot as plt
 
 #path = '/home/hanna/lagrings/results/stats/test_season/'
-base = '/home/hanna/lagrings/results/stats/test_season/'
+base = '/home/hanna/lagrings/results/stats/season/'
 n_rows = 5
 n_cols = 4
 
@@ -31,9 +31,8 @@ for stat in STATISTICS:
 
     for var in VARIABLES:
 
-
         path = '/home/hanna/lagrings/results/stats/'
-        files = glob.glob(path + '*global*{}*all.nc'.format(var))
+        files = glob.glob('/home/hanna/lagrings/results/stats/*global*{}*all.nc'.format(var))
 
         vmin = xr.open_dataset(files[0])['min'].values
         vmax = xr.open_dataset(files[0])['max'].values
@@ -62,8 +61,8 @@ for stat in STATISTICS:
             if counter < 4:
                  axs[counter].set_title('{}'.format(season))
 
-            if counter%4==0:
-                axs[counter].set_ylabel('{} [{}]'.format(var, UNITS[var]))
+            #if counter%4==0:
+            #    axs[counter].set_ylabel('{} [{}]'.format(var, UNITS[var]))
 
             counter += 1
 
@@ -71,7 +70,7 @@ for stat in STATISTICS:
             if counter%4==0:
                 fig.colorbar(cntours, ax=axs[counter-1], label = '{} [{}]'.format(var, UNITS[var]))
 
-    fig.suptitle(stat)
-    plt.subplots_adjust(left=0.1, bottom=0.05, right=0.9, top=0.9, hspace=0.1, wspace=0.1)
+    fig.suptitle(LONGNAME_STATISTICS[stat])
+    plt.subplots_adjust(left=0.05, bottom=0.05, right=0.85, top=0.9, hspace=0.1, wspace=0.1)
     plt.savefig(path_python_figures + 'seasonal_{}_all_variables.png'.format(stat))
     print('Finished {}'.format(stat))

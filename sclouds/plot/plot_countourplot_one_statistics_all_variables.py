@@ -16,14 +16,14 @@ from sclouds.io.utils import get_xarray_dataset_for_period
 from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                     path_python_figures, import_matplotlib,
                                     cmap_contour_plot, levels_contourplot,
-                                    color_maps)
+                                    color_maps, add_ticks)
 mat = import_matplotlib() #for mye
 import matplotlib.pyplot as plt
 
 n_rows = len(VARIABLES)
 n_cols = 1
 levels_contourplot = 100
-
+path_stats_results = '/home/hanna/lagrings/results/stats'
 
 for stat in STATISTICS: #['mean']:#STATISTICS:
     fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
@@ -53,12 +53,7 @@ for stat in STATISTICS: #['mean']:#STATISTICS:
         ax.set_title(LONGNAME[var], fontsize = 14)
         ax.set_ylabel('Latitude')
 
-        ax.xaxis.set_major_locator(MultipleLocator(20))
-        ax.yaxis.set_major_locator(MultipleLocator(20))
-        ax.xaxis.set_major_formatter(FormatStrFormatter('%d'))
-
-        ax.set_yticklabels(labels = np.linspace(30, 50, 5))
-        ax.set_xticklabels(labels = np.linspace(-20, 25, 10), rotation = 45)
+        ax = add_ticks(ax, x_num_tikz = 9, y_num_tikz = 5)
 
     plt.xlabel('Longitude')
     plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.9, bottom=0.1, left = 0.14, right = .95)

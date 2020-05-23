@@ -7,7 +7,7 @@ import glob
 import numpy as np
 import xarray as xr
 
-from utils import (mean_squared_error, r2_score,
+from sclouds.ml.regression.utils import (mean_squared_error, r2_score,
                      fit_pixel, predict_pixel,
                      accumulated_squared_error,
                      sigmoid, inverse_sigmoid)
@@ -23,8 +23,8 @@ import os,sys,inspect
 #currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 #¤parentdir = os.path.dirname(currentdir)
 
-sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
-from helpers import (merge, get_list_of_variables_in_ds,
+#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
+from sclouds.helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/io/')

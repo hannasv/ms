@@ -128,8 +128,62 @@ import glob
 import numpy as np
 import xarray as xr
 
-sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
-from helpers import merge, path_input
+#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
+from sclouds.helpers import merge, path_input
+
+def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True, var = 'tcc'):
+    """ Returns list of files containing data for the requested period.
+
+    Parameteres
+    ----------------------
+    start : str
+        Start of period. First day included. (default '2012-01-01')
+
+    stop : str
+        end of period. Last day included. (default '2012-01-31')
+
+    Returns
+    -----------------------
+    subset : List[str]
+        List of strings containing all the absolute paths of files containing
+        data in the requested period.
+    """
+    # Remove date.
+    parts = start.split('-')
+    start_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
+
+    if stop is not None:
+        parts = stop.split('-')
+        stop_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
+    else:
+        stop_search_str = ''
+
+    if (start_search_str == stop_search_str) or (stop is None):
+        subset = glob.glob(os.path.join( path_input, '{}*{}*.nc'.format(start_search_str, var)))
+    else:
+        # get all files
+        files = glob.glob(os.path.join( path_input, '*.nc' ))
+        files = np.sort(files) # sorting then for no particular reson
+
+        min_fil = os.path.join(path_input, start_search_str + '_{}.nc'.format(var))
+        max_fil = os.path.join(path_input, stop_search_str + '_{}.nc'.format(var))
+
+        if include_start and include_stop:
+            smaller = files[files <= max_fil]
+            subset  = smaller[smaller >= min_fil] # results in all the files
+
+        elif include_start and not include_stop:
+            smaller = files[files < max_fil]
+            subset  = smaller[smaller >= min_fil] # results in all the files
+
+        elif not include_start and include_stop:
+            smaller = files[files <= max_fil]
+            subset  = smaller[smaller > min_fil] # results in all the files
+        else:
+            raise ValueError('Something wierd happend. ')
+    return subset
+
+
 
 def get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31'):
     """ Reads data from the requested period into a xarray dataset.
@@ -227,8 +281,6 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start =
     #assert len(subset)!=0, "No files found, check if you have mounted lagringshotellet."
 
     return subset
-
-
 
 def dataset_to_numpy_grid_keras(pixel, seq_length):
     """ Takes a xr.dataset and transforms it to a numpy matrix.
