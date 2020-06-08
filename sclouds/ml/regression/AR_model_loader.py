@@ -8,7 +8,7 @@ import numpy as np
 import xarray as xr
 
 from sclouds.helpers import  path_ar_results
-from sclouds.ml.regression.AR_model import Model
+from sclouds.ml.regression.model import Model
 #from sclouds.ml.regression.utils import write_path, read_path
 
 def get_train_test(test_start, test_stop, model = 'ar'):
@@ -117,7 +117,7 @@ class AR_model_loader:
                        'test_start': self.dataset.test_start.values,
                        'test_stop': self.dataset.test_stop.values,
                        'bias': self.dataset.bias.values,
-                       'type':}
+                       'type':self.dataset.type.values}
         return self.dataset
 
     def get_configuration(self):
