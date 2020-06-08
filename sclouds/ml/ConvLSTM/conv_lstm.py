@@ -1,26 +1,19 @@
 """Convolutional Long-Short Term Model.
 """
+import numpy as np
+
 from sclouds.helpers import get_lon_array, get_lat_array, path_convlstm_results
+from sclouds.ml.ConvLSTM.utils import r2_keras
 
-# The impact of using return_sequences is that the model will classify each frame in one category.
-DATA_FORMAT        = 'channels_last'
-PADDING            = 'same'
-RETURN_SEQUENCE    = True
-NUM_INPUT_VARS     = 4
-OUTPUT_KERNEL_SIZE = 1
-OUTPUT_FILTER      = 1
+from tensorflow import keras
+from tensorflow.keras.callbacks import EarlyStopping
 
-n_lon = len(get_lon_array())
-n_lat = len(get_lat_array())
-
-# -- Preparatory code -- #############
-# Model configuration    #############
-batch_size = 100
-no_epochs = 30
-learning_rate = 0.001
-validation_split = 0.2
-verbosity = 1
-########################################
+#my_callbacks = [
+    #tf.keras.callbacks.EarlyStopping(patience=2),
+    #tf.keras.callbacks.ModelCheckpoint(filepath='model.{epoch:02d}-{val_loss:.2f}.h5'),
+    #tf.keras.callbacks.TensorBoard(log_dir='./logs'),
+#]
+#model.fit(dataset, epochs=10, callbacks=my_callbacks)
 
 class ConvLSTM:
     """ A convoliutional lstm neural network.
@@ -40,10 +33,75 @@ class ConvLSTM:
     recurrent_constraint=None, bias_constraint=None, return_sequences=False,
     go_backwards=False, stateful=False, dropout=0.0, recurrent_dropout=0.0
 
+    (x=x, y=y, batch_size=None, epochs=1, verbose=1, callbacks=None,
+    validation_split=0.2, validation_data=None, shuffle=True, class_weight=None,
+    sample_weight=None, initial_epoch=0, steps_per_epoch=None,
+    validation_steps=None, validation_batch_size=None, validation_freq=1,
+    max_queue_size=10,
+
+
     """
 
-    def __init__(self):
-        return
+    DATA_FORMAT        = 'channels_last'
+    PADDING            = 'same'
+    RETURN_SEQUENCE    = True
+    NUM_INPUT_VARS     = 4
+    OUTPUT_KERNEL_SIZE = 1
+    OUTPUT_FILTER      = 1
+    KERNAL_INIT        = 'lecun_uniform'
+
+    n_lat   = 81
+    n_lon   = 161
+    WORKERS = 1#12
+
+    USE_MULTIPROCESSING = False#True
+    early_stopping_monitor = EarlyStopping(patience=3)
+    CALLBACKS = [early_stopping_monitor]
+
+    def __init__(self, X_train, y_train, filters, kernels, seq_length = 24,
+                 epochs=40, batch_size = 20, validation_split=0.1):
+
+        self.filters = filters
+        self.kernels = kernels
+        self.seq_length = seq_length
+
+        self.X_train = X_train
+        self.y_train = y_train
+        self.epochs = epochs
+        self.batch_size = batch_size
+
+        self.validation_split = validation_split
+        print('Starts to build model ...')
+        self.model = self.build_model(filters, kernels, seq_length)
+        print('Statrs compilation of model ...')
+
+        self.model.compile(optimizer=keras.optimizers.Adam(
+                            learning_rate=0.001,
+                            beta_1=0.9,
+                            beta_2=0.999,
+                            epsilon=1e-07,
+                            amsgrad=False,
+                            name="Adam",),
+                            loss='mean_squared_error',
+                            metrics=['mean_squared_error'])
+        print('starts training')
+        self.history = self.model.fit(X_train, y_train, #batch_size=batch_size,
+                                     epochs=epochs, verbose=1,
+                                     #callbacks=self.CALLBACKS,
+                                     #validation_split=None,
+                                     #validation_data=None,
+                                     shuffle=False,
+                                     #class_weight=None,
+                                     #sample_weight=None, initial_epoch=0,
+                                     #steps_per_epoch=100,
+                                     #validation_steps=None,
+                                     #validation_freq=1, max_queue_size=10,
+                                     #workers=self.WORKERS,
+                                     #use_multiprocessing=False
+                                     )#self.USE_MULTIPROCESSING)
+        self.store_history()
+        print(self.get_summmary())
+
 
     def build_model(self, filters, kernels, seq_length = 24):
         """" Building a ConvLSTM model for predicting cloud cover.
@@ -59,40 +117,51 @@ class ConvLSTM:
         model : tensorflow.keras.Sequential
             Builded model
         """
-        # TODO : update with activations?
 
 
-        model =  Sequential()
+        model =  keras.Sequential()
+
+        input  = keras.layers.Input(shape=(seq_length, self.n_lat, self.n_lon,
+                                self.NUM_INPUT_VARS), name='input')
+
         # Adding the first layer
-        seq.add(ConvLSTM3D(filters = filters[0],
-                           kernel_size = (kernels[0], kernels[0], NUM_INPUT_VARS),
-                           input_shape = (seq_length, n_lat, n_lon, NUM_INPUT_VARS),
-                           kernel_initializer='glorot_uniform',
-                           padding = PADDING,
-                           return_sequences=RETURN_SEQUENCE,
-                           data_format=DATA_FORMAT))
+        model.add(keras.layers.ConvLSTM2D(filters = filters[0],
+                           kernel_size = (kernels[0], kernels[0]), #, self.NUM_INPUT_VARS
+                           input_shape = (seq_length,
+                                            self.n_lat, self.n_lon, self.NUM_INPUT_VARS),
+                           kernel_initializer=self.KERNAL_INIT,
+                           padding = self.PADDING,
+                           return_sequences=self.RETURN_SEQUENCE,
+                           data_format=self.DATA_FORMAT))
 
         prev_filter = filters[0]
-        for i, filter, kernal in enumerate(zip(filters[1:], kernels[1:])):
-            # Begin with 3D convolutional LSTM layer
-            seq.add(keras.layers.ConvLSTM3D(filters=filter,
-                                            kernel_size=(kernal, kernel, prev_filter),
-                                            kernel_initializer='glorot_uniform',
-                                            padding = PADDING,
-                                            return_sequences=RETURN_SEQUENCE,
-                                            data_format=DATA_FORMAT))
-            prev_filter = filter
+        if len(filters) > 1 and len(kernels) > 1:
+            print('Detected more than one layer ... ')
+            for i, tuple in enumerate(zip(filters[1:], kernels[1:])):
+                filter, kernal = tuple
+                # Begin with 3D convolutional LSTM layer
+                model.add(keras.layers.ConvLSTM2D(filters=filter,
+                                                kernel_size=(kernal, kernal), # prev_filter
+                                                input_shape = (seq_length, self.n_lat,
+                                                                self.n_lon, prev_filter),
+                                                kernel_initializer=self.KERNAL_INIT,
+                                                padding = self.PADDING,
+                                                return_sequences=self.RETURN_SEQUENCE,
+                                                data_format=self.DATA_FORMAT))
+                prev_filter = filter
         # Adding the last layer
-        seq.add(keras.layers.ConvLSTM3D(filters=OUTPUT_FILTER,
-                                        kernel_size=(1, 1, prev_filter),
-                                        kernel_initializer='glorot_uniform',
-                                        padding = PADDING,
-                                        return_sequences=RETURN_SEQUENCE,
-                                        data_format=DATA_FORMAT))
+        model.add(keras.layers.ConvLSTM2D(filters=self.OUTPUT_FILTER,
+                                        kernel_size=(self.OUTPUT_KERNEL_SIZE, self.OUTPUT_KERNEL_SIZE), #prev_filter
+                                        input_shape = (seq_length, self.n_lat,
+                                                        self.n_lon, prev_filter),
+                                        kernel_initializer=self.KERNAL_INIT,
+                                        padding = self.PADDING,
+                                        return_sequences=self.RETURN_SEQUENCE,
+                                        data_format=self.DATA_FORMAT))
 
         return model
 
-    def compile(self, model):
+    def compile(self, lmd=0.001):
         """ Compile model.
 
         Parameters
@@ -105,22 +174,100 @@ class ConvLSTM:
         model : tensorflow.keras.Sequential
             Compiled model.
         """
-        model.compile(optimizer=keras.optimizers.Adam(
-                            hp.Choice('learning_rate',
-                            values=[1e-2, 1e-3, 1e-4])),
-        loss='mean_squared_error',
-        metrics=['accuracy'])
-        return model
+        self.model.compile(optimizer=keras.optimizers.Adam(
+                            learning_rate=lmd,
+                            beta_1=0.9,
+                            beta_2=0.999,
+                            epsilon=1e-07,
+                            amsgrad=False,
+                            name="Adam",),
+                            loss='mean_squared_error',
+                            metrics=['mean_squared_error'])
+        return self.model
 
 
-    def fit(self, model):
+
+    def store_history(self):
         """ Fit builded model.
         Parameters
         -------------
         model : tensorflow.keras.Sequential
             Builded model
         """
-        return model
+        import pandas as pd
+        history = self.history
+
+        # convert the history.history dict to a pandas DataFrame:
+        hist_df = pd.DataFrame(history.history)
+
+        # save to json:
+        hist_json_file = 'history.json'
+        with open(hist_json_file, mode='w') as f:
+            hist_df.to_json(f)
+
+        # or save to csv:
+        hist_csv_file = 'history.csv'
+        with open(hist_csv_file, mode='w') as f:
+            hist_df.to_csv(f)
+
+        return
+
+    def store_summmary(self):
+        """ Store summary of tranings process.
+        """
+        sum = self.model.summary()
+        with open("summary.txt", "w") as text_file:
+            text_file.write(sum)
+
+        self.model.save('my_model.h5')  # creates a HDF5 file 'my_model.h5'
+        return sum
+
+    def for_later(self):
+        from keras.models import load_model
+
+        model.save('my_model.h5')  # creates a HDF5 file 'my_model.h5'
+
+        # returns a compiled model
+        # identical to the previous one
+        model = load_model('my_model.h5')
+
+        save_weights(
+            filepath, overwrite=True, save_format=None
+        )
+
+        test_on_batch(
+            x, y=None, sample_weight=None, reset_metrics=True, return_dict=False
+        )
+        return
+
 
 if __name__ == '__main__':
-    print('Nothing here yet.')
+    import tensorflow as tf
+    num_vars = 4
+    # (seq_length, self.n_lat, self.n_lon, self.NUM_INPUT_VARS),
+    seq_length = 24
+    Xtrain_dummy = tf.ones((10, seq_length, 81, 161, num_vars))
+    ytrain_dummy = tf.ones((10, seq_length, 81, 161))
+
+    print(Xtrain_dummy.shape)
+
+    # antall filrer i hver lag.
+    filters = [32] #256, 128,
+    # størrelsen på filterne i de lagene.
+    kernels = [3] #, 3, 3
+    """
+    tf.keras.Input(
+        shape=None,
+        batch_size=None,
+        name=None,
+        dtype=None,
+        sparse=False,
+        tensor=None,
+        ragged=False,
+        **kwargs
+    )"""
+
+
+    model = ConvLSTM(X_train=Xtrain_dummy, y_train=ytrain_dummy, filters=filters,
+                     kernels=kernels, seq_length = seq_length,
+                     epochs=40, batch_size = 20, validation_split=0.1)

@@ -6,14 +6,14 @@ import glob
 
 import numpy as np
 import xarray as xr
-https://www.finn.no/bap/forsale/ad.html?finnkode=177604374
+
 from timeit import default_timer as timer
 
-from utils import (mean_squared_error, r2_score, fit_pixel, predict_pixel,
+from sclouds.ml.regression.utils import (mean_squared_error, r2_score, fit_pixel, predict_pixel,
                      accumulated_squared_error,
                      sigmoid, inverse_sigmoid)
 
-from utils import (dataset_to_numpy, dataset_to_numpy_order,
+from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
                     dataset_to_numpy_order_traditional_ar,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
@@ -22,9 +22,9 @@ from utils import (dataset_to_numpy, dataset_to_numpy_order,
                               get_list_of_files,
                               get_list_of_files_excluding_period_traditional_model,
                               get_list_of_files_traditional_model)
-import os,sys,inspecthttps://www.finn.no/bap/forsale/ad.html?finnkode=177604374
-sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
-from helpers import (merge, get_list_of_variables_in_ds,
+
+#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
+from sclouds.helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
 base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/2014-01-01_2018-12-31/' #'2014-01-01_2018-12-31/
@@ -271,7 +271,7 @@ class Model:
                 mse_storage_train[i, j] = mse_tr
                 r2_storage_train[i, j]  = r2_tr
                 ase_storage_train[i, j] = ase_tr
-      
+
                 num_train_samples[i,j] = num_test
                 num_test_samples[i,j] = num_train
 
@@ -293,7 +293,7 @@ class Model:
     def predict(self, lat, lon):
         """ Used by model loader.
         """
-        # TODO loop over dataset ... 
+        # TODO loop over dataset ...
         ds     = get_pixel_from_ds(self.test_dataset, lat, lon)
         if self.type == 'ar':
             if self.order > 0:
@@ -544,7 +544,7 @@ class Model:
         vars_dict = {'mse': (['latitude', 'longitude'], self.mse),
                      'r2':  (['latitude', 'longitude'], self.r2),
                      'ase': (['latitude', 'longitude'], self.ase),
-                     
+
                      'num_train_samples': (['latitude', 'longitude'],
                                     self.num_train_samples),
                      'num_test_samples': (['latitude', 'longitude'],
