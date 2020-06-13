@@ -293,7 +293,8 @@ if __name__ == '__main__':
     print(data)
     X_train, y_train = get_data_keras(data, num_samples = None, seq_length = 24, batch_size = 10,
                     data_format='channels_last')
-
+    print(X_train.shape)
+    print(y_train.shape)
     model = ConvLSTM(X_train=X_train, y_train=y_train, filters=filters,
                      kernels=kernels, seq_length = seq_length,
                      epochs=epochs, batch_size = batch_size, validation_split=0.1,

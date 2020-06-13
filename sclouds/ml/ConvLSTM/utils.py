@@ -20,7 +20,7 @@ import glob
 import xarray as xr
 import numpy as np
 
-path_input = '/home/hanna/lagrings/ERA5_monthly/'
+path_input = '/home/hannasv/data/'
 
 # Custom R2-score metrics for keras backend
 
@@ -76,18 +76,25 @@ def dataset_to_numpy_grid_keras_dataformat_channel_last(pixel, seq_length, batch
 
     y = tcc[:, :, :, np.newaxis]
     samples, lat, ln, num_vars = X.shape
-
+    print('shape of input X {}'.format(X.shape))
+    print(samples/(seq_length*batch_size))
     # Reshapes data into sequence
     try:
-        X = X.reshape((int(samples/seq_length), seq_length, n_lat, n_lon, num_vars))
-        y = y.reshape((int(samples/seq_length), seq_length, n_lat, n_lon))
+        X = X.reshape( ( int(samples/(seq_length*batch_size)), batch_size, seq_length, n_lat, n_lon, num_vars))
+        y = y.reshape( ( int(samples/(seq_length*batch_size)), batch_size, seq_length, n_lat, n_lon) )
     except ValueError:
         print('enters except')
-        X_cropped = X[(samples%(seq_length*batch_size)):, :, :, :]
-        X = X_cropped.reshape((int(samples/(seq_length*batch_size)),
-                             batch_size, seq_length, n_lat, n_lon, num_vars))
-        y = y.reshape((int(samples/(seq_length*batch_size)),
+        dim = samples%(seq_length*batch_size)
+        print('old tot num samples {}, new tot num samples {}'.format(n_time, dim))
+        X_cropped = X[dim:, :, :, :]
+        y_cropped = y[dim:, :, :, :]
+        print('shape X cropped {}'.format(X_cropped.shape))
+        X = X_cropped.reshape(( int(samples/(seq_length*batch_size)), batch_size, seq_length, n_lat, n_lon, num_vars))
+        y = y_cropped.reshape((int(samples/(seq_length*batch_size)),
                                 batch_size, seq_length, n_lat, n_lon))
+    print('shape of output X {}'.format(X.shape))
+    print('shape of output y {}'.format(y.shape))
+
     return X, y
 
 def train_test_split_keras(dataset, seq_length, val_split = 0.2):
