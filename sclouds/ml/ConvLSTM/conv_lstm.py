@@ -1,12 +1,14 @@
 """Convolutional Long-Short Term Model.
 """
+import os, sys
+import glob
 import numpy as np
 
 from sclouds.helpers import get_lon_array, get_lat_array, path_convlstm_results
 from sclouds.ml.ConvLSTM.utils import r2_keras
 
 from tensorflow import keras
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
 
 #my_callbacks = [
     #tf.keras.callbacks.EarlyStopping(patience=2),
@@ -52,14 +54,14 @@ class ConvLSTM:
 
     n_lat   = 81
     n_lon   = 161
-    WORKERS = 1#12
+    WORKERS = 16 # identical to the number of cores requested in 
 
-    USE_MULTIPROCESSING = False#True
+    USE_MULTIPROCESSING = True
     early_stopping_monitor = EarlyStopping(patience=3)
-    CALLBACKS = [early_stopping_monitor]
+    CALLBACKS = [early_stopping_monitor, TensorBoard(log_dir='./logs')]
 
     def __init__(self, X_train, y_train, filters, kernels, seq_length = 24,
-                 epochs=40, batch_size = 20, validation_split=0.1):
+                 epochs=40, batch_size = 20, validation_split=0.1, name = None, result_path = None):
 
         self.filters = filters
         self.kernels = kernels
@@ -74,6 +76,16 @@ class ConvLSTM:
         print('Starts to build model ...')
         self.model = self.build_model(filters, kernels, seq_length)
         print('Statrs compilation of model ...')
+        self.name = name
+        if result_path is not None:
+            self.result_path = result_path
+            if not os.path.exists(result_path):
+                os.makedirs(result_path)
+            self.result_path = os.path.join(result_path, name)
+            if not os.path.exists(os.path.join(result_path, name)):
+                os.makedirs(os.path.join(result_path, name))
+        else:
+            self.result_path = '/home/hannasv/results/'
 
         self.model.compile(optimizer=keras.optimizers.Adam(
                             learning_rate=0.001,
@@ -83,12 +95,12 @@ class ConvLSTM:
                             amsgrad=False,
                             name="Adam",),
                             loss='mean_squared_error',
-                            metrics=['mean_squared_error'])
+                            metrics=['mean_squared_error', r2_keras])
         print('starts training')
         self.history = self.model.fit(X_train, y_train, #batch_size=batch_size,
                                      epochs=epochs, verbose=1,
-                                     #callbacks=self.CALLBACKS,
-                                     #validation_split=None,
+                                     callbacks=self.CALLBACKS,
+                                     validation_split=self.validation_split,
                                      #validation_data=None,
                                      shuffle=False,
                                      #class_weight=None,
@@ -96,9 +108,8 @@ class ConvLSTM:
                                      #steps_per_epoch=100,
                                      #validation_steps=None,
                                      #validation_freq=1, max_queue_size=10,
-                                     #workers=self.WORKERS,
-                                     #use_multiprocessing=False
-                                     )#self.USE_MULTIPROCESSING)
+                                     workers=self.WORKERS,
+                                     use_multiprocessing= self.USE_MULTIPROCESSING)
         self.store_history()
         self.store_summary()
         print('finished model -- ')
@@ -202,12 +213,12 @@ class ConvLSTM:
         hist_df = pd.DataFrame(history.history)
 
         # save to json:
-        hist_json_file = 'history.json'
+        hist_json_file = os.path.join(self.result_path, 'history.json')
         with open(hist_json_file, mode='w') as f:
             hist_df.to_json(f)
 
         # or save to csv:
-        hist_csv_file = 'history.csv'
+        hist_csv_file = os.path.join(self.result_path, 'history.csv')
         with open(hist_csv_file, mode='w') as f:
             hist_df.to_csv(f)
 
@@ -216,14 +227,16 @@ class ConvLSTM:
     def store_summary(self):
         """ Store summary of tranings process.
         """
-        sum = self.model.summary()
+        #        sum = self.model.summary()
 	#print(type(sum))
 	#print(sum)
-        with open("summary.txt", "w") as text_file:
-            text_file.write(str(sum))
-
-        self.model.save('my_model.h5')  # creates a HDF5 file 'my_model.h5'
-        return sum
+        ORIG_OUTPUT = sys.stdout
+        with open(os.path.join(self.result_path, "summary_{}.txt".format(self.name)), "w") as text_file:
+            sys.stdout = text_file
+            self.model.summary()
+        sys.stdout = ORIG_OUTPUT
+        self.model.save(os.path.join(self.result_path,'{}.h5'.format(self.name)))  # creates a HDF5 file 'my_model.h5'
+        return
 
     def for_later(self):
         from keras.models import load_model
@@ -273,4 +286,5 @@ if __name__ == '__main__':
 
     model = ConvLSTM(X_train=Xtrain_dummy, y_train=ytrain_dummy, filters=filters,
                      kernels=kernels, seq_length = seq_length,
-                     epochs=10, batch_size = 20, validation_split=0.1)
+                     epochs=10, batch_size = 20, validation_split=0.1,
+                     name = 'test_model', result_path = '/home/hannasv/results/')
