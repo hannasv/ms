@@ -56,7 +56,8 @@ def get_list_of_files_era5(start = '2012-01-01', stop = '2012-01-31', include_st
             raise ValueError('Something wierd happend. ')
     return subset
 
-def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True):
+def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31',
+                        include_start = True, include_stop = True):
     """ Returns list of files containing data for the requested period.
 
     Parameteres

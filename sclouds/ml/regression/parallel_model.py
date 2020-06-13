@@ -128,9 +128,13 @@ if __name__ == '__main__':
     proces = []
 
     for lon in np.array_split(longitudes, num_threads):
+        tr_data_sel =  train_dataset.sel(longitude = sel(min(lon), max(lon))).copy()
+        te_data_sel =  test_dataset.sel(longitude = sel(min(lon), max(lon))).copy()
+
         p = Process(target=config_model, args=(start, stop, test_start,
-                           test_stop, train_dataset, test_dataset, order, transform,
-                            sigmoid, latitudes, lon, type)).start()
+                           test_stop, tr_data_sel, te_data_sel, order, transform,
+                            sigmoid, latitudes, lon, type))
+        p.start()
         proces.append(p)
 
     #for t in threads:

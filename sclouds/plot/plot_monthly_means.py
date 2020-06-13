@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 n_rows = len(VARIABLES)
 n_cols = 1
 
-data = xr.open_dataset('/home/hanna/lagrings/results/stats/monthly_mean/monthly_means_updated.nc')
+data = xr.open_dataset('/home/hanna/lagrings/results/stats/monthly_mean/monthly_means_updated_3.nc')
 
 fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
 fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 3)

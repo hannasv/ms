@@ -34,6 +34,8 @@ class Filter:
         data : xr.Dataset
             Data to be filtered.
         """
+        if data is None:
+            raise ValueError('Data is not set ... ')
         self.data = data.copy()
         self.variable = variable
         self.data['filtered'] = (['time', 'latitude', 'longitude'],
@@ -52,8 +54,6 @@ class Filter:
         assert len(filters) == 1, 'Detected {} filters ... '.format(len(filters))
         filt = xr.open_dataset(filters[0])
         filt = xr.where(filt, 1.0, np.nan)
-        filt['land_mask'].plot()
-        plt.show()
         self.filter_ds = filt
 
         return
@@ -65,7 +65,7 @@ class Filter:
         data is identically equal zero.
         """
         matrix = self.data['filtered'].values
-        mean = np.nanmean(matrix, axis = 0)
+        mean = np.nanmean(matrix)
         self.mean = mean
         return mean
 
@@ -77,7 +77,6 @@ class Filter:
         """
         matrix = self.data['filtered'].values
         mean = np.nanmean(matrix, axis = (1, 2))
-
         self.mean = mean
         return mean
 
