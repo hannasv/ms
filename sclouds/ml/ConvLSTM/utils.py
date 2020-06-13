@@ -20,6 +20,7 @@ import glob
 import xarray as xr
 import numpy as np
 
+path_input = '/home/hanna/lagrings/ERA5_monthly/'
 
 # Custom R2-score metrics for keras backend
 
@@ -36,7 +37,7 @@ def mae(y_actual, y_predict):
     import tensorflow.keras.backend as kb
     return kb.sum(kb.abs(kb.subtract(y_actual, y_predict)), axis = 0)
 
-def dataset_to_numpy_grid_keras_dataformat_channel_last(pixel, seq_length):
+def dataset_to_numpy_grid_keras_dataformat_channel_last(pixel, seq_length, batch_size):
     """ Takes a xr.dataset and transforms it to a numpy matrix.
 
     Parameteres
@@ -82,8 +83,11 @@ def dataset_to_numpy_grid_keras_dataformat_channel_last(pixel, seq_length):
         y = y.reshape((int(samples/seq_length), seq_length, n_lat, n_lon))
     except ValueError:
         print('enters except')
-        X = X[(samples%seq_length):, :, :, :].reshape((int(samples/seq_length), seq_length, n_lat, n_lon, num_vars))
-        y = y.reshape((int(samples/seq_length), seq_length, n_lat, n_lon))
+        X_cropped = X[(samples%(seq_length*batch_size)):, :, :, :]
+        X = X_cropped.reshape((int(samples/(seq_length*batch_size)),
+                             batch_size, seq_length, n_lat, n_lon, num_vars))
+        y = y.reshape((int(samples/(seq_length*batch_size)),
+                                batch_size, seq_length, n_lat, n_lon))
     return X, y
 
 def train_test_split_keras(dataset, seq_length, val_split = 0.2):
@@ -146,7 +150,6 @@ def get_list_of_files(start = '2012-01-01', stop = '2012-01-31', include_start =
     """
 
     print('\n searchers for files')
-    path_input = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
     # Remove date.
     parts = start.split('-')
     start_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
@@ -222,7 +225,8 @@ def get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31'):
         data = data.sel(time = slice(start, stop))
     return data
 
-def get_data_keras(dataset, num_samples = None, seq_length = 24, data_format='channels_last'):
+def get_data_keras(dataset, num_samples = None, seq_length = 24,  batch_size = 10,
+                        data_format='channels_last'):
     """ """
     if num_samples is None:
         print('reads inn all available samples removing the last non complete values.')
@@ -233,7 +237,7 @@ def get_data_keras(dataset, num_samples = None, seq_length = 24, data_format='ch
         raise NotImplementedError('Coming soon .. Use not implemend error.')
     elif data_format=='channels_last':
         #  `(samples, time, output_row, output_col, filters)`
-        X_train, y_train = dataset_to_numpy_grid_keras_dataformat_channel_last(dataset, seq_length)
+        X_train, y_train = dataset_to_numpy_grid_keras_dataformat_channel_last(dataset, seq_length, batch_size)
     else:
         raise ValueError('Not valid data_format try {}, {}'.format('channels_first',
                                                         'channels_last'))
@@ -245,6 +249,7 @@ if __name__ == '__main__':
     #from sclouds.io.utils import get_xarray_dataset_for_period
     data = get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31')
     print(data)
-    X, y = get_data_keras(data, num_samples = None, seq_length = 24, data_format='channels_last')
+    X, y = get_data_keras(data, num_samples = None, seq_length = 24, batch_size = 10,
+                    data_format='channels_last')
     print(X.shape)
     print(y.shape)

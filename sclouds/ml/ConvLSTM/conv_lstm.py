@@ -270,8 +270,8 @@ if __name__ == '__main__':
 
     epochs = 40
     batch_size = 20
-    Xtrain_dummy = tf.ones((batch_size, seq_length, 81, 161, num_vars))
-    ytrain_dummy = tf.ones((batch_size, seq_length, 81, 161))
+    #Xtrain_dummy = tf.ones((batch_size, seq_length, 81, 161, num_vars))
+    #ytrain_dummy = tf.ones((batch_size, seq_length, 81, 161))
 
     # antall filrer i hver lag.
     filters = [32] #256, 128,
@@ -288,9 +288,13 @@ if __name__ == '__main__':
         ragged=False,
         **kwargs
     )"""
+    from utils import get_xarray_dataset_for_period, get_data_keras
+    data = get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31')
+    print(data)
+    X_train, y_train = get_data_keras(data, num_samples = None, seq_length = 24, batch_size = 10,
+                    data_format='channels_last')
 
-
-    model = ConvLSTM(X_train=Xtrain_dummy, y_train=ytrain_dummy, filters=filters,
+    model = ConvLSTM(X_train=X_train, y_train=y_train, filters=filters,
                      kernels=kernels, seq_length = seq_length,
                      epochs=epochs, batch_size = batch_size, validation_split=0.1,
                      name = 'test_model', result_path = '/home/hannasv/results/')
