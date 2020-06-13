@@ -54,7 +54,7 @@ class ConvLSTM:
 
     n_lat   = 81
     n_lon   = 161
-    WORKERS = 16 # identical to the number of cores requested in 
+    WORKERS = 16 # identical to the number of cores requested in
 
     USE_MULTIPROCESSING = True
     early_stopping_monitor = EarlyStopping(patience=3)
@@ -77,6 +77,7 @@ class ConvLSTM:
         self.model = self.build_model(filters, kernels, seq_length)
         print('Statrs compilation of model ...')
         self.name = name
+        """
         if result_path is not None:
             self.result_path = result_path
             if not os.path.exists(result_path):
@@ -86,7 +87,8 @@ class ConvLSTM:
                 os.makedirs(os.path.join(result_path, name))
         else:
             self.result_path = '/home/hannasv/results/'
-
+        """
+        self.result_path = '/home/hanna/lagrings/results/'
         self.model.compile(optimizer=keras.optimizers.Adam(
                             learning_rate=0.001,
                             beta_1=0.9,
@@ -97,7 +99,7 @@ class ConvLSTM:
                             loss='mean_squared_error',
                             metrics=['mean_squared_error', r2_keras])
         print('starts training')
-        self.history = self.model.fit(X_train, y_train, #batch_size=batch_size,
+        self.history = self.model.fit(X_train, y_train, batch_size=batch_size,
                                      epochs=epochs, verbose=1,
                                      callbacks=self.CALLBACKS,
                                      validation_split=self.validation_split,
@@ -144,7 +146,8 @@ class ConvLSTM:
                            kernel_initializer=self.KERNAL_INIT,
                            padding = self.PADDING,
                            return_sequences=self.RETURN_SEQUENCE,
-                           data_format=self.DATA_FORMAT))
+                           data_format=self.DATA_FORMAT,
+                           batch_size = self.batch_size))
 
         prev_filter = filters[0]
         if len(filters) > 1 and len(kernels) > 1:
@@ -159,7 +162,8 @@ class ConvLSTM:
                                                 kernel_initializer=self.KERNAL_INIT,
                                                 padding = self.PADDING,
                                                 return_sequences=self.RETURN_SEQUENCE,
-                                                data_format=self.DATA_FORMAT))
+                                                data_format=self.DATA_FORMAT,
+                                                batch_size = self.batch_size))
                 prev_filter = filter
         # Adding the last layer
         model.add(keras.layers.ConvLSTM2D(filters=self.OUTPUT_FILTER,
@@ -169,7 +173,8 @@ class ConvLSTM:
                                         kernel_initializer=self.KERNAL_INIT,
                                         padding = self.PADDING,
                                         return_sequences=self.RETURN_SEQUENCE,
-                                        data_format=self.DATA_FORMAT))
+                                        data_format=self.DATA_FORMAT,
+                                        batch_size = self.batch_size))
 
         return model
 
@@ -194,7 +199,7 @@ class ConvLSTM:
                             amsgrad=False,
                             name="Adam",),
                             loss='mean_squared_error',
-                            metrics=['mean_squared_error'])
+                            metrics=['mean_squared_error', r2_keras])
         return self.model
 
 
@@ -262,10 +267,11 @@ if __name__ == '__main__':
     num_vars = 4
     # (seq_length, self.n_lat, self.n_lon, self.NUM_INPUT_VARS),
     seq_length = 24
-    Xtrain_dummy = tf.ones((10, seq_length, 81, 161, num_vars))
-    ytrain_dummy = tf.ones((10, seq_length, 81, 161))
 
-    print(Xtrain_dummy.shape)
+    epochs = 40
+    batch_size = 20
+    Xtrain_dummy = tf.ones((batch_size, seq_length, 81, 161, num_vars))
+    ytrain_dummy = tf.ones((batch_size, seq_length, 81, 161))
 
     # antall filrer i hver lag.
     filters = [32] #256, 128,
@@ -286,5 +292,5 @@ if __name__ == '__main__':
 
     model = ConvLSTM(X_train=Xtrain_dummy, y_train=ytrain_dummy, filters=filters,
                      kernels=kernels, seq_length = seq_length,
-                     epochs=10, batch_size = 20, validation_split=0.1,
+                     epochs=epochs, batch_size = batch_size, validation_split=0.1,
                      name = 'test_model', result_path = '/home/hannasv/results/')
