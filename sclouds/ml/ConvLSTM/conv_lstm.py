@@ -100,7 +100,8 @@ class ConvLSTM:
                                      #use_multiprocessing=False
                                      )#self.USE_MULTIPROCESSING)
         self.store_history()
-        print(self.get_summmary())
+        self.store_summary()
+        print('finished model -- ')
 
 
     def build_model(self, filters, kernels, seq_length = 24):
@@ -212,12 +213,14 @@ class ConvLSTM:
 
         return
 
-    def store_summmary(self):
+    def store_summary(self):
         """ Store summary of tranings process.
         """
         sum = self.model.summary()
+	#print(type(sum))
+	#print(sum)
         with open("summary.txt", "w") as text_file:
-            text_file.write(sum)
+            text_file.write(str(sum))
 
         self.model.save('my_model.h5')  # creates a HDF5 file 'my_model.h5'
         return sum
@@ -270,4 +273,4 @@ if __name__ == '__main__':
 
     model = ConvLSTM(X_train=Xtrain_dummy, y_train=ytrain_dummy, filters=filters,
                      kernels=kernels, seq_length = seq_length,
-                     epochs=40, batch_size = 20, validation_split=0.1)
+                     epochs=10, batch_size = 20, validation_split=0.1)

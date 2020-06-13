@@ -22,7 +22,7 @@ import numpy as np
 
 
 # Custom R2-score metrics for keras backend
-"""
+
 def r2_keras(y_true, y_pred):
     import tensorflow.keras.backend as kb
     SS_res =  kb.sum(kb.square(y_true - y_pred))
@@ -30,12 +30,12 @@ def r2_keras(y_true, y_pred):
     return ( 1 - SS_res/(SS_tot + kb.epsilon()) )
 
 def mae(y_actual, y_predict):
-"""
-#Custum keras loss function, accumulated squared error.
-"""
+    """
+    #Custum keras loss function, accumulated squared error.
+    """
     import tensorflow.keras.backend as kb
     return kb.sum(kb.abs(kb.subtract(y_actual, y_predict)), axis = 0)
-"""
+
 def dataset_to_numpy_grid_keras_dataformat_channel_last(pixel, seq_length):
     """ Takes a xr.dataset and transforms it to a numpy matrix.
 
