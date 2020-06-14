@@ -681,7 +681,7 @@ def dataset_to_numpy_order_traditional_ar(dataset, order, bias = True):
     5 (4) - tcc previos time step
 
     """
-
+    print('enters dataset_to_numpy_order_traditional_ar')
     if bias:
         var_index = 1
     else:
@@ -691,7 +691,7 @@ def dataset_to_numpy_order_traditional_ar(dataset, order, bias = True):
     #print("Detected {} samples.".format(len(times)))
     X = np.zeros( (len(times)-order, order + var_index))
     y = np.zeros( (len(times)-order ))
-
+    print('generated empty X and y')
     tcc = dataset.tcc.values
     #print('len tcc {}'.format(len(tcc)))
 
@@ -700,7 +700,7 @@ def dataset_to_numpy_order_traditional_ar(dataset, order, bias = True):
 
     y = tcc[:len(times)-order, np.newaxis]
     #print('len y should be tcc - order {}'.format(len(y)))
-
+    print('finished y')
     # tcc1, tcc2, ..., tcc_n
     for temp_order in range(1, order+1):
         remove_from_end = len(tcc) - (order - temp_order)
@@ -716,6 +716,7 @@ def dataset_to_numpy_order_traditional_ar(dataset, order, bias = True):
         #print('X shape {}'.format(X[:, var_index].shape))
         X[:, var_index] = ins
         var_index+=1
+    print('finished X')
     #print(X.shape)
     #print(y.shape)
     return X, y
