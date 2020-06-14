@@ -68,6 +68,7 @@ def get_train_test(test_start, test_stop, model = 'ar'):
     return train_dataset, test_dataset
 
 # Custom R2-score metrics for keras backend
+
 def r2_keras(y_true, y_pred):
     import tensorflow.keras.backend as kb
     SS_res =  kb.sum(kb.square(y_true - y_pred))
@@ -76,7 +77,7 @@ def r2_keras(y_true, y_pred):
 
 def mae(y_actual, y_predict):
     """
-    #Custum keras loss function, accumulated squared error.
+    Custum keras loss function, accumulated squared error.
     """
     import tensorflow.keras.backend as kb
     return kb.sum(kb.abs(kb.subtract(y_actual, y_predict)), axis = 0)

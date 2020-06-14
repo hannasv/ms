@@ -50,19 +50,19 @@ def get_date_and_mean_from_one_filename(absolute_path = '/home/hanna/lagrings/ER
     var      = basename[8:].split('.')[0]
     # Generating all the data and filters.
     try:
+        #print('Attemps to open file {}'.format(absolute_path))
         data     = xr.open_dataset(absolute_path) # read the data
+        #print(data)
         f_land   = Filter('land').set_data(data = data, variable = var)
         f_sea    = Filter('sea').set_data(data = data, variable = var)
 
-        mean_all  = data.mean()[var].values
+        mean_all  = np.nanmean(data[var].values)
         mean_land = f_land.get_mean()
         mean_sea  = f_sea.get_mean()
         return date, mean_all, mean_land, mean_sea
     except OSError:
         print("Didn't find file ... {}".format(absolute_path))
         return date, np.nan, np.nan, np.nan
-
-#a,b,c,d = get_date_and_mean_from_one_filename(absolute_path = '/home/hanna/lagrings/ERA5_monthly/2012_01_t2m.nc')
 
 storage = {}
 for var in VARIABLES: # VARIABLES[:-1]
@@ -73,6 +73,7 @@ for var in VARIABLES: # VARIABLES[:-1]
     seas  = []
 
     files = get_all_filesnames_from_one_variable(var)
+    print('Detected {} files.'.format(len(files)))
     for i, fil in enumerate(np.sort(files)):
         d, region, land, sea = get_date_and_mean_from_one_filename(fil)
 
@@ -90,5 +91,5 @@ for var in VARIABLES: # VARIABLES[:-1]
     storage['date_{}'.format(var)] = dates # just to check that they are equal
 
 data = xr.Dataset(storage)
-data.to_netcdf(save_dir + 'monthly_means_updated.nc')
+data.to_netcdf(save_dir + 'monthly_means_updated_3.nc')
 print('Computet monthly means ... ')

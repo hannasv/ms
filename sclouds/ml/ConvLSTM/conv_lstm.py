@@ -33,8 +33,6 @@ class ConvLSTM:
     sample_weight=None, initial_epoch=0, steps_per_epoch=None,
     validation_steps=None, validation_batch_size=None, validation_freq=1,
     max_queue_size=10,
-
-
     """
 
     DATA_FORMAT        = 'channels_last'
@@ -92,7 +90,8 @@ class ConvLSTM:
                             loss='mean_squared_error',
                             metrics=['mean_squared_error', r2_keras])
         print('starts training')
-        self.history = self.model.fit(X_train, y_train, #batch_size=batch_size,
+        self.history = self.model.fit(X_train, y_train,
+                                     batch_size=batch_size,
                                      epochs=epochs, verbose=1,
                                      callbacks=self.CALLBACKS,
                                      validation_split=self.validation_split,
@@ -130,6 +129,7 @@ class ConvLSTM:
 
         input  = keras.layers.Input(shape=(seq_length, self.n_lat, self.n_lon,
                                 self.NUM_INPUT_VARS), name='input')#batch_size = self.batch_size)
+                                
 
         # Adding the first layer
         model.add(keras.layers.ConvLSTM2D(filters = filters[0],
@@ -140,7 +140,7 @@ class ConvLSTM:
                            padding = self.PADDING,
                            return_sequences=self.RETURN_SEQUENCE,
                            data_format=self.DATA_FORMAT,))
-                           #batch_size = self.batch_size))
+                           #batch_size = self.batch_size
 
         prev_filter = filters[0]
         if len(filters) > 1 and len(kernels) > 1:
@@ -150,18 +150,19 @@ class ConvLSTM:
                 # Begin with 3D convolutional LSTM layer
                 model.add(keras.layers.ConvLSTM2D(filters=filter,
                                                 kernel_size=(kernal, kernal), # prev_filter
-                                                input_shape = (seq_length, self.n_lat,
-                                                                self.n_lon, prev_filter),
+                                                input_shape = (self.batch_size,
+                                                        seq_length, self.n_lat,
+                                                        self.n_lon, prev_filter),
                                                 kernel_initializer=self.KERNAL_INIT,
                                                 padding = self.PADDING,
                                                 return_sequences=self.RETURN_SEQUENCE,
                                                 data_format=self.DATA_FORMAT,))
-                                                #batch_size = self.batch_size))
+                                                #batch_size = self.batch_size
                 prev_filter = filter
         # Adding the last layer
         model.add(keras.layers.ConvLSTM2D(filters=self.OUTPUT_FILTER,
                                         kernel_size=(self.OUTPUT_KERNEL_SIZE, self.OUTPUT_KERNEL_SIZE), #prev_filter
-                                        input_shape = (seq_length, self.n_lat,
+                                        input_shape = (self.batch_size, seq_length, self.n_lat,
                                                         self.n_lon, prev_filter),
                                         kernel_initializer=self.KERNAL_INIT,
                                         padding = self.PADDING,
@@ -255,14 +256,11 @@ class ConvLSTM:
 if __name__ == '__main__':
     import tensorflow as tf
     num_vars = 4
-    # (seq_length, self.n_lat, self.n_lon, self.NUM_INPUT_VARS),
     seq_length = 24
-
     epochs = 40
     batch_size = 20
     #Xtrain_dummy = tf.ones((batch_size, seq_length, 81, 161, num_vars))
-    #ytrain_dummy = tf.ones((batch_size, seq_length, 81, 161))
-
+    #ytrain_dummy = tf.ones((batch_size, seq_length, 81, 161)
     # antall filrer i hver lag.
     filters = [32] #256, 128,
     # size of filters used 

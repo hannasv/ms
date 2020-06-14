@@ -311,21 +311,3 @@ if __name__ == "__main__":
             stat = Stats(var = var, variable=var,
                         local = True, start = start, stop = stop,
                         filter_key = 'all', global_stat = False)
-
-        """
-        for key in VALID_FILTERS:
-            stat = Stats(var = var, variable=var)
-            data = stat.get_data()
-
-            for key in VALID_FILTERS:
-                print('Applying filter {}'.format(key))
-                filter = Filter(key).set_data(data, var)
-                print('Generated filter')
-                filtered_data = filter.get_filtered_data()
-                print('Recieved data from filter ')
-                print(filtered_data)
-                st = Stats(var = var,
-                           variable  = 'filtered',
-                           dataset= filtered_data,
-                           filter_key = key, local = False)
-        """
