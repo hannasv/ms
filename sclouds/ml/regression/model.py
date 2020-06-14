@@ -13,8 +13,77 @@ from utils import (mean_squared_error, r2_score, fit_pixel, predict_pixel,
                      accumulated_squared_error,
                      sigmoid, inverse_sigmoid)
 
+def dataset_to_numpy_order_traditional_ar(dataset, order, bias = True):
+    """ Tranforms a dataset to matrices.
+
+    Parameters
+    ----------------------------
+    dataset : xr.Dataset
+        Contains the data you want to make a prediction based.
+    order : float
+        The number of previos timesteps included as predictors.
+    bias : bool
+        Determines weather to include a bias column or not (default True)
+    keep the order of xarray time, lat, lon
+
+    Returns
+    ---------------------
+    X : array-like
+        Matrix containing the explanatory variables.
+    y : array-like
+        Responce variable.
+
+    Notes
+    --------------------------
+    Index description:
+
+    5 (4) - tcc previos time step
+
+    """
+    print('enters dataset_to_numpy_order_traditional_ar')
+    if bias:
+        var_index = 1
+    else:
+        var_index = 0
+
+    times = dataset.time.values
+    #print("Detected {} samples.".format(len(times)))
+    X = np.zeros( (len(times)-order, order + var_index))
+    y = np.zeros( (len(times)-order ))
+    print('generated empty X and y')
+    tcc = dataset.tcc.values
+    #print('len tcc {}'.format(len(tcc)))
+    print(tcc)
+    if bias:
+        X[:, 0] = 1 # bias
+    print('before y')
+    y = tcc[:len(times)-order, np.newaxis]
+    #print('len y should be tcc - order {}'.format(len(y)))
+    print('finished y')
+    # tcc1, tcc2, ..., tcc_n
+    for temp_order in range(1, order+1):
+        remove_from_end = len(tcc) - (order - temp_order)
+        #print('expected length : len(times)-order {}'.format(len(times)-order))
+        a = tcc[:len(times)-order]
+        #print('len(a) {}'.format(len(a)))
+        b = tcc[slice(temp_order, remove_from_end)]
+        #print('len(b) {}'.format(len(b)))
+        bo = [element.astype(int) == temp_order for element in (b-a).astype('timedelta64[h]') ]
+        #print('len(bo) {}'.format(len(bo)))
+        ins = b.copy()
+        ins[np.array(bo)] = np.nan
+        #print('X shape {}'.format(X[:, var_index].shape))
+        X[:, var_index] = ins
+        var_index+=1
+    print('finished X')
+    #print(X.shape)
+    #print(y.shape)
+    return X, y
+
+
+
 from utils import (dataset_to_numpy, dataset_to_numpy_order,
-                    dataset_to_numpy_order_traditional_ar,
+                    #dataset_to_numpy_order_traditional_ar,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
                               get_xarray_dataset_for_period,
@@ -58,12 +127,6 @@ class Model:
         if stop is not None:
             assert start < stop, "Start {} need to be prior to stop {}".format(start, stop)
 
-        print('Initialize model with training data ...')
-        print(train_dataset)
-
-        print('Initialize model with test data  ...')
-        print(train_dataset)
-
         self.start = start
         self.stop  = stop
 
@@ -85,7 +148,7 @@ class Model:
                 else:
                     files = get_list_of_files_excluding_period_traditional_model(test_start, test_stop)
 
-                print('Detected {} files .. Merging might take a while ... '.format(len(files)))
+                #print('Detected {} files .. Merging might take a while ... '.format(len(files)))
                 self.dataset = merge(files)
 
             elif((start is None and stop is None) and
@@ -97,7 +160,7 @@ class Model:
                     files = get_list_of_files(test_start, test_stop)
                 else:
                     files = get_list_of_files_traditional_model(test_start, test_stop)
-                print('Detected {} files .. Merging might take a while ... '.format(len(files)))
+                #print('Detected {} files .. Merging might take a while ... '.format(len(files)))
                 self.dataset = merge(files)
 
         if test_dataset is not None:
@@ -225,9 +288,7 @@ class Model:
     def fit(self):
         """ New fit function
         """
-        print('Uses this one')
-
-
+        print('enters fitting ')
         num_vars = self.bias + len(self.variables) + self.order
 
         coeff_matrix = np.zeros((len(self.latitude),
@@ -261,6 +322,7 @@ class Model:
         for i, lat in enumerate(self.latitude): # 81
             for j, lon in enumerate(self.longitude): # 161
                 # Loads
+                print('Starts with pixel {}/{}'.format((i+1)*j, 81*len(self.longitude)))
                 coeff, mse, ase, r2, num_test, num_train, mse_tr, ase_tr, r2_tr = self.load_transform_fit(lat, lon)
 
                 coeff_matrix[i, j, :] = coeff
@@ -275,7 +337,7 @@ class Model:
                 num_train_samples[i,j] = num_test
                 num_test_samples[i,j] = num_train
 
-                print('Finished with pixel {}/{}'.format((i+1)*j, 81*161))
+                print('Finished with pixel {}/{}'.format((i+1)*j, 81*len(self.longitude)))
 
         self.coeff_matrix = coeff_matrix
         self.mse = mse_storage
@@ -288,7 +350,7 @@ class Model:
 
         self.num_test_samples = num_test_samples
         self.num_train_samples = num_train_samples
-        return
+        return self
 
 
     def load_transform_fit(self, lat, lon):
@@ -319,6 +381,7 @@ class Model:
             else:
                 X, y   = dataset_to_numpy(ds, bias = self.bias)
         else:
+            print('finds traditional model')
             X, y   = dataset_to_numpy_order_traditional_ar(ds,
                                         order = self.order, bias = self.bias)
         local = timer()
