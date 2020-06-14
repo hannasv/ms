@@ -10,6 +10,13 @@ from sclouds.ml.ConvLSTM.utils import r2_keras
 from tensorflow import keras
 from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
 
+#my_callbacks = [
+    #tf.keras.callbacks.EarlyStopping(patience=2),
+    #tf.keras.callbacks.ModelCheckpoint(filepath='model.{epoch:02d}-{val_loss:.2f}.h5'),
+    #tf.keras.callbacks.TensorBoard(log_dir='./logs'),
+#]
+#model.fit(dataset, epochs=10, callbacks=my_callbacks)
+
 class ConvLSTM:
     """ A convoliutional lstm neural network.
 
@@ -92,7 +99,7 @@ class ConvLSTM:
                             loss='mean_squared_error',
                             metrics=['mean_squared_error', r2_keras])
         print('starts training')
-        self.history = self.model.fit(X_train, y_train, #batch_size=batch_size,
+        self.history = self.model.fit(X_train, y_train, batch_size=batch_size,
                                      epochs=epochs, verbose=1,
                                      callbacks=self.CALLBACKS,
                                      validation_split=self.validation_split,
@@ -128,7 +135,7 @@ class ConvLSTM:
 
         model =  keras.Sequential()
 
-        input  = keras.layers.Input(shape=(seq_length, self.n_lat, self.n_lon,
+        input  = keras.layers.Input(batch_input_shape=(self.batch_size, seq_length, self.n_lat, self.n_lon,
                                 self.NUM_INPUT_VARS), name='input')#batch_size = self.batch_size)
 
         # Adding the first layer
@@ -139,8 +146,8 @@ class ConvLSTM:
                            kernel_initializer=self.KERNAL_INIT,
                            padding = self.PADDING,
                            return_sequences=self.RETURN_SEQUENCE,
-                           data_format=self.DATA_FORMAT,))
-                           #batch_size = self.batch_size))
+                           data_format=self.DATA_FORMAT,
+                           batch_size = self.batch_size))
 
         prev_filter = filters[0]
         if len(filters) > 1 and len(kernels) > 1:
@@ -155,8 +162,8 @@ class ConvLSTM:
                                                 kernel_initializer=self.KERNAL_INIT,
                                                 padding = self.PADDING,
                                                 return_sequences=self.RETURN_SEQUENCE,
-                                                data_format=self.DATA_FORMAT,))
-                                                #batch_size = self.batch_size))
+                                                data_format=self.DATA_FORMAT,
+                                                batch_size = self.batch_size))
                 prev_filter = filter
         # Adding the last layer
         model.add(keras.layers.ConvLSTM2D(filters=self.OUTPUT_FILTER,
@@ -166,8 +173,8 @@ class ConvLSTM:
                                         kernel_initializer=self.KERNAL_INIT,
                                         padding = self.PADDING,
                                         return_sequences=self.RETURN_SEQUENCE,
-                                        data_format=self.DATA_FORMAT,))
-                                        #batch_size = self.batch_size))
+                                        data_format=self.DATA_FORMAT,
+                                        batch_size = self.batch_size))
 
         return model
 
@@ -278,13 +285,10 @@ if __name__ == '__main__':
         ragged=False,
         **kwargs
     )"""
-    from utils import get_xarray_dataset_for_period, get_data_keras, get_train_test
-    #data = get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31')
-    #print(data)
-    test_start = '2014-01-01'
-    test_stop  = '2018-12-31'
-    train_dataset, test_dataset =  get_train_test(test_start, test_stop, model = 'ar')
-    X_train, y_train = get_data_keras(train_dataset, num_samples = None, seq_length = 24, batch_size = None,
+    from utils import get_xarray_dataset_for_period, get_data_keras
+    data = get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31')
+    print(data)
+    X_train, y_train = get_data_keras(data, num_samples = None, seq_length = 24, batch_size = 10,
                     data_format='channels_last')
     print(X_train.shape)
     print(y_train.shape)
