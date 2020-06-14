@@ -9,9 +9,10 @@ import xarray as xr
 
 from timeit import default_timer as timer
 
-from utils import (mean_squared_error, r2_score, fit_pixel, predict_pixel,
+from sclouds.ml.regression.utils import (mean_squared_error, r2_score, fit_pixel, predict_pixel,
                      accumulated_squared_error,
                      sigmoid, inverse_sigmoid)
+
 
 def dataset_to_numpy_order_traditional_ar(dataset, order, bias = True):
     """ Tranforms a dataset to matrices.
@@ -84,6 +85,10 @@ def dataset_to_numpy_order_traditional_ar(dataset, order, bias = True):
 
 from utils import (dataset_to_numpy, dataset_to_numpy_order,
                     #dataset_to_numpy_order_traditional_ar,
+
+#from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
+#                    dataset_to_numpy_order_traditional_ar,
+
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
                               get_xarray_dataset_for_period,
@@ -91,9 +96,9 @@ from utils import (dataset_to_numpy, dataset_to_numpy_order,
                               get_list_of_files,
                               get_list_of_files_excluding_period_traditional_model,
                               get_list_of_files_traditional_model)
-import os,sys,inspect
-sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
-from helpers import (merge, get_list_of_variables_in_ds,
+
+#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
+from sclouds.helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
 base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/2014-01-01_2018-12-31/' #'2014-01-01_2018-12-31/
@@ -352,6 +357,71 @@ class Model:
         self.num_train_samples = num_train_samples
         return self
 
+    def predict(self, lat, lon):
+        """ Used by model loader.
+        """
+        # TODO loop over dataset ...
+        ds     = get_pixel_from_ds(self.test_dataset, lat, lon)
+        if self.type == 'ar':
+            if self.order > 0:
+                #print('Dataset has order {}'.format(order))
+                X_test, y_test_true = dataset_to_numpy_order(ds, self.order, bias = self.bias)
+            else:
+                #print('Dataset has order {} -- should be zero.'.format(order))
+                X_test, y_test_true  = dataset_to_numpy(ds, bias = self.bias)
+        else:
+            X_test, y_test_true   = dataset_to_numpy_order_traditional_ar(ds,
+                                        order = self.order, bias = self.bias)
+        #VARIABLES = ['t2m', 'q', 'r', 'sp']
+        if self.transform:
+            transformed_test = np.zeros((n_times, n_vars ))
+
+            for j, var in enumerate(self.variables):
+                t_data = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))
+                m = t_data['mean'].sel(latitude = lat, longitude = lon).values
+                s = t_data['std'].sel(latitude = lat, longitude = lon).values
+
+                transformed_test[:, j] = (X_test[:, j]- m)/s
+
+            if order > 0:
+                j = len(self.variables)
+                var = 'tcc'
+                t_data = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format(var))
+                m = t_data['mean'].sel(latitude = lat, longitude = lon).values
+                s = t_data['std'].sel(latitude = lat, longitude = lon).values
+
+                for k in range(order):
+                    # Something wierd with the rotation of cloud cover values
+                    transformed_test[:, k+j] = (X_test[:, k+j]- m)/s
+            X_test = transformed_test
+            print('Finished transforming test data in load_transform_fit after {} seconds'.format(timer() - self.timer_start))
+
+        i = (lat-30.0)/0.25
+        j = (lon-(-15.0))/0.25
+
+        coeffs = self.coeff_matrix[int(i), int(j), :][:, np.newaxis]
+        y_test_pred = predict_pixel(X_test, coeffs)
+        print('Finished predicting test pixel data in load_transform_fit after {} seconds'.format(timer() - self.timer_start))
+
+        if self.sigmoid:
+            y_test_pred = inverse_sigmoid(y_test_pred)
+
+        if len(y_test_true) == 4:
+            y_test_true = y_test_true[:, :, :, 0]
+
+
+        if len(y_test_pred) == 4:
+            y_test_pred = y_test_pred[:, :, :, 0]
+
+        # Move most of content in store performance to evaluate
+        mse  = mean_squared_error(y_test_true, y_test_pred)[0]
+        print('mse shape {}'.format(np.shape(mse)))
+        ase  = accumulated_squared_error(y_test_true, y_test_pred)[0]
+        r2   = r2_score(y_test_true, y_test_pred)[0]
+        #print(mse, ase, r2)
+        print('Finished computing mse, ase, r2 data in load_transform_fit after {} seconds'.format(timer() - self.timer_start))
+        print('mse {}, ase {}, r2 {}'.format(mse, ase, r2))
+        return mse, ase, r2
 
     def load_transform_fit(self, lat, lon):
         """ Standardisation X by equation x_new = (x-mean(x))/std(x)
@@ -478,7 +548,6 @@ class Model:
         print('Finished fitting pixel test data in load_transform_fit after {} seconds'.format(timer() - self.timer_start))
         y_test_pred = predict_pixel(X_test, coeffs)
         y_train_pred = predict_pixel(X_train, coeffs)
-
         print('Finished predicting test pixel data in load_transform_fit after {} seconds'.format(timer() - self.timer_start))
 
         if self.sigmoid:
@@ -496,7 +565,6 @@ class Model:
         print('mse shape {}'.format(np.shape(mse)))
         ase  = accumulated_squared_error(y_test_true, y_test_pred)[0]
         r2   = r2_score(y_test_true, y_test_pred)[0]
-
         mse_tr = mean_squared_error(y, y_train_pred)[0]
         ase_tr = accumulated_squared_error(y, y_train_pred)[0]
         r2_tr  = r2_score(y, y_train_pred)[0]
@@ -505,7 +573,6 @@ class Model:
         print('Finished computing mse, ase, r2 data in load_transform_fit after {} seconds'.format(timer() - self.timer_start))
         print('mse {}, ase {}, r2 {}'.format(mse, ase, r2))
         return coeffs.flatten(), mse, ase, r2, num_test, num_train, mse_tr, ase_tr, r2_tr
-
 
     def fit_evaluate(self):
         raise NotImplementedError('Coming soon ... ')
@@ -554,6 +621,7 @@ class Model:
                      'mse_train': (['latitude', 'longitude'], self.mse_train),
                      'r2_train':  (['latitude', 'longitude'], self.r2_train),
                      'ase_train': (['latitude', 'longitude'], self.ase_train),
+
                      'global_mse': np.mean(self.mse),
                      'global_r2':  np.mean(self.r2),
                      'global_ase': np.mean(self.ase),
@@ -682,7 +750,6 @@ if __name__ == '__main__':
                  order = 1,                 transform = trans,
                  sigmoid = sig, latitude = None, longitude = None,
                  type = type)
-
     coeff = m.fit()
     m.save()
     print(m.get_configuration())

@@ -12,7 +12,7 @@ from sclouds.helpers import (path_input, path_stats_results, VARIABLES,
                              UNITS, LONGNAME)
 from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                   path_python_figures, import_matplotlib,
-                                  file_format)
+                                  file_format, autolabel)
 
 matplotlib = import_matplotlib()
 
@@ -62,26 +62,29 @@ def get_missing_hours(year, month):
                     "len timearray {}, counter {}".format(start, stop, len(timearray), counter)
         return counter
 
-
 years = np.arange(2004, 2019)
 months = np.arange(1, 13)
-storage = {}
-for y in years:
-    storage[str(y)] = {}
-    for m in months:
-        storage[str(y)][str(m)] = get_missing_hours(y, m)
+sum = []
 
-
-df = pd.DataFrame.from_dict(storage)
+for m in months:
+    tempsum = []
+    for y in years:
+        missing = get_missing_hours(y, m)
+        tempsum.append(missing)
+    sum.append(np.nansum(tempsum))
 
 #fig, ax = plt.subplots(1, 1, figsize = (TEXT_WIDTH_IN, 0.5*TEXT_WIDTH_IN))
-ytikz = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+month = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+         'August', 'September', 'October', 'November', 'December']
 
 fig, ax = plt.subplots(1, 1, figsize = (TEXT_WIDTH_IN, 0.5*TEXT_WIDTH_IN) )
-
-sns.heatmap(df, linewidths=0.1, linecolor='white', vmax = 10, annot=True, # fmt="d",
-            cbar_kws={'extend':'max'}, ax = ax, yticklabels=ytikz, cmap = 'viridis')
-
-plt.subplots_adjust(hspace = 0.2, top=0.97, bottom=0.15, left = 0.15, right = 1.05)
-plt.xticks(rotation=45)
-fig.savefig(path_python_figures + 'heatmap_missing_values.{}'.format(file_format))
+rect = ax.bar(np.arange(len(month)), np.array(sum).astype(int), align = 'center',
+                alpha = 0.9, color = 'yellow')
+ax = autolabel(rect, ax)
+plt.xticks(np.arange(len(month)), rotation=45)
+ax.set_xticklabels(month)
+ax.set_ylim([0, np.max(sum) + 20])
+plt.title('Total number of missing hours')
+plt.ylabel('Total number of missing hours')
+plt.subplots_adjust(hspace = 0.2, top=0.9, bottom=0.3, left = 0.15, right = 0.95)
+fig.savefig(path_python_figures + 'heatmap_missing_values_monthly_sum.{}'.format(file_format))

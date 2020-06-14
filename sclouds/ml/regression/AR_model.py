@@ -7,24 +7,26 @@ import glob
 import numpy as np
 import xarray as xr
 
-from utils import (mean_squared_error, r2_score, fit_pixel, predict_pixel,
-                     accumulated_squared_error,
+
+from sclouds.ml.regression.utils import (mean_squared_error, r2_score,
+                     fit_pixel, predict_pixel, accumulated_squared_error,
                      sigmoid, inverse_sigmoid)
 
-from utils import (dataset_to_numpy, dataset_to_numpy_order,
+
+from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
                               get_xarray_dataset_for_period)
 import os,sys,inspect
-sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
-from helpers import (merge, get_list_of_variables_in_ds,
+
+from sclouds.helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/io/')
 
-# base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
+base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
 # base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/test/'
-base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/' #2014-01-01_2018-12-31/'
+# base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/' #2014-01-01_2018-12-31/'
 
 def min_max_scaling(dummy):
     """ Forces all values to be between 0 and 1.

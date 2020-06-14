@@ -1,5 +1,6 @@
 """ Explenation of the content of this file.
 """
+
 import sys
 import os
 import glob
@@ -9,11 +10,18 @@ import xarray as xr
 
 from timeit import default_timer as timer
 
+
 from utils import (mean_squared_error, r2_score, fit_pixel, predict_pixel,
                      accumulated_squared_error,
                      sigmoid, inverse_sigmoid)
 
 from utils import (dataset_to_numpy, dataset_to_numpy_order,
+#from sclouds.ml.regression.utils import (mean_squared_error, r2_score, fit_pixel, predict_pixel,
+#                     accumulated_squared_error,
+#                     sigmoid, inverse_sigmoid)
+#
+#from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
+
                     dataset_to_numpy_order_traditional_ar,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
@@ -23,11 +31,17 @@ from utils import (dataset_to_numpy, dataset_to_numpy_order,
                               get_list_of_files_excluding_period_traditional_model,
                               get_list_of_files_traditional_model)
 
+
 sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
 from helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
 from model import Model
+#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
+#from sclouds.helpers import (merge, get_list_of_variables_in_ds,
+                             get_pixel_from_ds, path_input, path_ar_results)
+
+#from sclouds.ml.regression.model import Model
 
 base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/2014-01-01_2018-12-31/' #'2014-01-01_2018-12-31/
 
@@ -37,7 +51,7 @@ class ParallellModel(Model):
         """ Saves model configuration, evaluation, transformation into a file
         named by the current time. Repo : /home/hanna/lagrings/results/ar/
         """
-        filename      = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/PARA_MODEL_{}_{}.nc'.format(
+        filename      = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/MODEL_{}_{}.nc'.format(
                                 np.min(self.longitude), np.datetime64('now'))
         path_ar_results = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/'
         #os.path.join(path_ar_results, )
@@ -80,6 +94,7 @@ def config_model(start, stop, test_start, test_stop,
                  train_dataset, test_dataset, order, transform,
                  sigmoid, latitude, longitude,
                  type):
+<<<<<<< HEAD
 
     print('Starting {}'.format(longitude))
 
@@ -101,7 +116,9 @@ def config_model(start, stop, test_start, test_stop,
 if __name__ == '__main__':
     start = None
     stop  = None
+
     print('start new run.')
+
     latitudes = np.arange(30,  50+0.25, step = 0.25)
     longitudes = np.arange(-15, 25+0.25, step = 0.25)
 
@@ -109,10 +126,12 @@ if __name__ == '__main__':
     #test_stop  = '2018-12-31'
     test_start = '2012-01-01'
     test_stop  = '2012-01-31'
-    sigmoid = False
-    transform = True
-    bias = True
+    
     order = 1
+    sig = False
+    trans = True
+    bias = True
+
     timer_start = timer()
 
     #test_start = '2014-01-01'
@@ -126,12 +145,12 @@ if __name__ == '__main__':
     trans = True
     bias = True
 
-
-    num_threads = 1
+    num_threads = 15
     n_lon = len(longitudes)
     parts = round(n_lon/num_threads)
 
     proces = []
+
     counter = 0
     longitudes = np.arange(num_threads)
     for lon in np.array_split(longitudes, num_threads):
@@ -152,7 +171,14 @@ if __name__ == '__main__':
     # for pro in proces:
     #    print('Enters join .. ')
     #    pro.join()
+    for lon in np.array_split(longitudes, num_threads):
+        p = Process(target=config_model, args=(start, stop, test_start,
+                           test_stop, train_dataset, test_dataset, order, transform,
+                            sigmoid, latitudes, lon, type)).start()
+        proces.append(p)
 
+    #for t in threads:
+        #t.join()
     """
     m = Model(start = start, stop = stop,
                  test_start = test_start, test_stop = test_stop,

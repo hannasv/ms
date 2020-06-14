@@ -1,14 +1,14 @@
 """ Utilities for reading routines.
 """
 
-import os
+import os, sys
 import glob
 
 import numpy as np
 import xarray as xr
 
-sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
-from helpers import merge, path_input
+#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
+from sclouds.helpers import merge, path_input
 
 
 

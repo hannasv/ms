@@ -64,7 +64,7 @@ for i, ax in enumerate(axes.flatten()):
     ax.set_title(LONGNAME[var])
 
 plt.xticks(y_pos, x_ticks_labels)
-plt.legend()
+plt.legend(ncol = len(FILTERS), frameon = False, bbox_to_anchor=(0.8, -0.25))
 #plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.9, bottom=0.1, left = 0.14, right = .95)
-plt.subplots_adjust(wspace = 0.3, hspace = 0.2, top= 0.95, bottom= 0.05, left= 0.15, right= 0.97)
-plt.savefig(os.path.join(path_store_plots, 'bar_plot_global_statistics.pdf'))
+plt.subplots_adjust(wspace = 0.3, hspace = 0.2, top= 0.95, bottom= 0.1, left= 0.15, right= 0.97)
+plt.savefig(os.path.join(path_store_plots, 'bar_plot_global_statistics_new_legend.pdf'))

@@ -11,13 +11,12 @@ from sclouds.helpers import (path_input, path_stats_results, VARIABLES,
                                 UNITS, LONGNAME)
 from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                     path_python_figures, import_matplotlib)
-n_rows = len(VARIABLES)
+n_rows = 3
 n_cols = 1
 
 #data = xr.open_dataset('/home/hanna/lagrings/results/stats/monthly_means.nc')
 
-#fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
-#fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1)
+
 #plt.subplots_adjust(hspace = 0.2, top=0.97, bottom=0.03, left = 0.14, right = 0.97)
 
 mat = import_matplotlib()
@@ -55,6 +54,13 @@ def filter_data_in_period(start = '2012-07-01', stop  = '2012-07-07'):
 
     return df_return
 
+fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True)
+fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 3)
+
+mapping_number_month = {'01':'Jan', '02':'Feb', '03':'Mar', '04':'Apr',
+                        '05':'May', '06':'Jun', '07':'Jul', '08':'Aug',
+                        '09':'Sep', '10':'Oct', '11':'Nov', '12':'Dec'}
+
 
 for i in range(1, 13):
     start = '2012-{:02d}-01'.format(i)
@@ -62,33 +68,37 @@ for i in range(1, 13):
 
     df = filter_data_in_period(start = start, stop  = stop)
 
-    n_rows = len(VARIABLES)
-    n_cols = 1
-
     data = df
     date = df.time.values
     date = np.arange(len(date))
 
-    fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex = True)
-    fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 3)
-    
-    for var, ax in zip(VARIABLES, axes):
-        vals   = data[var].values
-        f_land = data['land_{}'.format(var)].values
-        f_sea  = data['sea_{}'.format(var)].values
+    var = 'tcc'
+    vals   = data[var].values
+    f_land = data['land_{}'.format(var)].values
+    f_sea  = data['sea_{}'.format(var)].values
 
-        ax.set_title(LONGNAME[var], fontsize = 14)
-        ax.plot(date, vals, label = '{}'.format('no filter'))
-        ax.plot(date, f_land, label = '{}'.format('land'))
-        ax.plot(date, f_sea, label = '{}'.format('sea'))
-        ax.set_ylabel('{} [{}]'.format(var, UNITS[var]))
-        labels = ['{:02d}-{:02d}'.format(date, i) for date in range(1, 9)]
+    axes[0].set_title('No filter', fontsize = 14)
+    axes[0].plot(date, vals, label = mapping_number_month["{:02d}".format(i)])
+    #axes[0].legend(ncol = 6, frameon = False, bbox_to_anchor=(0.18, 1.2))
 
-        ax.set_xticks(np.linspace(0, len(vals), len(labels)))
-        ax.set_xticklabels( labels )
+    axes[1].set_title('Land', fontsize = 14)
+    axes[1].plot(date, f_land, label = mapping_number_month["{:02d}".format(i)])
 
-    plt.legend(ncol = 3, frameon = False, bbox_to_anchor=(0.8, -0.25))
-    #plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.9, bottom=0.1, left = 0.14, right = .95)
-    #plt.subplots_adjust(wspace = 0.3, hspace = 0.2, top= 0.95, bottom= 0.1, left= 0.15, right= 0.97)
-    plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.9, bottom=0.1, left = 0.14, right = .95)
-    plt.savefig(path_python_figures + 'spatially_averaged_one_week_from_{}.png'.format(start))
+    axes[2].set_title('Sea', fontsize = 14)
+    axes[2].plot(date, f_sea, label = mapping_number_month["{:02d}".format(i)])
+
+    axes[0].set_ylabel('{} [{}]'.format(var, UNITS[var]))
+    axes[1].set_ylabel('{} [{}]'.format(var, UNITS[var]))
+    axes[2].set_ylabel('{} [{}]'.format(var, UNITS[var]))
+
+    axes[0].set_ylim([0, 1])
+    axes[1].set_ylim([0, 1])
+    axes[2].set_ylim([0, 1])
+
+    labels = ['{:02d}'.format(date, i) for date in range(1, 9)]
+
+    axes[2].set_xticks(np.linspace(0, len(date), len(labels)))
+    axes[2].set_xticklabels( labels )
+plt.legend(ncol = 6, frameon = False, bbox_to_anchor=(0.99, -0.25))
+plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.9, bottom=0.2, left = 0.14, right = .95)
+plt.savefig(path_python_figures + 'spatially_averaged_one_week_tcc_seperated_by_filters.png'.format(start))

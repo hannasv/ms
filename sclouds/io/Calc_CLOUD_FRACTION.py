@@ -105,6 +105,8 @@ def calc_fraction_one_cell(lat = '30.25', lon = '19.25', cmk = None, data = None
 def compute(satfil, lats = np.arange(30.0, 50.25, 0.25), lons = np.arange(-15.0, 25.25, 0.25) ):
 
     o = clean_file(satfil)
+    #cloudMask = xr.open_dataset(satfil, engine = 'cfgrib')
+    #o = np.fliplr(cloudMask['p260537'].values.reshape( (3712, 3712) ))
 
     if o is not None:
         #d_phi, d_theta, cell_areas, lat_array, lon_array = read_dlon_dlat(data_dir)
@@ -316,9 +318,9 @@ if __name__ == '__main__':
     for y in years:
         for m in months:
             folder = make_folder_str(y, m)
-            if folder in ['2015_11', '2015_12', '2017_12']:
+            if folder in ['2009_05']: #['2015_11', '2015_12', '2017_12']: '2018_03',
                 #if len(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))) == 0:
-                print('search_for {}'.format(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))))
+                print('search_for {}'.format(glob.glob(os.path.join('/home/hanna/lagrings/satelite_coordinates/', '{}_test_regrindding_tcc.nc'.format(folder)))))
                 files_to_read = removes_duplicates(y, m)
                 print('folder {}'.format(folder))
                 print('len files_to_read {}'.format(len(files_to_read)))

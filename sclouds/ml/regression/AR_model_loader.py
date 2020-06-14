@@ -8,8 +8,41 @@ import numpy as np
 import xarray as xr
 
 from sclouds.helpers import  path_ar_results
-from sclouds.ml.regression.AR_model import AR_model
+from sclouds.ml.regression.model import Model
 #from sclouds.ml.regression.utils import write_path, read_path
+
+def get_train_test(test_start, test_stop, model = 'ar'):
+    print('gets train test data for ar model')
+    if type == 'ar':
+        files_train = get_list_of_files_excluding_period(test_start, test_stop)
+        files_test = get_list_of_files(test_start, test_stop)
+
+    else:
+        files_train = get_list_of_files_excluding_period_traditional_model(test_start, test_stop)
+        files_test = get_list_of_files_traditional_model(test_start, test_stop)
+
+    print('Detected {} train files and {} test files. Merging might take a while .... '.format(len(files_train), len(files_test)))
+    train_dataset = merge(files_train)
+    print('finished merging train')
+    test_dataset = merge(files_test)
+    return train_dataset, test_dataset
+
+def get_test_data(test_start, test_stop, model = 'ar'):
+    print('gets train test data for ar model')
+    if type == 'ar':
+        #files_train = get_list_of_files_excluding_period(test_start, test_stop)
+        files_test = get_list_of_files(test_start, test_stop)
+
+    else:
+        #files_train = get_list_of_files_excluding_period_traditional_model(test_start, test_stop)
+        files_test = get_list_of_files_traditional_model(test_start, test_stop)
+
+    print('Detected {} train files and {} test files. Merging might take a while .... '.format(len(files_train), len(files_test)))
+    #train_dataset = merge(files_train)
+    print('finished merging train')
+    test_dataset = merge(files_test)
+    return test_dataset
+
 
 class AR_model_loader:
     """ Load trained model
@@ -71,6 +104,11 @@ class AR_model_loader:
             Loads trained model into a dataset.
         """
         self.dataset = xr.open_dataset(file)
+        try:
+            type = self.dataset.type.values
+        except KeyError:
+            type = 'ar'
+            print('Sets type to ar because the test case is ar.')
         self.config = {'transform': self.dataset.transform.values,
                        'sigmoid': self.dataset.sigmoid.values,
                        'order': self.dataset.order.values,
@@ -78,54 +116,14 @@ class AR_model_loader:
                        'stop': self.dataset.stop.values,
                        'test_start': self.dataset.test_start.values,
                        'test_stop': self.dataset.test_stop.values,
-                       'bias': self.dataset.bias.values}
+                       'bias': self.dataset.bias.values,
+                       'type':self.dataset.type.values}
         return self.dataset
 
     def get_configuration(self):
         """ Get configuration from constructor.
         """
         return self.config
-
-    def load_transformation(self, file):
-        """ Returns trained tranformation
-        Develop this code after the
-        """
-        #raise NotImplementedError('Comming soon ....')
-        if not self.dataset:
-            # Havn't defined the data
-            self.load_model_to_xarray(file)
-
-        latitudes = self.dataset.latitude.values
-        longitudes = self.dataset.longitude.values
-
-        n_lat = len(latitudes)
-        n_lon = len(longitudes)
-
-        # Number of variables is sum of meteorological, bias
-        # (bool 0 or 1), and the order of the ar model
-        order = self.dataset.order.values
-        n_vars = 4 + order + self.dataset.bias.values
-        means = np.zeros((n_lat, n_lon,  2*n_vars))
-        stds = np.zeros((n_lat, n_lon,  2*n_vars))
-
-        means[:, :, 0] = self.dataset.mean_q.values
-        means[:, :, 1] = self.dataset.mean_t2m.values
-        means[:, :, 2] = self.dataset.mean_r.values
-        means[:, :, 3] = self.dataset.mean_sp.values
-
-        stds[:, :, 0] = self.dataset.std_q.values
-        stds[:, :, 1] = self.dataset.std_t2m.values
-        stds[:, :, 2] = self.dataset.std_r.values
-        stds[:, :, 3] = self.dataset.std_sp.values
-
-        if order > 0:
-            for o in range(order):
-                var = 'mean_{}'.format(o + 1)
-                means[:, :, var_idx] = self.dataset['std_{}'.format(o + 1)].values
-                stds[:, :, var_idx] = self.dataset['mean_{}'.format(o + 1)].values
-                var_idx += 1
-        return means, stds
-
 
     def load_model_from_hyperparameters(self):
         """ Load model from HyperParameters.
@@ -152,14 +150,19 @@ class AR_model_loader:
         model : sclouds.ml.regression.AR_model
             Loads a trained model based on filename.
         """
-        model = AR_model()
-        # Load transformation.
-        means, stds = self.load_transformation(file = file)
-        model.set_transformer_from_loaded_model(mean = means, std = stds)
-        # Load trained weights.
+        ds_model = load_model_to_xarray(file)
+        test_dataset = get_test_data(test_start, test_stop, model = 'ar')
+        # duplicate test as train data to aviod that data is read into model.
+        model = Model(start = self.config.start, stop = self.config.stop,
+                        test_start = self.config.test_start, test_stop = self.config.test_stop,
+                        train_dataset = test_dataset, test_dataset = test_dataset,
+                        order = 1, transform = self.config.transform, sigmoid = self.config.sigmoid,
+                        latitude = None, longitude = None, type = self.dataset.type.values,
+                        bias = self.config.bias)
+
         weights = self.load_weights(file = file)
         model.set_weights_from_loaded_model(W = weights)
-        model.set_configuration(self.config)
+        #model.set_configuration(self.config)
         return model
 
     def load_weights(self, file):
@@ -193,19 +196,21 @@ class AR_model_loader:
         # Number of variables is sum of meteorological, bias
         # (bool 0 or 1), and the order of the ar model
         order = self.dataset.order.values
-        n_vars = 4 + order + self.dataset.bias.values
+        n_vars = len(self.variables) + order + self.dataset.bias.values
         weights = np.zeros((n_lat, n_lon,  n_vars))
 
-        weights[:, :, 0] = self.dataset.Wq.values
-        weights[:, :, 1] = self.dataset.Wt2m.values
-        weights[:, :, 2] = self.dataset.Wr.values
-        weights[:, :, 3] = self.dataset.Wsp.values
+        if len(self.variables) > 0 :
+            weights[:, :, 0] = self.dataset.Wq.values
+            weights[:, :, 1] = self.dataset.Wt2m.values
+            weights[:, :, 2] = self.dataset.Wr.values
+            weights[:, :, 3] = self.dataset.Wsp.values
+            ar_index = 4
+        else:
+            ar_index = 0
 
         if self.dataset.bias.values:
-            weights[:, :, 4] = self.dataset.b.values
-            var_idx = 5
-        else:
-            var_idx = 4
+            weights[:, :, ar_index] = self.dataset.b.values
+            var_idx += 1
 
         if order > 0:
             for o in range(order):

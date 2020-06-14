@@ -50,12 +50,7 @@ for var, ax in zip(VARIABLES, axes):
     ax.set_title(LONGNAME[var], fontsize = 14)
     ax.set_ylabel('Latitude')
 
-    ax.xaxis.set_major_locator(MultipleLocator(20))
-    ax.yaxis.set_major_locator(MultipleLocator(20))
-    ax.xaxis.set_major_formatter(FormatStrFormatter('%d'))
-
-    ax.set_yticklabels(labels = np.linspace(30, 50, 5))
-    ax.set_xticklabels(labels = np.linspace(-20, 25, 10), rotation = 45)
+    ax = add_ticks(ax, x_num_tikz = 5, y_num_tikz = 5)
     #a.legend()
 plt.xlabel('Longitude')
 plt.subplots_adjust(wspace = 0.2, hspace = 0.2, top=0.97, bottom=0.1, left = 0.14, right = .95)

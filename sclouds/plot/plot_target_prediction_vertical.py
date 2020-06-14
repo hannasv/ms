@@ -11,7 +11,7 @@ from sclouds.helpers import (path_input, path_stats_results, VARIABLES,
 from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                     path_python_figures, import_matplotlib,
                                     cmap_contour_plot, levels_contourplot,
-                                    file_format)
+                                    file_format, add_ticks)
 mat = import_matplotlib() # for mye
 import matplotlib.pyplot as plt
 
@@ -55,10 +55,8 @@ axes[0].set_ylabel('Latitude')
 axes[1].set_ylabel('Latitude')
 axes[1].set_xlabel('Longitude')
 
-axes[0].set_yticklabels(labels = np.linspace(30, 50, 5))
-axes[1].set_yticklabels(labels = np.linspace(30, 50, 5))
-
-axes[1].set_xticklabels(labels = np.linspace(-15, 25, 9), rotation = 45)
+axes[0] = add_ticks(axes[0], x_num_tikz = 9, y_num_tikz = 5)
+axes[1] = add_ticks(axes[1], x_num_tikz = 9, y_num_tikz = 5)
 
 plt.subplots_adjust(left=0.1, bottom=0.2, right=0.8, top=0.9, wspace=0.1, hspace=0.3)
 plt.savefig(path_python_figures + 'target_prediction_plot_vertical.pdf')
