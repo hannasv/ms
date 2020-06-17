@@ -9,6 +9,7 @@ from sclouds.ml.ConvLSTM.utils import r2_keras
 
 from tensorflow import keras
 from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
+from utils import get_xarray_dataset_for_period, get_data_keras, get_train_test
 
 class ConvLSTM:
     """ A convoliutional lstm neural network.

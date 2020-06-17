@@ -20,7 +20,7 @@ import glob
 import xarray as xr
 import numpy as np
 
-path_input = '/home/hannasv/data/'
+path_input = '/global/D1/homes/hannasv/data/'
 
 def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
     first_period = get_list_of_files(start = '2004-04-01', stop = start,
