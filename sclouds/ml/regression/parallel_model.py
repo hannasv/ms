@@ -21,7 +21,6 @@ from utils import (dataset_to_numpy, dataset_to_numpy_order,
 #                     sigmoid, inverse_sigmoid)
 #
 #from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
-
                     dataset_to_numpy_order_traditional_ar,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
@@ -32,18 +31,19 @@ from utils import (dataset_to_numpy, dataset_to_numpy_order,
                               get_list_of_files_traditional_model)
 
 
-sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
-from helpers import (merge, get_list_of_variables_in_ds,
+#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
+from sclouds.helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
 from model import Model
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
 #from sclouds.helpers import (merge, get_list_of_variables_in_ds,
-                             get_pixel_from_ds, path_input, path_ar_results)
+#                             get_pixel_from_ds, path_input, path_ar_results)
 
 #from sclouds.ml.regression.model import Model
 
 base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/2014-01-01_2018-12-31/' #'2014-01-01_2018-12-31/
+base = '/global/D1/homes/hannasv/stats/2014-01-01_2018-12-31/'
 
 class ParallellModel(Model):
 
@@ -51,9 +51,9 @@ class ParallellModel(Model):
         """ Saves model configuration, evaluation, transformation into a file
         named by the current time. Repo : /home/hanna/lagrings/results/ar/
         """
-        filename      = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/MODEL_{}_{}.nc'.format(
+        filename      = '/home/hannasv/results/ar/MODEL_{}_{}.nc'.format(
                                 np.min(self.longitude), np.datetime64('now'))
-        path_ar_results = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/'
+        path_ar_results = '/home/hannasv/results/ar/'
         #os.path.join(path_ar_results, )
         print('Stores file {}'.format(filename))
         config_dict   = self.get_configuration()
@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
     latitudes = np.arange(30,  50+0.25, step = 0.25)
     longitudes = np.arange(-15, 25+0.25, step = 0.25)
-
+    longitudes = np.arange(-15, -14, step = 0.25)
     #test_start = '2014-01-01'
     #test_stop  = '2018-12-31'
     test_start = '2012-01-01'
