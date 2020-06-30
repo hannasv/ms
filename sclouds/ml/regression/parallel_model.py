@@ -15,12 +15,12 @@ from utils import (mean_squared_error, r2_score, fit_pixel, predict_pixel,
                      accumulated_squared_error,
                      sigmoid, inverse_sigmoid)
 
-from utils import (dataset_to_numpy, dataset_to_numpy_order,
+#from utils import (dataset_to_numpy, dataset_to_numpy_order,
 #from sclouds.ml.regression.utils import (mean_squared_error, r2_score, fit_pixel, predict_pixel,
 #                     accumulated_squared_error,
 #                     sigmoid, inverse_sigmoid)
 #
-#from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
+from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
                     dataset_to_numpy_order_traditional_ar,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
@@ -43,7 +43,6 @@ from model import Model
 #from sclouds.ml.regression.model import Model
 
 base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/2014-01-01_2018-12-31/' #'2014-01-01_2018-12-31/
-base = '/global/D1/homes/hannasv/stats/2014-01-01_2018-12-31/'
 
 class ParallellModel(Model):
 
@@ -51,9 +50,9 @@ class ParallellModel(Model):
         """ Saves model configuration, evaluation, transformation into a file
         named by the current time. Repo : /home/hanna/lagrings/results/ar/
         """
-        filename      = '/home/hannasv/results/ar/MODEL_{}_{}.nc'.format(
+        filename      = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/MODEL_{}_{}.nc'.format(
                                 np.min(self.longitude), np.datetime64('now'))
-        path_ar_results = '/home/hannasv/results/ar/'
+        path_ar_results = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/'
         #os.path.join(path_ar_results, )
         print('Stores file {}'.format(filename))
         config_dict   = self.get_configuration()
@@ -120,7 +119,7 @@ if __name__ == '__main__':
 
     latitudes = np.arange(30,  50+0.25, step = 0.25)
     longitudes = np.arange(-15, 25+0.25, step = 0.25)
-    longitudes = np.arange(-15, -14, step = 0.25)
+
     #test_start = '2014-01-01'
     #test_stop  = '2018-12-31'
     test_start = '2012-01-01'

@@ -1,19 +1,3 @@
-"""
-- If `return_sequences`
-       - If data_format='channels_first'
-          5D tensor with shape:
-          `(samples, time, filters, output_row, output_col)`
-       - If data_format='channels_last'
-          5D tensor with shape:
-          `(samples, time, output_row, output_col, filters)`
-- Else
-  - If data_format ='channels_first'
-      4D tensor with shape:
-      `(samples, filters, output_row, output_col)`
-  - If data_format='channels_last'
-      4D tensor with shape:
-      `(samples, output_row, output_col, filters)`
-"""
 import os
 import glob
 
@@ -21,6 +5,7 @@ import xarray as xr
 import numpy as np
 
 path_input = '/global/D1/homes/hannasv/data/'
+path_input = '/home/hanna/lagrings/ERA5_monthly/'
 
 def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
     first_period = get_list_of_files(start = '2004-04-01', stop = start,
@@ -183,21 +168,20 @@ def dataset_to_numpy_grid_keras_dataformat_channel_last_batch_size(pixel, seq_le
     y = tcc[:, :, :, np.newaxis]
     samples, lat, ln, num_vars = X.shape
     print('shape of input X {}'.format(X.shape))
-    print(samples/(seq_length*batch_size))
+    print(samples/(seq_length))
     # Reshapes data into sequence
     try:
         X = X.reshape( ( int(samples/(seq_length*batch_size)), batch_size, seq_length, n_lat, n_lon, num_vars))
         y = y.reshape( ( int(samples/(seq_length*batch_size)), batch_size, seq_length, n_lat, n_lon) )
     except ValueError:
         print('enters except')
-        dim = samples%(seq_length*batch_size)
+        dim = samples%(seq_length)
         print('old tot num samples {}, new tot num samples {}'.format(n_time, dim))
         X_cropped = X[dim:, :, :, :]
         y_cropped = y[dim:, :, :, :]
         print('shape X cropped {}'.format(X_cropped.shape))
-        X = X_cropped.reshape(( int(samples/(seq_length*batch_size)), batch_size, seq_length, n_lat, n_lon, num_vars))
-        y = y_cropped.reshape((int(samples/(seq_length*batch_size)),
-                                batch_size, seq_length, n_lat, n_lon))
+        X = X_cropped.reshape(( int(samples/(seq_length)), seq_length, n_lat, n_lon, num_vars))
+        y = y_cropped.reshape((int(samples/(seq_length)), seq_length, n_lat, n_lon))
     print('shape of output X {}'.format(X.shape))
     print('shape of output y {}'.format(y.shape))
 

@@ -5,11 +5,11 @@ import glob
 import numpy as np
 
 from sclouds.helpers import get_lon_array, get_lat_array, path_convlstm_results
-from sclouds.ml.ConvLSTM.utils import r2_keras
+from sclouds.ml.ConvLSTM.utils import r2_keras, get_xarray_dataset_for_period
 
 from tensorflow import keras
 from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
-from utils import get_xarray_dataset_for_period, get_data_keras, get_train_test
+#from utils import  #, get_data_keras, get_train_test
 
 class ConvLSTM:
     """ A convoliutional lstm neural network.
@@ -130,7 +130,7 @@ class ConvLSTM:
 
         input  = keras.layers.Input(shape=(seq_length, self.n_lat, self.n_lon,
                                 self.NUM_INPUT_VARS), name='input')#batch_size = self.batch_size)
-                                
+
 
         # Adding the first layer
         model.add(keras.layers.ConvLSTM2D(filters = filters[0],
@@ -264,7 +264,7 @@ if __name__ == '__main__':
     #ytrain_dummy = tf.ones((batch_size, seq_length, 81, 161)
     # antall filrer i hver lag.
     filters = [32] #256, 128,
-    # size of filters used 
+    # size of filters used
     kernels = [3] #, 3, 3
     """
     tf.keras.Input(
@@ -277,7 +277,7 @@ if __name__ == '__main__':
         ragged=False,
         **kwargs
     )"""
-    from utils import get_xarray_dataset_for_period, get_data_keras, get_train_test
+    #from utils import get_xarray_dataset_for_period, get_data_keras, get_train_test
     #data = get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31')
     #print(data)
     test_start = '2014-01-01'
