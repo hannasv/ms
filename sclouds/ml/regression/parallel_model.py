@@ -94,7 +94,6 @@ def config_model(start, stop, test_start, test_stop,
                  train_dataset, test_dataset, order, transform,
                  sigmoid, latitude, longitude,
                  type):
-<<<<<<< HEAD
 
     print('Starting {}'.format(longitude))
 
@@ -126,7 +125,7 @@ if __name__ == '__main__':
     #test_stop  = '2018-12-31'
     test_start = '2012-01-01'
     test_stop  = '2012-01-31'
-    
+
     order = 1
     sig = False
     trans = True
@@ -154,13 +153,13 @@ if __name__ == '__main__':
     counter = 0
     longitudes = np.arange(num_threads)
     for lon in np.array_split(longitudes, num_threads):
-        tr_data_sel =  train_dataset.sel(longitude = slice(min(lon), max(lon))).copy()
-        te_data_sel =  test_dataset.sel(longitude = slice(min(lon), max(lon))).copy()
+        tr_data_sel =  train_dataset.sel(longitude = slice(min(lon), max(lon)))
+        te_data_sel =  test_dataset.sel(longitude = slice(min(lon), max(lon)))
 
         p = Process(target=config_model, args=(start, stop, test_start,
                            test_stop, tr_data_sel, te_data_sel, order, transform,
                             sigmoid, latitudes, lon, type))
-        
+
         p.start()
         print('starts thread {}'.format(counter))
         counter+=1
@@ -168,29 +167,6 @@ if __name__ == '__main__':
 
     print('Started all .. ')
 
-    # for pro in proces:
-    #    print('Enters join .. ')
-    #    pro.join()
-    for lon in np.array_split(longitudes, num_threads):
-        tr_data_sel =  train_dataset.sel(longitude = sel(min(lon), max(lon))).copy()
-        te_data_sel =  test_dataset.sel(longitude = sel(min(lon), max(lon))).copy()
-
-        p = Process(target=config_model, args=(start, stop, test_start,
-                           test_stop, tr_data_sel, te_data_sel, order, transform,
-                            sigmoid, latitudes, lon, type))
-        p.start()
-        proces.append(p)
-
-    #for t in threads:
-        #t.join()
-    """
-    m = Model(start = start, stop = stop,
-                 test_start = test_start, test_stop = test_stop,
-                 train_dataset = train_dataset, test_dataset = test_dataset,
-                 order = 1,                 transform = trans,
-                 sigmoid = sig, latitude = None, longitude = None,
-                 type = type)
-    coeff = m.fit()
-    m.save()
-    print(m.get_configuration())
-    """
+    for pro in proces:
+        print('Enters join .. ')
+        pro.join()
