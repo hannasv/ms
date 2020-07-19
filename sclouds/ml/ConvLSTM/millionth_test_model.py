@@ -105,4 +105,3 @@ model.fit(ms_batch_train_ds, #batch_size=batch_size,
          #validation_freq=1, max_queue_size=10,
          #workers=self.WORKERS,
          use_multiprocessing=False)
-

@@ -83,12 +83,11 @@ def dataset_to_numpy_order_traditional_ar(dataset, order, bias = True):
 
 
 
-from utils import (dataset_to_numpy, dataset_to_numpy_order,
+#from utils import (dataset_to_numpy, dataset_to_numpy_order,
                     #dataset_to_numpy_order_traditional_ar,
 
-#from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
-#                    dataset_to_numpy_order_traditional_ar,
-
+from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
+                    dataset_to_numpy_order_traditional_ar,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
                               get_xarray_dataset_for_period,

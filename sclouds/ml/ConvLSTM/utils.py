@@ -1,4 +1,3 @@
-
 import os
 import glob
 
@@ -30,6 +29,8 @@ def get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31'):
     if stop is not None:
         data = data.sel(time = slice(start, stop))
     return data
+
+#path_input = '/global/D1/homes/hannasv/data/'
 
 
 def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
@@ -193,21 +194,20 @@ def dataset_to_numpy_grid_keras_dataformat_channel_last_batch_size(pixel, seq_le
     y = tcc[:, :, :, np.newaxis]
     samples, lat, ln, num_vars = X.shape
     print('shape of input X {}'.format(X.shape))
-    print(samples/(seq_length*batch_size))
+    print(samples/(seq_length))
     # Reshapes data into sequence
     try:
         X = X.reshape( ( int(samples/(seq_length*batch_size)), batch_size, seq_length, n_lat, n_lon, num_vars))
         y = y.reshape( ( int(samples/(seq_length*batch_size)), batch_size, seq_length, n_lat, n_lon) )
     except ValueError:
         print('enters except')
-        dim = samples%(seq_length*batch_size)
+        dim = samples%(seq_length)
         print('old tot num samples {}, new tot num samples {}'.format(n_time, dim))
         X_cropped = X[dim:, :, :, :]
         y_cropped = y[dim:, :, :, :]
         print('shape X cropped {}'.format(X_cropped.shape))
-        X = X_cropped.reshape(( int(samples/(seq_length*batch_size)), batch_size, seq_length, n_lat, n_lon, num_vars))
-        y = y_cropped.reshape((int(samples/(seq_length*batch_size)),
-                                batch_size, seq_length, n_lat, n_lon))
+        X = X_cropped.reshape(( int(samples/(seq_length)), seq_length, n_lat, n_lon, num_vars))
+        y = y_cropped.reshape((int(samples/(seq_length)), seq_length, n_lat, n_lon))
     print('shape of output X {}'.format(X.shape))
     print('shape of output y {}'.format(y.shape))
 
