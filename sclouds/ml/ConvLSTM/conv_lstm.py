@@ -5,11 +5,11 @@ import glob
 import numpy as np
 
 from sclouds.helpers import get_lon_array, get_lat_array, path_convlstm_results
-from sclouds.ml.ConvLSTM.utils import r2_keras
+from sclouds.ml.ConvLSTM.utils import r2_keras, get_xarray_dataset_for_period, get_data_keras, get_train_test
 
 from tensorflow import keras
 from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
-from utils import get_xarray_dataset_for_period, get_data_keras, get_train_test
+#from sclouds.ml.utils import get_xarray_dataset_for_period, get_data_keras, get_train_test
 
 class ConvLSTM:
     """ A convoliutional lstm neural network.

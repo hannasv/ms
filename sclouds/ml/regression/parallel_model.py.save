@@ -21,6 +21,7 @@ from utils import (dataset_to_numpy, dataset_to_numpy_order,
 #                     sigmoid, inverse_sigmoid)
 #
 #from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
+
                     dataset_to_numpy_order_traditional_ar,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
@@ -31,28 +32,29 @@ from utils import (dataset_to_numpy, dataset_to_numpy_order,
                               get_list_of_files_traditional_model)
 
 
-#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
-from sclouds.helpers import (merge, get_list_of_variables_in_ds,
+sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
+from helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
 from model import Model
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
 #from sclouds.helpers import (merge, get_list_of_variables_in_ds,
-#                             get_pixel_from_ds, path_input, path_ar_results)
+                             get_pixel_from_ds, path_input, path_ar_results)
+
 #from sclouds.ml.regression.model import Model
 
 base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/2014-01-01_2018-12-31/' #'2014-01-01_2018-12-31/
-base = '/global/D1/homes/hannasv/stats/2014-01-01_2018-12-31/'
-
+base = '/global/D1/homes/hannsv/stats/'2014-01-01_2018-12-31/
+'
 class ParallellModel(Model):
 
     def save(self):
         """ Saves model configuration, evaluation, transformation into a file
         named by the current time. Repo : /home/hanna/lagrings/results/ar/
         """
-        filename      = '/home/hannasv/results/ar/MODEL_{}_{}.nc'.format(
+        filename      = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/MODEL_{}_{}.nc'.format(
                                 np.min(self.longitude), np.datetime64('now'))
-        path_ar_results = '/home/hannasv/results/ar/'
+        path_ar_results = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/'
         #os.path.join(path_ar_results, )
         print('Stores file {}'.format(filename))
         config_dict   = self.get_configuration()
@@ -116,56 +118,56 @@ if __name__ == '__main__':
     stop  = None
 
     print('start new run.')
+
     latitudes = np.arange(30,  50+0.25, step = 0.25)
-    #longitudes = np.arange(-15, 25+0.25, step = 0.25)
-    longitudes = np.arange(-15, -14, step = 0.25)
+    longitudes = np.arange(-15, 25+0.25, step = 0.25)
+
     #test_start = '2014-01-01'
     #test_stop  = '2018-12-31'
-    #test_start = '2012-01-01'
-    #test_stop  = '2012-01-31'
+    test_start = '2012-01-01'
+    test_stop  = '2012-01-31'
 
     order = 1
-    sigmoid = False
-    transform = True
+    sig = False
+    trans = True
     bias = True
 
     timer_start = timer()
 
-    test_start = '2014-01-01'
-    test_stop  = '2018-12-31'
+    #test_start = '2014-01-01'
+    #test_stop  = '2018-12-31'
 
     type = 'traditional'
     train_dataset, test_dataset = get_train_test(test_start, test_stop,
                                                  model = type)
 
-    sigmoid = False
-    transform = True
+    sig = False
+    trans = True
     bias = True
 
-    #num_threads = 15
-    #n_lon = len(longitudes)
-    #parts = round(n_lon/num_threads)
+    num_threads = 15
+    n_lon = len(longitudes)
+    parts = round(n_lon/num_threads)
 
-    #proces = []
+    proces = []
 
-    #counter = 0
-    #longitudes = np.arange(num_threads)
-    #for lon in np.array_split(longitudes, num_threads):
-    longitudes = [longitudes[0]]
-    latitudes  = [latitudes[0]]
-    tr_data_sel =  train_dataset.sel(longitude = slice(min(longitudes), max(longitudes)))
-    te_data_sel =  test_dataset.sel(longitude = slice(min(longitudes), max(longitudes)))
+    counter = 0
+    longitudes = np.arange(num_threads)
+    for lon in np.array_split(longitudes, num_threads):
+        tr_data_sel =  train_dataset.sel(longitude = slice(min(lon), max(lon)))
+        te_data_sel =  test_dataset.sel(longitude = slice(min(lon), max(lon)))
 
-    p = Process(target=config_model, args=(start, stop, test_start,
+        p = Process(target=config_model, args=(start, stop, test_start,
                            test_stop, tr_data_sel, te_data_sel, order, transform,
-                            sigmoid, latitudes, longitudes, type))
+                            sigmoid, latitudes, lon, type))
 
-    p.start()
-    #print('starts thread {}'.format(counter))
-    #counter+=1
-    #proces.append(p)
-    #print('Started all .. ')
-    #for pro in proces:
-    #    print('Enters join .. ')
-    p.join()
-    print('passes p join before threads are finished')
+        p.start()
+        print('starts thread {}'.format(counter))
+        counter+=1
+        proces.append(p)
+
+    print('Started all .. ')
+
+    for pro in proces:
+        print('Enters join .. ')
+        pro.join()
