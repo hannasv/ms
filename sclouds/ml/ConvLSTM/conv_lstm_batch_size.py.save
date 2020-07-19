@@ -12,7 +12,7 @@ from tensorflow import keras
 from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
 
 my_callbacks = [
-    tf.keras.callbacks.EarlyStopping(patience=3),
+    tf.keras.callbacks.EarlyStopping(patience=10),
     #tf.keras.callbacks.ModelCheckpoint(filepath='model.{epoch:02d}-{val_loss:.2f}.h5'),
     tf.keras.callbacks.TensorBoard(log_dir='./logs'),
     tf.keras.callbacks.TerminateOnNaN()
@@ -27,19 +27,6 @@ def gen_name(filters, kernal):
             name += '-{}'.format(k)
         print('generated name {}'.format(name))
         return name
-
-def gen_longname(filters, kernal, batch_size, seq_length):
-        name = 'ConvLSTM'
-        name += '-B{}'.format(batch_size)
-        name += '-SL{}'.format(seq_length)
-        for i in range(len(filters)):
-            f = filters[i]
-            k = kernal[i]
-            name += '-{}'.format(f)
-            name += '-{}x{}'.format(k, k)
-        print('generated name {}'.format(name))
-        return name
-
 
 
 class ConvLSTM:
@@ -94,7 +81,7 @@ class ConvLSTM:
 
         #if validation_split > 0.0 and batch_size > 1:
         #    raise ValueError('Validation split is incompatible with batchsize > 1')
-        print(ms_batch_train_ds)
+
         self.ms_batch_train_ds = ms_batch_train_ds
         self.ms_batch_train_ds_val = ms_batch_train_ds_val
         self.epochs = epochs
@@ -103,11 +90,11 @@ class ConvLSTM:
         self.validation_split = validation_split
         print('Starts to build model ...')
         self.model = self.build_model(filters, kernels, seq_length)
-        #self.model.build(ms_batch_train_ds[0].shape)
+        #self.model.build(input_shape = )
         #self.store_summary()
         print('Statrs compilation of model ...')
         self.name = name
-        self.name = gen_longname(filters, kernels, batch_size, seq_length)
+        self.name = gen_name(filters, kernels)
 
         if result_path is not None:
             self.result_path = result_path
@@ -154,8 +141,8 @@ class ConvLSTM:
         self.save_model_weights_config()
 
     def save_model_weights_config(self):
-        self.model.save(os.path.join(self.result_path,'{}_config'.format(self.name)))
-        self.model.save_weights(os.path.join(self.result_path,'{}_weights'.format(self.name)))
+        self.model.save(os.path.join(self.result_path,'{}_config.h5'.format(self.name)))
+        self.model.save_weights(os.path.join(self.result_path,'{}_weights.h5'.format(self.name)))
 
         print('finished model -- ')
 

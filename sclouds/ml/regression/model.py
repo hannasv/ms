@@ -83,12 +83,11 @@ def dataset_to_numpy_order_traditional_ar(dataset, order, bias = True):
 
 
 
-from utils import (dataset_to_numpy, dataset_to_numpy_order,
+#from utils import (dataset_to_numpy, dataset_to_numpy_order,
                     #dataset_to_numpy_order_traditional_ar,
 
-#from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
-#                    dataset_to_numpy_order_traditional_ar,
-
+from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
+                    dataset_to_numpy_order_traditional_ar,
                               dataset_to_numpy_grid_order,
                               dataset_to_numpy_grid,
                               get_xarray_dataset_for_period,
@@ -101,7 +100,7 @@ from utils import (dataset_to_numpy, dataset_to_numpy_order,
 from sclouds.helpers import (merge, get_list_of_variables_in_ds,
                              get_pixel_from_ds, path_input, path_ar_results)
 
-base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/2014-01-01_2018-12-31/' #'2014-01-01_2018-12-31/
+base = '/home/hannasv/stats/2014-01-01_2018-12-31/' #'2014-01-01_2018-12-31/
 
 class Model:
 
@@ -678,8 +677,8 @@ class Model:
         """ Saves model configuration, evaluation, transformation into a file
         named by the current time. Repo : /home/hanna/lagrings/results/ar/
         """
-        path_ar_results = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/'
-        filename      = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/MODEL_{}.nc'.format(np.datetime64('now'))
+        path_ar_results = '/home/hannasv/results/ar/'
+        filename      = '/home/hannasv/results/ar/MODEL_{}.nc'.format(np.datetime64('now'))
         #os.path.join(path_ar_results, )
         print('Stores file {}'.format(filename))
         config_dict   = self.get_configuration()

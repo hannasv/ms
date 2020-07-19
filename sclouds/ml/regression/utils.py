@@ -88,7 +88,7 @@ def get_list_of_files_era5(start = '2012-01-01', stop = '2012-01-31', include_st
         stop_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
     else:
         stop_search_str = ''
-    path_input = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_tcc/'
+    path_input = '/global/D1/homes/hannasv/data/'
     if (start_search_str == stop_search_str) or (stop is None):
         subset = glob.glob(os.path.join( path_input, '{}*tcc*.nc'.format(start_search_str)))
     else:
@@ -283,7 +283,7 @@ def inverse_sigmoid(x):
     _ : array-like
         The inverse sigmoid transform of x
     """
-    return np.log(x/(1-x + 0.0000001))
+    return np.log(x/(1-x + 0.01))
 
 def mean_squared_error(y_true, y_pred):
     """Computes the Mean Squared Error score metric.
@@ -303,6 +303,23 @@ def mean_squared_error(y_true, y_pred):
     mse = np.nanmean(np.square(np.subtract(y_true, y_pred)), axis = 0)
     return mse
 
+def mean_absolute_error(y_true, y_pred):
+    """Computes the Mean Squared Error score metric.
+
+    Parameteres
+    ------------------
+    y_true : array-like
+        Actual vales of y.
+    y_pred : array-like
+        Predicted values of y.
+
+    Returns
+    -------------------
+    mse : float
+        mean squared error
+    """
+    mse = np.nanmean(np.abs(np.subtract(y_true, y_pred)), axis = 0)
+    return mse
 
 def accumulated_squared_error(y_true, y_pred):
     """Computes the Mean Squared Error score metric.
@@ -377,8 +394,8 @@ import numpy as np
 import xarray as xr
 
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
-#from sclouds.helpers 
-#path_input = '/uio/lagringshotellet/student
+from sclouds.helpers import merge, path_input
+path_input = '/global/D1/homes/hannasv/data/'
 
 def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True, var = 'tcc'):
     """ Returns list of files containing data for the requested period.
