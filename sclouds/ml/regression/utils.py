@@ -1,7 +1,66 @@
 import os, sys
-
+path_input = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
 import numpy as np
 import xarray as xr
+
+
+def mean_absolute_error(y_true, y_pred):
+    """Computes the Mean Squared Error score metric.
+
+    Parameteres
+    ------------------
+    y_true : array-like
+        Actual vales of y.
+    y_pred : array-like
+        Predicted values of y.
+
+    Returns
+    -------------------
+    mse : float
+        mean squared error
+    """
+    mse = np.nanmean(np.abs(np.subtract(y_true, y_pred)), axis = 0)
+    return mse
+
+def merge(files):
+    """ Merging a list of filenames into a dataset.open_mfdataset
+
+    Parameteres
+    -----------
+    files : List[str]
+        List of abolute paths to files.
+
+    Returns
+    ------------
+     _ : xr.dataset
+        Merged files into one dataset.
+    """
+    assert len(files) != 0, 'No files to merge'
+    #datasets = [xr.open_dataset(fil) for fil in files]
+    #return xr.merge(datasets)
+    return xr.open_mfdataset(files, compat='no_conflicts') # , join='outer'
+
+
+def get_pixel_from_ds(ds, lat, lon):
+    """Select pixel in dataset based on coordinates.
+
+    Parameters
+    ------------
+    ds : xr.Dataset
+        dataset
+
+    lat :  float
+        Requested latitude value.
+    lon : float
+        Requested longitude value.
+
+    Returns
+    ----------------
+    ds : xr.Dataset
+        Subset of ds, the selecting the requested coordinate.
+    """
+    return ds.sel(latitude = lat, longitude = lon)
+
 
 def get_list_of_files_era5(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True):
     """ Returns list of files containing data for the requested period.
@@ -29,7 +88,7 @@ def get_list_of_files_era5(start = '2012-01-01', stop = '2012-01-31', include_st
         stop_search_str = '{}_{:02d}'.format(parts[0], int(parts[1]))
     else:
         stop_search_str = ''
-    path_input = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_tcc/'
+    path_input = '/global/D1/homes/hannasv/data/'
     if (start_search_str == stop_search_str) or (stop is None):
         subset = glob.glob(os.path.join( path_input, '{}*tcc*.nc'.format(start_search_str)))
     else:
@@ -336,6 +395,7 @@ import xarray as xr
 
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
 from sclouds.helpers import merge, path_input
+path_input = '/global/D1/homes/hannasv/data/'
 
 def get_list_of_files_traditional_model(start = '2012-01-01', stop = '2012-01-31', include_start = True, include_stop = True, var = 'tcc'):
     """ Returns list of files containing data for the requested period.

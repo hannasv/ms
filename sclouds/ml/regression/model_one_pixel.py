@@ -1,19 +1,21 @@
 """ Paralisering av regresjon
 """
-import os
+import os, sys
 import glob
 
 import numpy as np
 import xarray as xr
 
 from timeit import default_timer as timer
-
-from sclouds.ml.regression.utils import (mean_squared_error, r2_score, fit_pixel,
+#sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
+#from sclouds.ml.regression.
+from utils import (mean_squared_error, r2_score, fit_pixel,
                                          predict_pixel,
                                          accumulated_squared_error,
                                          sigmoid, inverse_sigmoid)
 
-from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_order,
+#from sclouds.ml.regression.
+from utils import (dataset_to_numpy, dataset_to_numpy_order,
                                          dataset_to_numpy_order_traditional_ar,
                                          dataset_to_numpy_grid_order,
                                          dataset_to_numpy_grid,
@@ -24,14 +26,15 @@ from sclouds.ml.regression.utils import (dataset_to_numpy, dataset_to_numpy_orde
                                          get_list_of_files_traditional_model)
 
 #sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
-from sclouds.helpers import (merge, get_list_of_variables_in_ds,
-                             get_pixel_from_ds, path_input, path_ar_results)
+#from sclouds.helpers 
+from utils import (merge, #get_list_of_variables_in_ds,
+                             get_pixel_from_ds)#, path_input, path_ar_results)
 
 base = '/uio/lagringshotell/geofag/students/metos/hannasv/results/stats/2014-01-01_2018-12-31/' #'2014-01-01_2018-12-31/
-base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
-
-#path_ar_results = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/'
-#filename = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/MODEL_{}.nc'.format(np.datetime64('now'))
+#base = '/home/hanna/lagrings/results/stats/2014-01-01_2018-12-31/'
+path_input = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
+path_ar_results = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/'
+filename = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/MODEL_{}.nc'.format(np.datetime64('now'))
 
 def get_train_test(test_start, test_stop, model = 'ar'):
     """Loads train and test data to datasets ... """
@@ -108,8 +111,8 @@ class Transformer:
         if len(self.variables) == 0:
             mean = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format('tcc'))['mean']
             std  = xr.open_dataset(base + 'stats_pixel_{}_all.nc'.format('tcc'))['std']
-            print(mean)
-            print(std)
+            #print(mean)
+            #print(std)
         else:
             raise ValueError('Not implemented yet')
             var = self.variables[0]
@@ -189,9 +192,9 @@ class Transformer:
 
 
 class ModelPixel:
-    """ En tråd må startes med all dataen den skal ha.
+    """ En traad maa startes med all dataen den skal ha.
     """
-    def __init__(self, config:dict, lat: float, lon: float):
+    def __init__(self, config, lat, lon):
         self.config = config
         self.config['lat'] = lat
         self.config['lon'] = lon
@@ -200,9 +203,28 @@ class ModelPixel:
         # for storing of file
         self.score = dict()
         self.coeff = None
-
         self.longitude = lon
         self.latitude  = lat
+
+        self.start = config['start']
+        self.stop = config['stop']
+        self.test_start = config['test_start']
+        self.test_stop = config['test_stop']
+
+        self.train_dataset = train_dataset
+        self.test_dataset = test_dataset
+
+        self.transform = config['transform']
+        self.sigmoid   = config['sigmoid']
+        self.bias = config['bias']
+
+        self.order = config['order']
+        self.type  = config['type']
+
+        if self.config['type'] == 'ar':
+            self.variables = ["t2m", 'sp', 'q', 'r']
+        else:
+            self.variables = []
 
     def get_weights(self, coeffs):
         """Returns dictionary of weigths fitted using this model.
@@ -227,11 +249,14 @@ class ModelPixel:
         if self.order > 0:
             for i in range(self.order):
                 var = 'W{}'.format(i+1)
-                temp_dict[var] = (['latitude', 'longitude'], self.coeff_matrix[:, :, ar_index])
+                temp_dict[var] = (['latitude', 'longitude'], self.coeff)
                 ar_index+=1
 
         temp_dict.update(vars_dict) # meges dicts together
         return temp_dict
+
+    def get_configuration(self):
+        return self.config
 
     def fit_evaluate(self, X_train, y_train, X_test, y_test):
         # Do the regression -- change this if it to slow.
@@ -266,9 +291,8 @@ class ModelPixel:
                                 self.longitude, self.latitude)
         path_ar_results = '/uio/lagringshotell/geofag/students/metos/hannasv/results/ar/'
 
-        path_ar_results = '/home/hanna/lagrings/results/ar/'
-        filename        = '{}/TEST_MODEL_{}_{}.nc'.format(path_ar_results,
-                            self.longitude, self.latitude)
+        #path_ar_results = '/home/hanna/lagrings/results/ar/'
+        #filename        = '{}/TEST_MODEL_{}_{}.nc'.format(path_ar_results, self.longitude, self.latitude)
 
         #os.path.join(path_ar_results, )
         print('Stores file {}'.format(filename))
@@ -287,9 +311,9 @@ class ModelPixel:
         return
 
 from multiprocessing import Process
-
+from sklearn.linear_model import LinearRegression
 def process_for_thread(lat, lon, X_train, y_train, X_test, y_test):
-
+    #reg = LinearRegression().fit(X_train, y_train)
     model = ModelPixel(transformer.get_configuration().copy(), lat, lon)
     model.save(X_train, y_train, X_test, y_test)
     return
@@ -305,7 +329,7 @@ if __name__ == '__main__':
     #test_stop  = None
 
     sig = False
-    trans = False
+    trans = True
     bias = True
     order = 1
     timer_start = timer()
@@ -318,14 +342,14 @@ if __name__ == '__main__':
     lat = 30.0
     lon = 0.0
 
-    test_start = '2012-01-01'
-    test_stop  = '2012-01-31'
-
-    test_files = glob.glob('/home/hanna/lagrings/ERA5_monthly/*2012*01*.nc')
-    data = xr.open_mfdataset(test_files, compat='no_conflicts')
-
-    train_dataset = data.copy()
-    test_dataset  = data.copy()
+    #test_start = '2012-01-01'
+    #test_stop  = '2012-01-31'
+    #path_input = '/uio/lagringshotell/geofag/students/metos/hannasv/ERA5_monthly/'
+    #test_files = glob.glob('{}*2012*01*.nc'.format(path_input))
+    #data = xr.open_mfdataset(test_files, compat='no_conflicts')
+    train_dataset, test_dataset =  get_train_test(test_start, test_stop, model = 'ar')
+    #train_dataset = data.copy()
+    #test_dataset  = data.copy()
 
     transformer = Transformer(start=test_start, stop=test_start,
                               test_start = None, test_stop = None,
@@ -334,7 +358,13 @@ if __name__ == '__main__':
                               order = order, transform = trans, sigmoid = sig,
                               latitude = lat, longitude = lon, type = 'traditional',
                               bias = bias)
-
+    def clean(X, y):
+        a = np.concatenate([X, y], axis = 1)
+        a = a[~np.isnan(a).any(axis = 1)]
+        # This is where you do the transformation
+        X = a[:, :-1]
+        y = a[:, -1, np.newaxis] # not tested
+        return X, y
 
     longitudes = [0.0, 0.25, 0.50]
     latitudes  = [30.0, 30.25, 30.50]
@@ -344,6 +374,23 @@ if __name__ == '__main__':
     for lat in latitudes:
         for lon in longitudes:
             X_train, y_train, X_test, y_test = transformer.get_transformed_pixel(lat, lon)
+            if not np.isfinite(X_train).all():
+                print('xTRAIN IS NOT ALL FINITE')
+                X_train, y_train = clean(X_train, y_train)
+
+            if not np.isfinite(X_test).all():
+                print('Xtest IS NOT ALL FINITE')
+                X_test, y_test = clean(X_test, y_test)
+
+            if not np.isfinite(y_train).all():
+                print('y TRAIN IS NOT ALL FINITE')
+       	       	X_train, y_train = clean(X_train, y_train)
+
+            if not np.isfinite(y_test).all():
+                print('ytest IS NOT ALL FINITE')
+                X_test, y_test = clean(X_test, y_test)
+
+
             print('Retrived data for {}, {}'.format(lon, lat))
             #model = ModelPixel(transformer.get_configuration().copy(), lat, lon)
             #model.save(X_train, y_train, X_test, y_test)

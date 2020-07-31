@@ -4,8 +4,34 @@ import glob
 import xarray as xr
 import numpy as np
 
-path_input = '/global/D1/homes/hannasv/data/'
-path_input = '/home/hanna/lagrings/ERA5_monthly/'
+path_input = '/global/D1/homes/hannasv/new_data/'
+
+def get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31'):
+    """ Reads data from the requested period into a xarray dataset.
+    I stop is not provided it defaults to one month of data.
+
+    Parameteres
+    ----------------------
+    start : str
+        Start of period. First day included. (default '2012-01-01')
+    stop : str, optional
+        end of period. Last day included. (default '2012-01-31')
+
+    Returns
+    -----------------------
+    data : xr.Dataset
+        Dataset including all variables in the requested period.
+    """
+    #from utils import merge
+    files = get_list_of_files(start = start, stop = stop)
+    #print("Num files {}".format(len(files)))
+    data = merge(files)
+    if stop is not None:
+        data = data.sel(time = slice(start, stop))
+    return data
+
+#path_input = '/global/D1/homes/hannasv/data/'
+
 
 def get_list_of_files_excluding_period(start = '2012-01-01', stop = '2012-01-31'):
     first_period = get_list_of_files(start = '2004-04-01', stop = start,
@@ -31,7 +57,7 @@ def merge(files):
     assert len(files) != 0, 'No files to merge'
     #datasets = [xr.open_dataset(fil) for fil in files]
     #return xr.merge(datasets)
-    return xr.open_mfdataset(files, compat='no_conflicts') # , join='outer'
+    return xr.open_mfdataset(files, compat='no_conflicts', engine = 'h5netcdf') # , join='outer'
 
 def get_train_test(test_start, test_stop, model = 'ar'):
     """Loads train and test data to datasets ... """
@@ -317,7 +343,7 @@ def get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31'):
     files = get_list_of_files(start = start, stop = stop)
 
     print("Num files {}".format(len(files)))
-    data = xr.open_mfdataset(files, compat='no_conflicts') # , join='outer'(files)
+    data = xr.open_mfdataset(files, compat='no_conflicts', engine = 'h5netcdf') # , join='outer'(files)
     if stop is not None:
         data = data.sel(time = slice(start, stop))
     return data
@@ -335,10 +361,10 @@ def get_data_keras(dataset, num_samples = None, seq_length = 24,  batch_size = N
     elif data_format=='channels_last':
         #  `(samples, time, output_row, output_col, filters)`
         #  `(samples, time, output_row, output_col, filters)`
-        if batch_size is None:
-            X_train, y_train = dataset_to_numpy_grid_keras_dataformat_channel_last(dataset, seq_length)
-        else:
-            X_train, y_train = dataset_to_numpy_grid_keras_dataformat_channel_last_batch_size(dataset, seq_length, batch_size)
+        X_train, y_train = dataset_to_numpy_grid_keras_dataformat_channel_last(dataset, seq_length)
+        # else:
+        print('no batch size dependancy on input')
+        # X_train, y_train = dataset_to_numpy_grid_keras_dataformat_channel_last_batch_size(dataset, seq_length, batch_size)
     else:
         raise ValueError('Not valid data_format try {}, {}'.format('channels_first',
                                                         'channels_last'))
