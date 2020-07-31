@@ -38,7 +38,7 @@ fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 1)
 for var, ax in zip(VARIABLES, axes):
     #if var != 'tcc':
     #print('Warning this duplicates the RH in plot for tcc')
-    vals   = data[var].values
+    vals   = np.abs(data[var].values)
     cntours = ax.contourf(vals, levels=levels_contourplot, cmap=color_maps[var])
 
     # Removes white lines

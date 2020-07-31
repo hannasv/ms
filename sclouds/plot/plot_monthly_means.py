@@ -31,12 +31,24 @@ fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 3)
 #plt.subplots_adjust(hspace = 0.2, top=0.97, bottom=0.03, left = 0.14, right = 0.97)
 
 for var, ax in zip(VARIABLES, axes):
-    #if var != 'tcc':
-    #    print('Warning this duplicates the RH in plot for tcc')
     vals   = data[var].values
     f_land = data['land_{}'.format(var)].values
     f_sea  = data['sea_{}'.format(var)].values
     date   = data['date_{}'.format(var)].values
+
+    if var == 'tcc':
+        from sclouds.io import Filter
+        data   = xr.open_dataset('/home/hanna/MS/sclouds/io/2005_04_tcc.nc')
+        f_l = Filter('land').set_data(data = data, variable = var)
+        f_s  = Filter('sea').set_data(data = data, variable = var)
+
+        mean_all  = np.nanmean(data[var].values)
+        mean_land = f_l.get_mean()
+        mean_sea  = f_s.get_mean()
+
+        vals[12]   = mean_all
+        f_land[12] = mean_land
+        f_sea[12]  = mean_sea
 
     ax.set_title(LONGNAME[var], fontsize = 14)
     ax.plot(date, vals, label = '{}'.format('no filter'))
