@@ -291,6 +291,7 @@ def compute_one_folder(subset, year, month):
                                  lat =  np.arange(30.0, 50.25, 0.25) ,
                                  lon = np.arange(-15.0, 25.25, 0.25) )
     #save_dir = generate_save_dir(year, month)
+    save_dir = '/home/hanna/MS/sclouds/io/'
     try:
         ds.to_netcdf(path = os.path.join(save_dir,'{}_{:02d}_tcc.nc'.format(year, month)),
                      engine='netcdf4',
@@ -308,6 +309,8 @@ def already_regridded(year, month):
     #folder = make_folder_str(year = year, month = month)
     month = "%2.2d"%month # Skriver
     #key = "*-{}{}*.grb".format(year, month)
+    #
+    # full = os.path.join( save_dir, '{}_{}_tcc.nc'.format(year, month) )
     full = os.path.join(save_dir, '{}_{}_tcc.nc'.format(year, month) )
     return os.path.isfile(full)
 
@@ -318,8 +321,9 @@ if __name__ == '__main__':
     for y in years:
         for m in months:
             folder = make_folder_str(y, m)
-            if folder in ['2009_05']: #['2015_11', '2015_12', '2017_12']: '2018_03',
-                #if len(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))) == 0:
+            if folder in ['2005_04', '2005_03']:
+                # ['2015_11', '2015_12', '2017_12']: '2018_03',
+                # if len(glob.glob(os.path.join(save_dir, '{}_tcc.nc'.format(folder)))) == 0:
                 print('search_for {}'.format(glob.glob(os.path.join('/home/hanna/lagrings/satelite_coordinates/', '{}_test_regrindding_tcc.nc'.format(folder)))))
                 files_to_read = removes_duplicates(y, m)
                 print('folder {}'.format(folder))

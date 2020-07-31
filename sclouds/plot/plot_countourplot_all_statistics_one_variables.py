@@ -40,7 +40,7 @@ for var in VARIABLES: #['mean']:#STATISTICS:
 
         data = xr.open_dataset(files[0])
 
-        vals = data[stat].values
+        vals = np.abs(data[stat].values)
 
         if var != 'tcc':
             vals   = np.flipud(vals)
