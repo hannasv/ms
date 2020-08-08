@@ -19,11 +19,14 @@ matplotlib = import_matplotlib()
 def get_path(year, month, base = '/home/hanna/lagrings/ERA5_monthly/'):
     month ="%2.2d" %month # includng leading zeros.
     search_str = '{}*{}*tcc.nc'.format(year, month)
-    return glob.glob(os.path.join(base, search_str))
+    if not (year==2005 and month == 4):
+        return glob.glob(os.path.join(base, search_str))
+    else:
+        return ['/home/hanna/MS/sclouds/io/2005_04_tcc.nc']
 
 def get_missing_hours(year, month):
     files = get_path(year, month)
-
+    print(files)
     if len(files) == 0:
         print("year: {}, month: {}".format(year, month))
         return np.nan
@@ -42,7 +45,8 @@ def get_missing_hours(year, month):
             month1 = month
             month2 = month + 1
             year2  = year
-
+        if year==2005 and month == 4:
+            fil = '/home/hanna/MS/sclouds/io/2005_04_tcc.nc'
         data = xr.open_dataset(fil) # , decode_times = False
         #print(data)
         #print(data)
@@ -84,7 +88,7 @@ ax = autolabel(rect, ax)
 plt.xticks(np.arange(len(month)), rotation=45)
 ax.set_xticklabels(month)
 ax.set_ylim([0, np.max(sum) + 20])
-plt.title('Total number of missing hours')
-plt.ylabel('Total number of missing hours')
+plt.title('Number of Missing Hours')
+plt.ylabel('Number of Missing Hours')
 plt.subplots_adjust(hspace = 0.2, top=0.9, bottom=0.3, left = 0.15, right = 0.95)
-fig.savefig(path_python_figures + 'heatmap_missing_values_monthly_sum.{}'.format(file_format))
+fig.savefig(path_python_figures + 'NEW_heatmap_missing_values_monthly_sum.{}'.format(file_format))

@@ -54,8 +54,11 @@ for var, ax in zip(VARIABLES, axes):
     ax.plot(date, vals, label = '{}'.format('no filter'))
     ax.plot(date, f_land, label = '{}'.format('land'))
     ax.plot(date, f_sea, label = '{}'.format('sea'))
-
-    ax.set_ylabel('{} [{}]'.format(var, UNITS[var]))
+    if var != 'tcc':
+        lab = '{} [{}]'.format(var, UNITS[var])
+    else:
+        lab = 'cfc [1]'
+    ax.set_ylabel(lab)
 
 plt.legend(ncol = 3, frameon = False, bbox_to_anchor=(0.8, -0.25))
 plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.9, bottom=0.1, left = 0.14, right = .95)

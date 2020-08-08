@@ -39,20 +39,26 @@ for var in VARIABLES: #['mean']:#STATISTICS:
     maxs = []
 
     for s in ['std', 'mad']:
-        sub = data[s]
+        sub = np.abs(data[s])
         mins.append(float(sub.min()))
         maxs.append(float(sub.max()))
 
     MIN = np.min(mins)
     MAX = np.max(maxs)
+    f = np.max([abs(MIN), abs(MAX)])
 
     for stat, ax in zip(DEVIATIONS, axes):
         vals = np.abs(data[stat].values)
+        if stat == 'mad':
+            vals=np.abs(vals)
 
         if var != 'tcc':
             vals   = np.flipud(vals)
+            lab = '{} [{}]'.format(var, UNITS[var])
+        else:
+            lab = 'cfc [1]'
 
-        cntours = ax.contourf(vals, levels=levels_contourplot, cmap=color_maps[var],
+        cntours = ax.contourf(vals, levels=levels_contourplot, cmap=color_maps[var], # color_maps[var],
                                 vmin = MIN, vmax = MAX)
 
         # Removes white lines
@@ -66,10 +72,11 @@ for var in VARIABLES: #['mean']:#STATISTICS:
         ax = add_ticks(ax, x_num_tikz = 9, y_num_tikz = 5)
 
     cmap = mpl.cm.get_cmap(color_maps[var])
-    norm = mpl.colors.Normalize(vmin=MIN, vmax=MAX)
+    norm = mpl.colors.Normalize(vmin = MIN, vmax = MAX)
     mappable = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
     fig.colorbar(mappable, ax=axes, orientation = 'vertical',
-                 label = '{} [{}]'.format(var, UNITS[var]))
+                 label = lab,
+                 shrink = 0.85, anchor = (0.0, 1.2))
 
     plt.xlabel('Longitude')
     #plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.95, bottom=0.1, left = 0.14, right = .75)

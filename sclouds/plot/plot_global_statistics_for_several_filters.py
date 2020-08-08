@@ -60,7 +60,11 @@ for i, ax in enumerate(axes.flatten()):
 
     rect4 = ax.bar(y_pos + 3*width/4, list_y_values[3], width=w, align='center', alpha=0.5, label='{}'.format(labels[3]))
     #autolabel(rect4, ax, below = False)  # add annotations to plot
-    ax.set_ylabel('{} [{}]'.format(var, UNITS[var]))
+    if var != 'tcc':
+        lab = '{} [{}]'.format(var, UNITS[var])
+    else:
+        lab = 'cfc [1]'
+    ax.set_ylabel(lab)
     ax.set_title(LONGNAME[var])
 
 plt.xticks(y_pos, x_ticks_labels)

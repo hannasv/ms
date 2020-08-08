@@ -17,10 +17,10 @@ from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                     file_format)
 mat = import_matplotlib() # for mye
 import matplotlib.pyplot as plt
-
+import matplotlib as mpl
 fil = '/home/hanna/EX3_Results/ConvLSTM-B10-SL24-32-1x1-32-1x1/prediction.nc'
 data = xr.open_dataset(fil)
-data = data.sel(batch=0)
+data = data.sel(batch=1)
 #file = '/home/hanna/miphclac/2004_07/2004_07_tcc.nc'
 #¤data = xr.open_dataset(files[0])
 
@@ -29,7 +29,7 @@ n_cols = 4
 var = 'tcc'
 
 fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
-fig.suptitle('ConvLSTM (2014-01-01): '+LONGNAME[var], fontsize = 14)
+fig.suptitle('ConvLSTM (2014-02-01): '+LONGNAME[var], fontsize = 14)
 #plt.axis('off')
 fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN-2)
 
@@ -47,7 +47,17 @@ for i, ax in enumerate(axes.flatten()):
     for c in cntours.collections:
         c.set_edgecolor("face")
 
-fig.colorbar(cntours, ax = axes,  orientation='horizontal', anchor = (0.5, 0.05), label = '{} [{}]'.format(var, UNITS[var]))
-plt.subplots_adjust(left=0.1, bottom=0.15, right=0.95, top=0.92,
+cmap = mpl.cm.get_cmap('Blues_r')
+norm = mpl.colors.Normalize(vmin=0.0, vmax=1.0)
+mappable = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
+
+fig.colorbar(mappable, ax = axes,  orientation='horizontal', anchor = (0.60, 0.05),
+                #label = '{} [{}]'.format(var, UNITS[var]), shrink=1.0, aspect = 40,)
+                label = 'cfc [1]'.format(var, UNITS[var]), shrink=.97, aspect = 40,)
+plt.subplots_adjust(left=0.1, bottom=0.15, right=0.9, top=0.92,
                     wspace = 0.2, hspace = 0.3)
-plt.savefig(path_python_figures + 'timelapse_convlstm_1x1_24hrs_from_{}.png'.format(str(data.date_seq.values)))
+
+#fig.colorbar(cntours, ax = axes,  orientation='horizontal', anchor = (0.5, 0.05), label = '{} [{}]'.format(var, UNITS[var]))
+#plt.subplots_adjust(left=0.1, bottom=0.15, right=0.95, top=0.92,
+                    #wspace = 0.2, hspace = 0.3)
+plt.savefig(path_python_figures + 'timelapse_convlstm_1x1_24hrs_from_2014-02-01.png'.format(str(data.date_seq.values)))

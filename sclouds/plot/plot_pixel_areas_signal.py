@@ -62,10 +62,10 @@ for i, lat in enumerate(list(data.keys())):
         areas[i][j] = centre+left+up+down+left
 
 fig, ax = plt.subplots(1, 1, figsize = (TEXT_WIDTH_IN, 0.5*TEXT_WIDTH_IN) )
-ax = sns.heatmap(areas[:, :161], ax = ax, cmap = 'viridis', cbar_kws = {'label':'accumulated area in km2'})
+ax = sns.heatmap(areas[:, :161], ax = ax, cmap = 'viridis', cbar_kws = {'label':'Area/R [m]'})
 ax.invert_yaxis()
 #ax.plot(dataset['filtered'].values, bins=100, orientation='horizontal')
-plt.title('Area contrubution to a fraction in km2?')
+plt.title(r'Surface area [m], scaled by R=6371000')
 
 plt.ylabel('Latitude')
 plt.xlabel('Longitude')

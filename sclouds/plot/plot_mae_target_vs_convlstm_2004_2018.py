@@ -34,8 +34,8 @@ fig.set_size_inches(w = TEXT_WIDTH_IN, h = 0.5*TEXT_WIDTH_IN)
 
 
 data = xr.open_dataset(os.path.join('/home/hanna/MS-thesis/python_figs/','mae_convlstm_best_model.nc'))
-vals    = data[var].values
-
+vals    = data[var].values/43680
+print(np.mean(vals))
 cntours = ax.contourf(vals, levels=levels_contourplot, cmap='hot_r')
 
 # Removes white lines

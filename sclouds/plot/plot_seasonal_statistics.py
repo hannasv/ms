@@ -65,10 +65,13 @@ for stat in STATISTICS:
             #    axs[counter].set_ylabel('{} [{}]'.format(var, UNITS[var]))
 
             counter += 1
-
+            if var != 'tcc':
+                lab = '{} [{}]'.format(var, UNITS[var])
+            else:
+                lab = 'cfc [1]'
 
             if counter%4==0:
-                fig.colorbar(cntours, ax=axs[counter-1], label = '{} [{}]'.format(var, UNITS[var]))
+                fig.colorbar(cntours, ax=axs[counter-1], label = lab)
 
     fig.suptitle(LONGNAME_STATISTICS[stat])
     plt.subplots_adjust(left=0.05, bottom=0.05, right=0.85, top=0.9, hspace=0.1, wspace=0.1)

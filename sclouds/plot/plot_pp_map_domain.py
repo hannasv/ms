@@ -9,17 +9,20 @@ import pandas as pd
 
 import cartopy.crs as ccrs
 
-from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
-                                  path_python_figures, import_matplotlib,
-                                  file_format)
+from sclouds.plot.helpers import (PP_WIDTH_IN, PP_HEIGHT_IN,
+                                    path_python_figures, import_matplotlib_pp,
+                                    cmap_contour_plot, levels_contourplot,
+                                    file_format, add_ticks)
+mat = import_matplotlib_pp() # for mye
+import matplotlib
 
+path_presentation = '/home/hanna/MS-presentation/figures/'
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-
-matplotlib = import_matplotlib()
 matplotlib.rcParams.update({
-    'figure.figsize' : (TEXT_WIDTH_IN, 0.5*TEXT_WIDTH_IN)
+    'figure.figsize' : (PP_WIDTH_IN, 0.5*PP_WIDTH_IN)
 })
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 def plot_satellite_projection():
     """Stored for future use."""
@@ -53,4 +56,4 @@ ax.add_feature(cp.feature.LAND, zorder=0, edgecolor='black')
 ax.set_extent([-15, 25., 30, 49.])
 
 plt.subplots_adjust(left=0.05, bottom=0.1, right=0.9, top=0.99, wspace=0.1, hspace=0.1)
-plt.savefig(os.path.join(path_python_figures, "Domain.{}".format(file_format)))
+plt.savefig(os.path.join(path_presentation, "Domain.png".format(file_format)))
