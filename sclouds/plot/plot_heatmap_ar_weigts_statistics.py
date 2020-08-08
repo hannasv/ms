@@ -22,7 +22,7 @@ n_cols = 1
 fig, ax =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=False)
 fig.set_size_inches(w = TEXT_WIDTH_IN, h = 0.5*TEXT_WIDTH_IN)
 
-files = glob.glob('/home/hanna/EX3_Results_AR/AR-B-5/*weights*AR*L1*')
+files = glob.glob('/home/hanna/EX3_Results_AR/AR-B-5/*weights*AR*L5*')
 data = xr.open_mfdataset(files, combine='by_coords')
 
 data['latitude'] = data.latitude.values.astype(float)

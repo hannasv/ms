@@ -54,7 +54,9 @@ for var in VARIABLES: #['mean']:#STATISTICS:
         vals = np.abs(data[stat].values)
         if var != 'tcc':
             vals   = np.flipud(vals)
-
+            lab = '{} [{}]'.format(var, UNITS[var])
+        else:
+            lab = 'cfc [1]'
         cntours = ax.contourf(vals, levels=levels_contourplot, cmap=color_maps[var],
                                             vmin = MIN, vmax=MAX)
         # Removes white lines
@@ -69,8 +71,10 @@ for var in VARIABLES: #['mean']:#STATISTICS:
     cmap = mpl.cm.get_cmap(color_maps[var])
     norm = mpl.colors.Normalize(vmin=MIN, vmax=MAX)
     mappable = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
-    fig.colorbar(mappable, ax=axes, orientation = 'vertical',
-                 label = '{} [{}]'.format(var, UNITS[var]))
+
+    fig.colorbar(mappable, ax = axes,  orientation='vertical',
+                    label = lab, anchor = (0.4, -0.5),# 1.3 funker
+                    aspect = 40, shrink=1.0)
     plt.xlabel('Longitude')
-    plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.95, bottom=0.1, left = 0.14, right = .75)
-    plt.savefig(path_python_figures + 'all_stat_variable_{}.pdf'.format(var))
+    plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.95, bottom=0.1, left = 0.14, right = .80)
+    plt.savefig(path_python_figures + 'all_stat_variable_{}.png'.format(var))

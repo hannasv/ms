@@ -29,49 +29,51 @@ n_cols = 1
 
 var = 'tcc'
 python_path = '/home/hanna/MS-thesis/python_figs/'
-folders = ['AR-S-5', 'AR-T-5', 'AR-B-5', 'AR-B-S-5', 'AR-T-S-5', 'AR-5']
-
+folders = ['AR-B-5', 'AR-5']# 'AR-T-5', 
+#folders = ['AR-B-5']
+degree = 'L1'
 for fold in folders:
-    for tpe in ['AR', 'TR']:
-        print('Searching for {}'.format('/home/hanna/EX3_Results_AR/{}/*performance*{}*L1*'.format(fold, tpe)))
-        files = glob.glob('/home/hanna/EX3_Results_AR/{}/*performance*{}*L1*'.format(fold, tpe))
+    for tpe in ['AR', 'TR']:#, 'TR']:
+        print('Searching for {}'.format('/home/hanna/EX3_Results_AR/{}/*performance*{}*{}*'.format(fold, tpe, degree)))
+        files = glob.glob('/home/hanna/EX3_Results_AR/{}/*performance*{}*{}*'.format(fold, tpe, degree))
         name = '-'.join(files[0].split('_')[-3].split('-5-'))
 
-        if not os.path.isfile(python_path+'mea_best_ar_model_{}_L1_in_folder_{}.png'.format('tcc', name)):
-            print('Merging {} files ...'.format(len(files)))
-            try:
-                data = xr.open_mfdataset(files, combine='by_coords')
-                data['latitude'] = data.latitude.values.astype(float)
-                data['longitude'] = data.longitude.values.astype(float)
-                data = data.sortby('longitude')
-                data = data.sortby('latitude')
-                data.to_netcdf('/home/hanna/TEMP_MODELS/{}_L1.nc')
-                print('stored nc files')
-                vals = data['mae_test'].values.transpose()*43824 # constant is num hour 2014+-2018
-                TEXT_WIDTH_IN  = 6.1023622
-                TEXT_HEIGHT_IN = 9.72440945
-                var = 'MAE'
+        #if not os.path.isfile(python_path+'mea_best_ar_model_{}_{}_in_folder_{}.png'.format('tcc', degree, name)):
+        #    print('Merging {} files ...'.format(len(files)))
+        try:
+            data = xr.open_mfdataset(files, combine='by_coords')
+            data['latitude'] = data.latitude.values.astype(float)
+            data['longitude'] = data.longitude.values.astype(float)
+            data = data.sortby('longitude')
+            data = data.sortby('latitude')
+            #data.to_netcdf('/home/hanna/TEMP_MODELS/{}_L5.nc'.format(fold))
+            #print('stored nc files')
+            vals = data['mae_test'].values.transpose() # constant is num hour 2014+-2018
+            print(np.nanmean(vals))
+            TEXT_WIDTH_IN  = 6.1023622
+            TEXT_HEIGHT_IN = 9.72440945
+            var = 'MAE'
 
-                fig, ax =  plt.subplots(nrows = 1, ncols = 1, sharex=True, sharey=False)
-                fig.set_size_inches(w = TEXT_WIDTH_IN, h = 0.5*TEXT_WIDTH_IN)
-                cntours = ax.contourf(vals, levels=100, cmap='hot_r')
+            fig, ax =  plt.subplots(nrows = 1, ncols = 1, sharex=True, sharey=False)
+            fig.set_size_inches(w = TEXT_WIDTH_IN, h = 0.5*TEXT_WIDTH_IN)
+            cntours = ax.contourf(vals, levels=100, cmap='hot_r')
 
-                # Removes white lines
-                for c in cntours.collections:
-                    c.set_edgecolor("face")
+            # Removes white lines
+            for c in cntours.collections:
+                c.set_edgecolor("face")
 
-                fig.colorbar(cntours, ax=ax, label = '{}'.format(var))
+            fig.colorbar(cntours, ax=ax, label = '{}'.format(var))
 
-                ax.set_title('{}'.format(name), fontsize = 14)
-                #plt.xlabel('Longitude')
+            ax.set_title('{}'.format(name), fontsize = 14)
+            #plt.xlabel('Longitude')
 
-                ax.set_xlabel('Longitude')
-                ax.set_ylabel('Latitude')
-                ax = add_ticks(ax)
-                #a.legend()
-                plt.xlabel('Longitude')
-                plt.subplots_adjust(left=0.1, bottom=0.25, right=0.97, top=0.9, wspace=0.1, hspace=0.1)
-                plt.savefig(python_path+'mea_best_ar_model_{}_L1_in_folder_{}.png'.format('tcc', name))
-                plt.close()
-            except OSError as e:
-                print('unable to genrate plot for {}'.format(name))
+            ax.set_xlabel('Longitude')
+            ax.set_ylabel('Latitude')
+            ax = add_ticks(ax)
+            #a.legend()
+            plt.xlabel('Longitude')
+            plt.subplots_adjust(left=0.1, bottom=0.25, right=0.97, top=0.9, wspace=0.1, hspace=0.1)
+            plt.savefig(python_path+'mea_best_ar_model_{}_{}_in_folder_{}.png'.format('tcc', degree, name))
+            plt.close()
+        except OSError as e:
+            print('unable to genrate plot for {}'.format(name))

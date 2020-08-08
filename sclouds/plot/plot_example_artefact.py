@@ -23,7 +23,7 @@ from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                     file_format, add_ticks)
 mat = import_matplotlib() # for mye
 import matplotlib.pyplot as plt
-
+import matplotlib as mpl
 n_rows = 1
 n_cols = 1
 
@@ -38,13 +38,17 @@ subset = data.sel(time = '2004-07-02T12')
 var = 'tcc'
 
 vals    = subset[var].values
-cntours = ax.contourf(vals, levels=levels_contourplot, cmap='Blues_r')
+cntours = ax.contourf(vals, levels=levels_contourplot, cmap='Blues_r',
+                    vmin = 0, vmax = 1)
 
 # Removes white lines
 for c in cntours.collections:
     c.set_edgecolor("face")
 
-fig.colorbar(cntours, ax=ax, label = '{} [{}]'.format(var, UNITS[var]))
+cmap = mpl.cm.get_cmap('Blues_r')
+norm = mpl.colors.Normalize(vmin=0.0, vmax=1.0)
+mappable = mpl.cm.ScalarMappable(norm=None, cmap=cmap)
+fig.colorbar(mappable, ax=ax, label = 'cfc [1]'.format(var, UNITS[var]))
 #a = sns.heatmap(vals, ax = ax, cbar = True, cmap = 'viridis', linewidths=0)
 ax.set_title(LONGNAME[var], fontsize = 14)
 ax.set_ylabel('Latitude')

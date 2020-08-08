@@ -33,8 +33,8 @@ fig, ax =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex=True, sharey=Fals
 fig.set_size_inches(w = TEXT_WIDTH_IN, h = 0.5*TEXT_WIDTH_IN)
 
 data = xr.open_dataset(os.path.join(path_python_figures, 'mae_target_vs_era5.nc'))
-vals    = data[var].values
-
+vals    = data[var].values/43824
+print(np.mean(vals))
 cntours = ax.contourf(vals, levels=levels_contourplot, cmap='hot_r')
 
 # Removes white lines

@@ -19,6 +19,7 @@ from sclouds.plot.helpers import (TEXT_WIDTH_IN, TEXT_HEIGHT_IN,
                                     color_maps, add_ticks)
 mat = import_matplotlib() #for mye
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 path = '/home/hanna/lagrings/ERA5_monthly/'
 path_python_figures = '/home/hanna/MS-thesis/python_figs/'
@@ -35,19 +36,26 @@ for j, i in enumerate(rel_indecies):
     ax = axes[j]
 
     vals = data.isel(time = i)['tcc'].values
-    cntours = ax.contourf(vals, levels=100, cmap='Blues_r')
+    cntours = ax.contourf(vals, levels=100, cmap='Blues_r', vmin = 0, vmax=1.0)
 
     # Removes white lines
     for c in cntours.collections:
         c.set_edgecolor("face")
 
-    fig.colorbar(cntours, ax=ax)
+    #fig.colorbar(cntours, ax=ax, label = '{} [{}]'.format(var, UNITS[var]))
     #a = sns.heatmap(vals, ax = ax, cbar = True, cmap = 'viridis', linewidths=0)
     ax.set_title(str(data.isel(time = i)['time'].values)[:-16], fontsize = 14)
     ax.set_ylabel('Latitude')
     ax = add_ticks(ax, x_num_tikz = 9, y_num_tikz = 5)
 
+cmap = mpl.cm.get_cmap('Blues_r')
+norm = mpl.colors.Normalize(vmin=0.0, vmax=1.0)
+mappable = mpl.cm.ScalarMappable(norm=None, cmap=cmap)
+
+fig.colorbar(mappable, ax = axes,  orientation='vertical',
+                label = 'cfc [1]'.format(var, UNITS[var]), anchor = (0.4, 1.2),
+                aspect = 40, shrink=1.0)
 plt.xlabel('Longitude')
-plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.95, bottom=0.1, left = 0.14, right = .95)
-plt.savefig(path_python_figures + 'timelapse_tcc_spike_09_2012.pdf')
+plt.subplots_adjust(wspace = 0.2, hspace = 0.3, top=0.95, bottom=0.1, left = 0.14, right = .80)
+plt.savefig(path_python_figures + 'timelapse_tcc_spike_09_2012.png')
 print('Finished {}'.format(var))
