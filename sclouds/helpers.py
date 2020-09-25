@@ -90,7 +90,7 @@ def merge(files):
     assert len(files) != 0, 'No files to merge'
     #datasets = [xr.open_dataset(fil) for fil in files]
     #return xr.merge(datasets)
-    return xr.open_mfdataset(files, compat='no_conflicts', engine = 'h5netcdf') # , join='outer'
+    return xr.open_mfdataset(files, compat='no_conflicts')#, engine = 'h5netcdf') # , join='outer'
 
 def get_list_of_variables_in_ds(ds):
     """ Returs list of variables in dataset

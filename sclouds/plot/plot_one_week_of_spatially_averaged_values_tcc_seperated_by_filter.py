@@ -87,9 +87,14 @@ for i in range(1, 13):
     axes[2].set_title('Sea', fontsize = 14)
     axes[2].plot(date, f_sea, label = mapping_number_month["{:02d}".format(i)])
 
-    axes[0].set_ylabel('{} [{}]'.format(var, UNITS[var]))
-    axes[1].set_ylabel('{} [{}]'.format(var, UNITS[var]))
-    axes[2].set_ylabel('{} [{}]'.format(var, UNITS[var]))
+    if var != 'tcc':
+        lab = '{} [{}]'.format(var, UNITS[var])
+    else:
+        lab = 'cfc [1]'
+        
+    axes[0].set_ylabel(lab)
+    axes[1].set_ylabel(lab)
+    axes[2].set_ylabel(lab)
 
     axes[0].set_ylim([0, 1])
     axes[1].set_ylim([0, 1])

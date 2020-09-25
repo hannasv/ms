@@ -71,7 +71,7 @@ for i in range(1, 13):
 
     fig, axes =  plt.subplots(nrows = n_rows, ncols = n_cols, sharex = True)
     fig.set_size_inches(w = TEXT_WIDTH_IN, h = TEXT_HEIGHT_IN - 3)
-    
+
     for var, ax in zip(VARIABLES, axes):
         vals   = data[var].values
         f_land = data['land_{}'.format(var)].values
@@ -81,7 +81,12 @@ for i in range(1, 13):
         ax.plot(date, vals, label = '{}'.format('no filter'))
         ax.plot(date, f_land, label = '{}'.format('land'))
         ax.plot(date, f_sea, label = '{}'.format('sea'))
-        ax.set_ylabel('{} [{}]'.format(var, UNITS[var]))
+        if var != 'tcc':
+            lab = '{} [{}]'.format(var, UNITS[var])
+        else:
+            lab = 'cfc [1]'
+
+        ax.set_ylabel(lab)
         labels = ['{:02d}-{:02d}'.format(date, i) for date in range(1, 9)]
 
         ax.set_xticks(np.linspace(0, len(vals), len(labels)))

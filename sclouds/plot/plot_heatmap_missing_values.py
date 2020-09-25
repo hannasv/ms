@@ -42,7 +42,10 @@ def get_missing_hours(year, month):
             month1 = month
             month2 = month + 1
             year2  = year
-
+        print(year)
+        print(month)
+        if year==2005 and month == 4:
+            fil = '/home/hanna/MS/sclouds/io/2005_04_tcc.nc'
         data = xr.open_dataset(fil) # , decode_times = False
         #print(data)
         #print(data)
@@ -80,8 +83,9 @@ ytikz = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August
 fig, ax = plt.subplots(1, 1, figsize = (TEXT_WIDTH_IN, 0.5*TEXT_WIDTH_IN) )
 
 sns.heatmap(df, linewidths=0.1, linecolor='white', vmax = 10, annot=True, # fmt="d",
-            cbar_kws={'extend':'max'}, ax = ax, yticklabels=ytikz, cmap = 'viridis')
+            cbar_kws={'extend':'max', 'label' : 'Number of Missing Hours'},
+            ax = ax, yticklabels=ytikz, cmap = 'viridis')
 
-plt.subplots_adjust(hspace = 0.2, top=0.97, bottom=0.15, left = 0.15, right = 1.05)
+plt.subplots_adjust(hspace = 0.2, top=0.97, bottom=0.15, left = 0.15, right = 1.0)
 plt.xticks(rotation=45)
-fig.savefig(path_python_figures + 'heatmap_missing_values.{}'.format(file_format))
+fig.savefig(path_python_figures + 'newheatmap_missing_values.{}'.format(file_format))

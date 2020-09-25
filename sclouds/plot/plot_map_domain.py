@@ -30,7 +30,7 @@ def plot_satellite_projection():
     ax.add_feature(cp.feature.OCEAN, zorder=0)
     ax.add_feature(cp.feature.LAND, zorder=0, edgecolor='black')
 
-    ax.set_extent([-15, 25.25, 30, 55.25])
+    ax.set_extent([-15, 25, 30, 50])
 
     plt.subplots_adjust(left=0.01, bottom=0.1, right=0.9, top=0.9, wspace=0.1, hspace=0.1)
     plt.savefig(os.path.join(save_dir, "Domain_SAT.png"), bbox_inches='tight')
@@ -50,7 +50,7 @@ gl.yformatter = LATITUDE_FORMATTER
 ax.add_feature(cp.feature.OCEAN, zorder=0)
 ax.add_feature(cp.feature.LAND, zorder=0, edgecolor='black')
 
-ax.set_extent([-15, 25., 30, 50])
+ax.set_extent([-15, 25., 30, 49.])
 
 plt.subplots_adjust(left=0.05, bottom=0.1, right=0.9, top=0.99, wspace=0.1, hspace=0.1)
 plt.savefig(os.path.join(path_python_figures, "Domain.{}".format(file_format)))

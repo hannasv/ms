@@ -6,6 +6,28 @@ TEXT_HEIGHT_CM = 24.7
 TEXT_WIDTH_IN  = 6.1023622
 TEXT_HEIGHT_IN = 9.72440945
 
+# (16:9) slides have a size of 13.33 x 7.5
+PP_WIDTH_IN = 13.33
+PP_HEIGHT_IN = 7.5
+
+## FontSizes on PP
+def import_matplotlib_pp():
+    import matplotlib
+    matplotlib.use("pgf") # use pgf as a backend
+    print('Warning.. Using pgf backend, no GUI available. use plt.savefig() for inpection')
+    matplotlib.rcParams.update({
+        #"pgf.texsystem": "lualatex",
+        'font.family': 'serif',
+        'font.size': 28,
+        'legend.fontsize': 28,
+        'figure.titlesize': 36,
+        'axes.titlesize':32,
+        #'text.usetex': True,
+        'pgf.rcfonts': False,
+    })
+    return matplotlib
+
+
 ANGLE_ROTATION = 45
 
 cmap_contour_plot = 'BuGr_r'
