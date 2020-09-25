@@ -19,7 +19,7 @@ from base_config import train_convlstm
 #               drop_remainder_batch = True, overwrite_results = True)
 
 # converged models.
-train_convlstm(num_vars = 4, seq_length = 24, epochs = 40, batch_size = 10,
+train_convlstm(num_vars = 4, seq_length = 24, epochs = 1, batch_size = 10,
                filters = [128], kernels = [3],
                drop_remainder_batch = True, overwrite_results = True)
 

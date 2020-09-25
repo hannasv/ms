@@ -1,13 +1,13 @@
-from base_config import train_convlstm
-
+#from base_config import train_convlstm
+from conv_lstm_batch_size import train_convlstm
 
 # NON converging models
 #train_convlstm(num_vars = 4, seq_length = 6, epochs = 40, batch_size = 5,
 #               filters = [256, 256], kernels = [3, 3],
 #               drop_remainder_batch = True, overwrite_results = True)
 
-train_convlstm(num_vars = 4, seq_length = 24, epochs = 40, batch_size = 10,
-               filters = [16, 16], kernels = [1, 1],
+train_convlstm(num_vars = 4, seq_length = 24, epochs = 1, batch_size = 10,
+               filters = [32, 32], kernels = [3, 3],
                drop_remainder_batch = True, overwrite_results = True)
 
 #train_convlstm(num_vars = 4, seq_length = 6, epochs = 40, batch_size = 5,

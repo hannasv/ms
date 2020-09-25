@@ -155,7 +155,7 @@ import numpy as np
 import xarray as xr
 
 sys.path.insert(0,'/uio/hume/student-u89/hannasv/MS/sclouds/')
-from helpers import merge, path_input
+from sclouds.helpers import merge, path_input
 
 def get_xarray_dataset_for_period(start = '2012-01-01', stop = '2012-01-31'):
     """ Reads data from the requested period into a xarray dataset.

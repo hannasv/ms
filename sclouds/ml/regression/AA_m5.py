@@ -1,8 +1,8 @@
 #from base_train_from_files import train_ar_model
-from test_bias_error import train_ar_model
+from base_train_from_files import train_ar_model
 import glob
 
-print('num available files {}'.format(len(glob.glob('/uio/lagringshotell/geofag/students/metos/hannasv/ar_data/*.nc'))))
+print('Num available files {} for regridding.'.format(len(glob.glob('/global/D1/homes/hannasv/ar_data/*.nc'))))
 
 # pasted in m1.py
 #try:
@@ -41,6 +41,6 @@ print('num available files {}'.format(len(glob.glob('/uio/lagringshotell/geofag/
 try:
     train_ar_model(transform=False, bias=False, sig=False, order=5, overwrite_results = True) # AR-L0
 except Exception as e:
-    print('All False ')
+    #print('All False ')
     print(e)
 

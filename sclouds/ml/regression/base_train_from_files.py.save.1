@@ -16,18 +16,6 @@ filnavn = '/global/D1/homes/hannasv/ar_data/all_vars_lat_lon_35.0_-15.0.nc'
 #data = xr.open_dataset(filnavn)
 #print(data)
 
-def get_list_of_corrupt_files():
-    files = []
-    for lat, lon in [('35.0', '14.25'), ('36.25', '1.25'), ('37.25', '-13.75'), ('37.75', '10.5'), ('38.25', '2.75'), ('38.25', '3.5'),
-       ('38.5', '-1.5'), ('40.75', '4.0'), ('43.5', '-4.5'),
-       ('45.75', '5.25'), ('48.75', '-4.75'), ('49.5', '-3.25')]:
-        # /home/hanna/ex3_ar_data/
-        #fil = glob.glob( '/global/D1/homes/hannasv/ar_data3/*_{}*_{}.nc')[0]
-        fil = glob.glob('/global/D1/homes/hannasv/ar_data3/all_vars*{}*{}*.nc'.format(lat, lon))[0]
-        #print(fil)
-        files.append(fil)
-    return files
-
 from timeit import timeit
 
 from utils import (dataset_to_numpy, dataset_to_numpy_order,
@@ -223,9 +211,8 @@ def train_ar_model(transform=False, bias=False, sig=False, order=0, overwrite_re
     if not os.path.isdir(path_ar_results):
         os.mkdir(path_ar_results)
         print('Created directory')
-    #list_to_regridd = get_list_of_files_to_regridd(model_name=full_name, path=path_ar_results)
+    list_to_regridd = get_list_of_files_to_regridd(model_name=full_name, path=path_ar_results)
     #list_to_regridd = glob.glob('/global/D1/homes/hannasv/ar_data/*.nc')
-    list_to_regridd = get_list_of_corrupt_files()
     list_files = list_to_regridd
     print('Detected {}/13041 num files to regridd.'.format(len( list_to_regridd )))
     corrupt_files = []
@@ -319,7 +306,7 @@ def train_ar_model(transform=False, bias=False, sig=False, order=0, overwrite_re
                     mae_train_tr = mean_absolute_error(y_train_pred_tr, ytr)
 
                 except np.linalg.LinAlgError:
-                    coeffs_tr = np.ones(len(tr_explain))
+                    coeffs_tr = np.nan*np.ones(len(tr_explain))
                     mse_test  = [np.nan]
                     mse_train = [np.nan] #mean_squared_error(y_train_pred, ytr)
 
@@ -341,7 +328,7 @@ def train_ar_model(transform=False, bias=False, sig=False, order=0, overwrite_re
                 mae_train = mean_squared_error(y_train_pred, ytr)
 
             except np.linalg.LinAlgError:
-                coeffs = np.ones(len(explain))
+                coeffs = np.nan*np.ones(len(explain))
                 mse_test  = [np.nan]
                 mse_train = [np.nan] #mean_squared_error(y_train_pred, ytr)
 
