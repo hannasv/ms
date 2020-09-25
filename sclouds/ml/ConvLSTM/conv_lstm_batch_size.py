@@ -3,18 +3,41 @@
 import os, sys
 import glob
 import numpy as np
-
+import xarray as xr
 from sclouds.helpers import get_lon_array, get_lat_array, path_convlstm_results
-from sclouds.ml.ConvLSTM.utils import r2_keras
+from sclouds.ml.ConvLSTM.utils import r2_keras, mae
+from tensorflow.keras.losses import MeanSquaredError
+mse = MeanSquaredError()
 
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
 
+def save_prediction(test_mae, test_mse, sequence_prediction):
+    """ Save prediction """
+    data_dict = {'tcc': (['batch', 'sequence_length', 'latitude', 'longitude'], sequence_prediction[:, :, :, :, 0])}
+
+    longitude  = np.arange(-15.0, 25.0+0.25, step = 0.25)
+    latitude   =  np.arange(30.0, 50.0+0.25, step = 0.25)
+    #seq_length = sequence_prediction
+    #time = np.arange(seq_length)
+    print(sequence_prediction[:, :, :, :, 0].shape)
+    ds = xr.Dataset(data_dict,
+                     coords={'longitude': (['longitude'], longitude),
+                             'latitude': (['latitude'], latitude),
+                             'sequence_length': (['sequence_length'], np.arange(24)), 
+                             'batch':(['batch'], np.arange(10))
+                            })
+    ds['mse_test']  = test_mse
+    ds['mae_test']  = test_mae
+    ds['date_seq']  = '2014-01-01'
+
+    ds.to_netcdf('/home/hannasv/results_summary/test_prediction_conv_lstm.nc')
+    return 
 my_callbacks = [
-    tf.keras.callbacks.EarlyStopping(patience=3),
+    #tf.keras.callbacks.EarlyStopping(patience=3),
     #tf.keras.callbacks.ModelCheckpoint(filepath='model.{epoch:02d}-{val_loss:.2f}.h5'),
-    tf.keras.callbacks.TensorBoard(log_dir='./logs'),
+    #tf.keras.callbacks.TensorBoard(log_dir='./logs'),
     tf.keras.callbacks.TerminateOnNaN()
 ]
 #model.fit(dataset, epochs=10, callbacks=my_callbacks)
@@ -86,7 +109,7 @@ class ConvLSTM:
     #CALLBACKS = [early_stopping_monitor, TensorBoard(log_dir='./logs')]
 
     def __init__(self, ms_batch_train_ds, ms_batch_train_ds_val, filters, kernels, seq_length = 24,
-                 epochs=40, batch_size = 10, validation_split=None, name = None, result_path = None):
+                 epochs=40, batch_size = 10, validation_split=None, name = None, result_path = None, test_data = None):
 
         self.filters = filters
         self.kernels = kernels
@@ -97,6 +120,8 @@ class ConvLSTM:
         print(ms_batch_train_ds)
         self.ms_batch_train_ds = ms_batch_train_ds
         self.ms_batch_train_ds_val = ms_batch_train_ds_val
+        self.test_data = test_data
+        print(self.test_data)
         self.epochs = epochs
         self.batch_size = batch_size
 
@@ -108,7 +133,7 @@ class ConvLSTM:
         print('Statrs compilation of model ...')
         self.name = name
         self.name = gen_longname(filters, kernels, batch_size, seq_length)
-
+        result_path = '/home/hannasv/results_summary/'
         if result_path is not None:
             self.result_path = result_path
             if not os.path.exists(result_path):
@@ -117,7 +142,7 @@ class ConvLSTM:
             if not os.path.exists(os.path.join(result_path, self.name)):
                 os.makedirs(os.path.join(result_path, self.name))
         else:
-            self.result_path = '/home/hannasv/results/'
+            self.result_path = '/home/hannasv/results_summary/'
        
         # self.result_path = '/home/hanna/lagrings/results/'
         self.model.compile(optimizer=keras.optimizers.Adam(
@@ -129,7 +154,7 @@ class ConvLSTM:
                             name="Adam",),
                             loss='mean_squared_error',
                             metrics=['mean_squared_error', r2_keras, tf.keras.metrics.MeanAbsoluteError()])
-        print('starts training')
+        print('Starts training, files are stored in  {}'.format(self.result_path))
         #self.model.save(os.path.join(self.result_path,'{}_config.h5'.format(self.name)))
 
         #self.store_summary()
@@ -149,14 +174,61 @@ class ConvLSTM:
 
 
         self.store_history()
-        #self.store_summary()
-        #self.model.save_weights(self.results_path+'model_weights.h5')
+        self.store_summary()
+        # serialize model to JSON
+        model_json = self.model.to_json()
+        # print(model_json)
+        with open(self.result_path+"/model.json", "w") as json_file:
+            json_file.write(model_json)
+        self.model.save_weights(os.path.join(self.result_path,'model_weights.h5'))
         self.save_model_weights_config()
+        # make prediction 
+        #print("Evaluate on test data")
+        #test_data = np.random.random((10, 24, 81, 161, 4)).astype('float32')
+        #results = model.evaluate(x_test, y_test, batch_size=128)
+        #print("test loss, test acc:", results)
+        #print("Evaluate")
+        result = self.model.evaluate(test_data)
+        score = dict(zip(self.model.metrics_names, result))
+        #print(score)
+        with open(self.result_path+"/test_score.json", "w") as json_file:
+            #json_file.write(score)
+            import json
+            json.dump(score, json_file)
+        
+        #test_np = np.stack(list(test_data))
+        #print(type(test_np), test_np.shape)
+        prediction = self.model.predict(test_data)
+        print(prediction)
+        print(prediction.shape)
+        #print(prediction)
+        #test_mse = mse(test_data[1], prediction).numpy()
+        #print(test_mse)
+        #test_mae = mae(test_data[1], prediction).numpy()
+        #save_prediction(0.1, 0.1, prediction)
+        data_dict = {'tcc': (['batch', 'sequence_length', 'latitude', 'longitude'], prediction[:, :, :, :, 0])}
+
+        longitude  = np.arange(-15.0, 25.0+0.25, step = 0.25)
+        latitude   =  np.arange(30.0, 50.0+0.25, step = 0.25)
+        #seq_length = sequence_prediction
+        #time = np.arange(seq_length)
+        #print(sequence_prediction[:, :, :, :, 0].shape)
+        ds = xr.Dataset(data_dict,
+                     coords={'longitude': (['longitude'], longitude),
+                             'latitude': (['latitude'], latitude),
+                             'sequence_length': (['sequence_length'], np.arange(24)), 
+                             'batch':(['batch'], np.arange(1820))
+                            })
+        #ds['mse_test']  = test_mse
+        #ds['mae_test']  = test_mae
+        ds['date_seq']  = '2014-01-01'
+        print(ds)
+        ds.to_netcdf(os.path.join(self.result_path,'prediction.nc'), engine = 'h5netcdf')
+        
 
     def save_model_weights_config(self):
-        self.model.save(os.path.join(self.result_path,'{}_config'.format(self.name)))
-        self.model.save_weights(os.path.join(self.result_path,'{}_weights'.format(self.name)))
-
+        self.model.save(os.path.join(self.result_path,'{}_config.h5'.format(self.name)))
+        self.model.save_weights(os.path.join(self.result_path,'{}_weights.h5'.format(self.name)))
         print('finished model -- ')
 
 

@@ -31,7 +31,7 @@ from base_config import train_convlstm
 #               filters = [16, 16], kernels = [3, 3],
 #               drop_remainder_batch = True, overwrite_results = True)
 
-train_convlstm(num_vars = 4, seq_length = 24, epochs = 40, batch_size = 10,
+train_convlstm(num_vars = 4, seq_length = 24, epochs = 1, batch_size = 10,
                filters = [8, 8, 8], kernels = [3, 3, 3],
                drop_remainder_batch = True, overwrite_results = True)
 

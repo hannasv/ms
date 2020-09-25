@@ -1,5 +1,5 @@
-#from base_train_from_files import train_ar_model
-from test_bias_error import train_ar_model
+from base_train_from_files import train_ar_model
+#from test_bias_error import train_ar_model
 import glob
 
 print('num available files {}'.format(len(glob.glob('/uio/lagringshotell/geofag/students/metos/hannasv/ar_data/*.nc'))))

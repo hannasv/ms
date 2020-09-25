@@ -283,7 +283,7 @@ def inverse_sigmoid(x):
     _ : array-like
         The inverse sigmoid transform of x
     """
-    return np.log(x/(1-x + 0.01))
+    return np.log(x/(1-x + 1.00000000*10**(-300)))
 
 def mean_squared_error(y_true, y_pred):
     """Computes the Mean Squared Error score metric.
